@@ -44,16 +44,21 @@ let random_bsp_naive (profondeur : int) (largeur : int) (hauteur : int) =
 
 
 (* Change la couleur d'un rectangle d'un bsp, dans lequel se situe p *)
-let rec change_color (bsp : bsp) (p : point) (c : color) =
-  let rec aux bsp (x,y) c v =
+let change_color (bsp : bsp) (p : point)=
+  let rec aux bsp (x,y) v =
     match bsp with
-    | R _ -> R (Some c)
+    | R c ->
+       begin
+         match c with
+         |  None ->   R (Some blue)
+         | Some c -> R (Some (if c = blue then red else blue))
+       end
     | L (lab, left, right) ->
        if v
        then if x < lab.coord
-            then L (lab, aux left p c (not v), right)
-            else L (lab, left, aux right (x-lab.coord,y) c (not v))
+            then L (lab, aux left p (not v), right)
+            else L (lab, left, aux right (x-lab.coord,y) (not v))
        else if y < lab.coord
-            then L (lab, aux left p c (not v), right)
-            else L (lab, left, aux right (x,y-lab.coord) c (not v))
-  in aux bsp p c true
+            then L (lab, aux left p (not v), right)
+            else L (lab, left, aux right (x,y-lab.coord) (not v))
+  in aux bsp p true
