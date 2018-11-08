@@ -28,16 +28,33 @@ let rec string_of_bsp (bsp : bsp) =
 NOTE: Pour l'instant, toutes les arrêtes sont visibles
 
  *)
-let rec random_bsp_naive ?(v=true) (profondeur : int) (largeur : int) (hauteur : int) =
-  if profondeur = 0
+let rec random_bsp_naive ?(v=true) ?(start_larg=0) ?(start_haut=0) (prof : int) (larg : int) (haut : int) =
+  if prof = 0
   then R (Some (if Random.bool () then blue else red))
   else
     let lab =
-      { coord = Random.int (if v then largeur else hauteur);
+      { coord =
+          if v
+          then start_larg + (Random.int (larg-start_larg))
+          else start_haut + (Random.int (haut-start_haut));
         colored = true
       } in
-    let l = random_bsp_naive ~v:(not v) (profondeur-1) (if v then lab.coord else largeur) (if v then hauteur else lab.coord) in
-    let r = random_bsp_naive ~v:(not v) (profondeur-1) (if v then (largeur-lab.coord) else largeur) (if v then hauteur else (hauteur - lab.coord)) in
+    let l =
+      random_bsp_naive
+        ~v:(not v)
+        ~start_larg:start_larg
+        ~start_haut:start_haut
+        (prof-1)
+        (if v then larg - lab.coord else larg)
+        (if v then haut else haut - lab.coord) in
+    let r =
+      random_bsp_naive
+        ~v:(not v)
+        ~start_larg:(if v then larg-lab.coord else start_larg)
+        ~start_haut:(if v then start_haut else haut - lab.coord)
+        (prof-1)
+        larg
+        haut in
     L (lab,l,r)
 
 
@@ -47,14 +64,14 @@ let rec change_color ?(v=true) (bsp : bsp) ((x,y) as p : point) =
     | R c ->
        begin
          match c with
-         |  None ->   R (Some blue)
+         | None ->   R (Some blue)
          | Some c -> R (Some (if c = blue then red else blue))
        end
     | L (lab, left, right) ->
        if v
        then if x < lab.coord
             then L (lab, change_color ~v:(not v) left p, right)
-            else L (lab, left, change_color ~v:(not v) right (x-lab.coord,y))
+            else L (lab, left, change_color ~v:(not v) right p)
        else if y < lab.coord
             then L (lab, change_color ~v:(not v) left p, right)
-            else L (lab, left, change_color ~v:(not v) right (x,y-lab.coord))
+            else L (lab, left, change_color ~v:(not v) right p)
