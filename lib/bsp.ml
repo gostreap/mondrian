@@ -1,5 +1,3 @@
-open List
-
 type label =
   { coord : int;
     colored : bool;
