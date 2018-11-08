@@ -26,15 +26,15 @@ NOTE: Pour l'instant, toutes les arrêtes sont visibles
 
  *)
 let random_bsp_naive (profondeur : int) (largeur : int) (hauteur : int) =
-  let rec aux profondeur largeur hauteur vertical =
+  let rec aux profondeur largeur hauteur v =
   if profondeur = 0
   then R (Some (if Random.bool () then Graphics.blue else Graphics.red))
   else
     let lab =
-      { coord = Random.int (if vertical then largeur else hauteur);
+      { coord = Random.int (if v then largeur else hauteur);
         colored = true
       } in
-    let l = aux (profondeur-1) largeur hauteur (not vertical) in
-    let r = aux (profondeur-1) largeur hauteur (not vertical) in
+    let l = aux (profondeur-1) (if v then lab.coord else largeur) (if v then hauteur else lab.coord) (not v) in
+    let r = aux (profondeur-1) (if v then (largeur-lab.coord) else largeur) (if v then hauteur else (hauteur - lab.coord)) (not v) in
     L (lab,l,r)
   in aux profondeur largeur hauteur true
