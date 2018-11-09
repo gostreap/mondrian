@@ -91,3 +91,55 @@ let rec compare_bsp (bsp1 : bsp) (bsp2 : bsp) =
          L (_,x',y') -> compare_bsp x x' && compare_bsp y y'
        | _ -> false
      end
+
+(*
+Retourn un couple (r,b) où:
+
+r est le nombre de rectangle rouge sur la partie gauche (resp droite)
+b est le nombre de rectangle bleue sur la partie gauche (resp droite)
+
+resp si is_l = false
+ *)
+let rec get_coul ?(v=true) (is_l : bool) (bsp : bsp) =
+  match bsp with
+  | R x ->
+     begin
+       match x with
+         None -> (0,0)
+       | Some x ->
+          if x = blue then (0,1) else (1,0)
+     end
+  | L (_,x,y) ->
+     let rx,bx as x' = get_coul ~v:(not v) is_l x in
+     let ry,by as y' = get_coul ~v:(not v) is_l y in
+     if v
+     then if is_l then y' else x'
+     else (rx+ry,bx+by)
+
+(*
+Vérifie si deux colorations sont équivalentes
+ *)
+let rec check_current (bsp1 : bsp) (bsp2 : bsp) =
+  match bsp1 with
+  | L (_,x,y) ->
+     begin
+       match bsp2 with
+         L (_,x',y') ->
+          let cond =
+            let lx', ly' = get_coul true x', get_coul false y' in
+            let lx, ly = get_coul true x, get_coul false y in
+            let r',b' = fst lx' + fst ly' , snd lx' + snd ly' in
+            let r ,b =  fst lx + fst ly , snd lx + snd ly in
+            if r' = b'
+            then r = b
+            else
+              if r' < b'
+              then r < b
+              else r > b
+          in check_current x x' && check_current y y' && cond
+       | _ -> false
+     end
+  | R _ ->
+     match bsp2 with
+       R _ -> true
+     | _ -> false
