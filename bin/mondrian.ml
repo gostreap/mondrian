@@ -22,7 +22,7 @@ let rec affiche ?(v=true) ?(infx=0) ?(infy=0) ?(supx=500) ?(supy=500) (bsp : bsp
            | Some c ->
               begin
                   set_color c;
-                  (* fill_rect (infx+25+2) (infy+25+2) (supx+25-2) (supy+25-2) *)
+                  fill_rect (infx+25+2) (infy+25+2) (supx-infx-4) (supy-infy-4)
               end
        end
     | L (lab, l, r) ->
@@ -46,8 +46,9 @@ let rec affiche ?(v=true) ?(infx=0) ?(infy=0) ?(supx=500) ?(supy=500) (bsp : bsp
        end
   
 let main () =
+  Random.self_init ();
   open_graph " 550x550" ;
-  let bsp = random_bsp_naive 3 500 500
+  let bsp = random_bsp_naive 4 500 500
   in
   affiche bsp;
   print_string (string_of_bsp bsp);
