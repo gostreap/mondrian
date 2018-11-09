@@ -29,16 +29,16 @@ let rec string_of_bsp (bsp : bsp) =
 NOTE: Pour l'instant, toutes les arrêtes sont visibles
 
  *)
-let rec random_bsp_naive ?(v=true) ?(minsize=10) ?(start_larg=0)
+let rec random_bsp_naive ?(v=true) ?(minsize=20) ?(start_larg=0)
                          ?(start_haut=0) (prof : int) (larg : int) (haut : int) =
-  if prof = 0 || larg-start_larg < minsize || haut-start_haut < minsize
+  if prof = 0 || larg-start_larg <= minsize*2 || haut-start_haut <= minsize*2
   then R (Some (if Random.bool () then blue else red))
   else
     let lab =
       { coord =
           if v
-          then start_larg + (Random.int (larg-start_larg))
-          else start_haut + (Random.int (haut-start_haut));
+          then start_larg + minsize + (Random.int (larg-start_larg - minsize*2))
+          else start_haut + minsize + (Random.int (haut-start_haut - minsize*2));
         colored = true
       } in
     let l =

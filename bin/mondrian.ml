@@ -48,10 +48,10 @@ let rec affiche ?(v=true) ?(infx=0) ?(infy=0) ?(supx=500) ?(supy=500) (bsp : bsp
 let main () =
   Random.self_init ();
   open_graph " 550x550" ;
-  let bsp = random_bsp_naive 4 500 500
+  let bsp = random_bsp_naive 10 500 500
   in
+  print_endline (string_of_bsp bsp);
   affiche bsp;
-  print_string (string_of_bsp bsp);
   loop ()
 
 
