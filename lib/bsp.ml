@@ -21,14 +21,16 @@ let rec string_of_bsp (bsp : bsp) =
        | Some x -> if x = red then "red" else "blue"
      end
   | L (lab,l,r) ->
-    "(" ^ (string_of_bsp l) ^ ") " ^ (string_of_int (lab.coord)) ^ " (" ^ (string_of_bsp r) ^ ")"
+     "(" ^ (string_of_bsp l) ^ ") " ^ (string_of_int (lab.coord)) ^
+         " (" ^ (string_of_bsp r) ^ ")"
 
 (* Génère un BSP aléatoire de profondeur 'profondeur'
 
 NOTE: Pour l'instant, toutes les arrêtes sont visibles
 
  *)
-let rec random_bsp_naive ?(v=true) ?(minsize=10) ?(start_larg=0) ?(start_haut=0) (prof : int) (larg : int) (haut : int) =
+let rec random_bsp_naive ?(v=true) ?(minsize=10) ?(start_larg=0)
+                         ?(start_haut=0) (prof : int) (larg : int) (haut : int) =
   if prof = 0 || larg-start_larg < minsize || haut-start_haut < minsize
   then R (Some (if Random.bool () then blue else red))
   else
@@ -45,13 +47,13 @@ let rec random_bsp_naive ?(v=true) ?(minsize=10) ?(start_larg=0) ?(start_haut=0)
         ~start_larg:start_larg
         ~start_haut:start_haut
         (prof-1)
-        (if v then larg - lab.coord else larg)
-        (if v then haut else haut - lab.coord) in
+        (if v then lab.coord else larg)
+        (if v then haut else lab.coord) in
     let r =
       random_bsp_naive
         ~v:(not v)
-        ~start_larg:(if v then larg-lab.coord else start_larg)
-        ~start_haut:(if v then start_haut else haut - lab.coord)
+        ~start_larg:(if v then lab.coord else start_larg)
+        ~start_haut:(if v then start_haut else lab.coord)
         (prof-1)
         larg
         haut in
