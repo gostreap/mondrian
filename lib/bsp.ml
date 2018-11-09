@@ -28,8 +28,8 @@ let rec string_of_bsp (bsp : bsp) =
 NOTE: Pour l'instant, toutes les arrêtes sont visibles
 
  *)
-let rec random_bsp_naive ?(v=true) ?(start_larg=0) ?(start_haut=0) (prof : int) (larg : int) (haut : int) =
-  if prof = 0
+let rec random_bsp_naive ?(v=true) ?(minsize=10) ?(start_larg=0) ?(start_haut=0) (prof : int) (larg : int) (haut : int) =
+  if prof = 0 || larg-start_larg < minsize || haut-start_haut < minsize
   then R (Some (if Random.bool () then blue else red))
   else
     let lab =
