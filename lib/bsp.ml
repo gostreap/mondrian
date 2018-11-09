@@ -59,7 +59,6 @@ let rec random_bsp_naive ?(v=true) ?(minsize=20) ?(start_larg=0)
         haut in
     L (lab,l,r)
 
-
 (* Change la couleur d'un rectangle d'un bsp, dans lequel se situe p *)
 let rec change_color ?(v=true) (bsp : bsp) ((x,y) as p : point) =
     match bsp with
@@ -77,3 +76,18 @@ let rec change_color ?(v=true) (bsp : bsp) ((x,y) as p : point) =
        else if y < lab.coord
             then L (lab, change_color ~v:(not v) left p, right)
             else L (lab, left, change_color ~v:(not v) right p)
+
+let rec compare_bsp (bsp1 : bsp) (bsp2 : bsp) =
+  match bsp1 with
+  | R x ->
+     begin
+       match bsp2 with
+         R y -> x = y
+       | _ -> false
+     end
+  | L (_,x,y) ->
+     begin
+       match bsp2 with
+         L (_,x',y') -> compare_bsp x x' && compare_bsp y y'
+       | _ -> false
+     end
