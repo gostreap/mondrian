@@ -18,19 +18,11 @@ let rec affiche_coloration ?(v=true) ?(infx=0) ?(infy=0) ?(supx=800)
      begin
          if v then
              begin
-                 (* set_color black;
-                  * set_line_width 1;
-                  * draw_segments [|(lab.coord + offset, infy + offset,
-                  *                  lab.coord + offset, supy + offset)|] ; *)
                  affiche_coloration ~v:(not v) ~infx:infx ~infy:infy ~supx:lab.coord ~supy:supy l;
                  affiche_coloration ~v:(not v) ~infx:lab.coord ~infy:infy ~supx:supx ~supy:supy r
              end
          else
              begin
-                 (* set_color black;
-                  * set_line_width 1;
-                  * draw_segments [|(infx + offset, lab.coord + offset,
-                  *                  supx + offset, lab.coord + offset)|] ; *)
                  affiche_coloration ~v:(not v) ~infx:infx ~infy:infy ~supx:supx ~supy:lab.coord l;  
                  affiche_coloration ~v:(not v) ~infx:infx ~infy:lab.coord ~supx:supx ~supy:supy r
              end
@@ -84,7 +76,7 @@ let main () =
   let larg = 800 and haut = 800 in
   Random.self_init ();
   open_graph " 850x850" ;
-  let bsp = random_bsp_naive 3 larg haut
+  let bsp = random_bsp_naive 9 larg haut
   in
   (* print_endline (string_of_bsp bsp); *)
   loop bsp larg haut

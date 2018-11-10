@@ -117,12 +117,12 @@ let rec get_coul ?(v=true) (is_l : bool) (bsp : bsp) =
   | L (_,x,y) ->
      let rx,bx as x' = get_coul ~v:(not v) is_l x in
      let ry,by as y' = get_coul ~v:(not v) is_l y in
-     if v
+     if not v
      then if is_l then y' else x'
      else (rx+ry,bx+by)
 
 (* Renvoie la couleur naturel de la ligne correspondant à la racine de bsp*)
-let get_color_line (* (v:bool) *) (bsp : bsp) =
+let get_color_line (bsp : bsp) =
   match bsp with
   | R _ -> None
   | L (_, l, r) ->    
@@ -168,7 +168,7 @@ let rec linetree_of_bsp ?(v=true) ?(infx = 0) ?(infy = 0)
   match bsp with
   | R _ -> Leef
   | L (lab, left, right) ->
-     let color = get_color_line (* v *) bsp in
+     let color = get_color_line bsp in
      if v then
          let
              left_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:infy
