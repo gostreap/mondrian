@@ -1,4 +1,5 @@
 open Bsp
+open Couleur
 open Graphics
 
 let rec affiche_coloration ?(v=true) ?(infx=0) ?(infy=0) ?(supx=800)
@@ -10,7 +11,7 @@ let rec affiche_coloration ?(v=true) ?(infx=0) ?(infy=0) ?(supx=800)
          | None -> ()
          | Some c ->
             begin
-                set_color c;
+                set_color (get_rgb c);
                 fill_rect (infx+offset+3) (infy+offset+3) (supx-infx-6) (supy-infy-6)
             end
      end
@@ -23,7 +24,7 @@ let rec affiche_coloration ?(v=true) ?(infx=0) ?(infy=0) ?(supx=800)
              end
          else
              begin
-                 affiche_coloration ~v:(not v) ~infx:infx ~infy:infy ~supx:supx ~supy:lab.coord l;  
+                 affiche_coloration ~v:(not v) ~infx:infx ~infy:infy ~supx:supx ~supy:lab.coord l;
                  affiche_coloration ~v:(not v) ~infx:infx ~infy:lab.coord ~supx:supx ~supy:supy r
              end
      end
@@ -44,7 +45,7 @@ let affiche ?(offset=25) (bsp : bsp) (larg : int) (haut : int) =
        begin
            match color with
            | None -> set_color black;
-           | Some c -> set_color c;
+           | Some c -> set_color (get_rgb_l c);
            set_line_width 3;
            draw_segments [|(a + offset, b + offset, x + offset, y + offset)|] ;
            affiche_linetree left;
@@ -55,7 +56,7 @@ let affiche ?(offset=25) (bsp : bsp) (larg : int) (haut : int) =
   affiche_coloration bsp
 
 
-      
+
 let rec loop ?(offset=25) (bsp : bsp) (larg : int) (haut : int) =
   clear_graph ();
   affiche bsp larg haut;
@@ -71,7 +72,7 @@ let rec loop ?(offset=25) (bsp : bsp) (larg : int) (haut : int) =
            loop bsp larg haut
        end
   else loop bsp larg haut
-    
+
 let main () =
   let larg = 800 and haut = 800 in
   Random.self_init ();

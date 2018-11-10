@@ -1,4 +1,4 @@
-open Graphics
+open Couleur
 
 type label =
   { coord : int;
@@ -6,14 +6,14 @@ type label =
   }
 
 (* Commence avec une séparation verticale *)
-type bsp = R of color option
+type bsp = R of couleur option
          | L of label * bsp * bsp
 
 type point = (int * int)
 
 type linetree =
   | Leef
-  | Line of point * point * color option * linetree * linetree
+  | Line of point * point * couleur_l option * linetree * linetree
 
 (* Affichage rudimentaire de BSP *)
 let rec string_of_bsp (bsp : bsp) =
@@ -22,7 +22,7 @@ let rec string_of_bsp (bsp : bsp) =
      begin
        match x with
          None -> "None"
-       | Some x -> if x = red then "red" else "blue"
+       | Some x -> string_of_couleur x
      end
   | L (lab,l,r) ->
      "(" ^ (string_of_bsp l) ^ ") " ^ (string_of_int (lab.coord)) ^
@@ -35,9 +35,8 @@ NOTE: Pour l'instant, toutes les arrêtes sont visibles
  *)
 let rec random_bsp_naive ?(v=true) ?(minsize=20) ?(start_larg=0)
                          ?(start_haut=0) (prof : int) (larg : int) (haut : int) =
-  let red2 = rgb 211 19 2 in
   if prof = 0 || larg-start_larg <= minsize*2 || haut-start_haut <= minsize*2
-  then R (Some (if Random.bool () then blue else red2))
+  then R (Some (if Random.bool () then Blue else Red))
   else
     let lab =
       { coord =
@@ -70,8 +69,8 @@ let rec change_color ?(v=true) (bsp : bsp) ((x,y) as p : point) =
     | R c ->
        begin
          match c with
-         | None ->   R (Some blue)
-         | Some c -> R (Some (if c = blue then red else blue))
+         | None ->   R (Some Blue)
+         | Some c -> R (Some (neg_coul c))
        end
     | L (lab, left, right) ->
        if v
@@ -109,8 +108,7 @@ let get_coul_sum (bsp : bsp) =
        begin
          match x with
            None -> (0,0)
-         | Some x ->
-            if x = blue then (0,1) else (1,0)
+         | Some x -> switch_coul (1,0) (0,1) x
        end
     | L (_,x,y) ->
        let rx,bx as x' = get_coul ~v:(not v) is_l x in
@@ -133,11 +131,11 @@ let get_color_line (bsp : bsp) =
   then None
   else
     if r = b then
-      Some yellow
+      Some Purple
     else if r < b then
-      Some blue
+      Some (C Blue)
     else
-      Some red
+      Some (C Red)
 
 (* Vérifie si deux colorations sont équivalentes *)
 let rec check_current (bsp1 : bsp) (bsp2 : bsp) =
