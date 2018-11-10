@@ -18,20 +18,17 @@ type linetree =
 (* Affichage rudimentaire de BSP *)
 let rec string_of_bsp (bsp : bsp) =
   match bsp with
-  | R x ->
-     begin
-       match x with
-         None -> "None"
-       | Some x -> string_of_couleur x
-     end
   | L (lab,l,r) ->
      "(" ^ (string_of_bsp l) ^ ") " ^ (string_of_int (lab.coord)) ^
-         " (" ^ (string_of_bsp r) ^ ")"
+       " (" ^ (string_of_bsp r) ^ ")"
+  | R x ->
+     match x with
+       None -> "None"
+     | Some x -> string_of_couleur x
 
-(* Génère un BSP aléatoire de profondeur 'profondeur'
-
-NOTE: Pour l'instant, toutes les arrêtes sont visibles
-
+(*
+ Génère un BSP aléatoire de profondeur 'profondeur'
+ NOTE: Pour l'instant, toutes les arrêtes sont visibles
  *)
 let rec random_bsp_naive ?(v=true) ?(minsize=20) ?(start_larg=0)
                          ?(start_haut=0) (prof : int) (larg : int) (haut : int) =
@@ -65,36 +62,19 @@ let rec random_bsp_naive ?(v=true) ?(minsize=20) ?(start_larg=0)
 
 (* Change la couleur d'un rectangle d'un bsp, dans lequel se situe p *)
 let rec change_color ?(v=true) (bsp : bsp) ((x,y) as p : point) =
-    match bsp with
-    | R c ->
-       begin
-         match c with
-         | None ->   R (Some Blue)
-         | Some c -> R (Some (neg_coul c))
-       end
-    | L (lab, left, right) ->
-       if v
-       then if x < lab.coord
-            then L (lab, change_color ~v:(not v) left p, right)
-            else L (lab, left, change_color ~v:(not v) right p)
-       else if y < lab.coord
-            then L (lab, change_color ~v:(not v) left p, right)
-            else L (lab, left, change_color ~v:(not v) right p)
-
-let rec compare_bsp (bsp1 : bsp) (bsp2 : bsp) =
-  match bsp1 with
-  | R x ->
-     begin
-       match bsp2 with
-         R y -> x = y
-       | _ -> false
-     end
-  | L (_,x,y) ->
-     begin
-       match bsp2 with
-         L (_,x',y') -> compare_bsp x x' && compare_bsp y y'
-       | _ -> false
-     end
+  match bsp with
+  | L (lab, left, right) ->
+     if v
+     then if x < lab.coord
+          then L (lab, change_color ~v:(not v) left p, right)
+          else L (lab, left, change_color ~v:(not v) right p)
+     else if y < lab.coord
+     then L (lab, change_color ~v:(not v) left p, right)
+     else L (lab, left, change_color ~v:(not v) right p)
+  | R c ->
+     match c with
+     | None ->   R (Some Blue)
+     | Some c -> R (Some (neg_coul c))
 
 (*
 Retourne un couple (r,b) où:
@@ -104,18 +84,16 @@ Retourne un couple (r,b) où:
 let get_coul_sum (bsp : bsp) =
   let rec get_coul ?(v=true) (is_l : bool) (bsp : bsp) =
     match bsp with
-    | R x ->
-       begin
-         match x with
-           None -> (0,0)
-         | Some x -> switch_coul (1,0) (0,1) x
-       end
     | L (_,x,y) ->
        let rx,bx as x' = get_coul ~v:(not v) is_l x in
        let ry,by as y' = get_coul ~v:(not v) is_l y in
        if not v
        then if is_l then y' else x'
        else (rx+ry,bx+by)
+    | R x ->
+       match x with
+         None -> (0,0)
+       | Some x -> switch_coul (1,0) (0,1) x
   in
   match bsp with
   | R _ -> (0,0)
