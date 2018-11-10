@@ -24,13 +24,6 @@ let rec affiche_coloration ?(v=true) ?(infx=0) ?(infy=0) ?(supx=800)
         fill_rect (infx+offset+3) (infy+offset+3) (supx-infx-6) (supy-infy-6)
 
 let affiche ?(offset=25) (bsp : bsp) (larg : int) (haut : int) =
-  set_line_width 1;
-  set_color black;
-  (* Affiche un cadre autour du puzzle *)
-  draw_segments[|(offset, offset, offset, haut + offset);
-                 (offset, haut + offset, larg + offset, haut + offset);
-                 (larg + offset, haut + offset, larg + offset, offset);
-                 (larg + offset, offset, offset, offset)|] ;
   let linetree = linetree_of_bsp bsp larg haut in
   let rec affiche_linetree linetree =
     match linetree with
@@ -39,14 +32,21 @@ let affiche ?(offset=25) (bsp : bsp) (larg : int) (haut : int) =
        match color with
        | None -> set_color black;
        | Some c ->
+          affiche_linetree left;
+          affiche_linetree right;
           set_color (get_rgb_l c);
           set_line_width 3;
-          draw_segments [|(a + offset, b + offset, x + offset, y + offset)|] ;
-          affiche_linetree left;
-          affiche_linetree right
+          draw_segments [|(a + offset, b + offset, x + offset, y + offset)|]
   in
   affiche_linetree linetree;
-  affiche_coloration bsp
+  affiche_coloration bsp;
+  set_line_width 3;
+  set_color black;
+  (* Affiche un cadre autour du puzzle *)
+  draw_segments[|(offset, offset, offset, haut + offset);
+                 (offset, haut + offset, larg + offset, haut + offset);
+                 (larg + offset, haut + offset, larg + offset, offset);
+                 (larg + offset, offset, offset, offset)|]
 
 let rec loop ?(offset=25) (bsp : bsp) (larg : int) (haut : int) =
   clear_graph ();
