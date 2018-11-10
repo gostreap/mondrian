@@ -160,3 +160,8 @@ let rec linetree_of_bsp ?(v=true) ?(infx = 0) ?(infy = 0)
                             right supx supy
        in
        Line ((infx, lab.coord), (supx, lab.coord), color, left_linetree, right_linetree)
+
+let rec empty_copy_of_bsp (bsp : bsp) =
+  match bsp with
+  | R _ -> R None
+  | L (lab,left,right) -> L (lab, empty_copy_of_bsp left, empty_copy_of_bsp right) 
