@@ -15,16 +15,19 @@ type linetree =
   | Leef
   | Line of point * point * couleur_l option * linetree * linetree
 
+(* Utilitaire *)
+let maybe n f m =
+  match m with
+  | None -> n
+  | Some s -> f s
+
 (* Affichage rudimentaire de BSP *)
 let rec string_of_bsp (bsp : bsp) =
   match bsp with
   | L (lab,l,r) ->
      "(" ^ (string_of_bsp l) ^ ") " ^ (string_of_int (lab.coord)) ^
        " (" ^ (string_of_bsp r) ^ ")"
-  | R x ->
-     match x with
-       None -> "None"
-     | Some x -> string_of_couleur x
+  | R x -> maybe "None" string_of_couleur x
 
 (*
  Génère un BSP aléatoire de profondeur 'profondeur'
@@ -71,10 +74,7 @@ let rec change_color ?(v=true) (bsp : bsp) ((x,y) as p : point) =
      else if y < lab.coord
      then L (lab, change_color ~v:(not v) left p, right)
      else L (lab, left, change_color ~v:(not v) right p)
-  | R c ->
-     match c with
-     | None ->   R (Some Blue)
-     | Some c -> R (Some (neg_coul c))
+  | R c -> R (Some (maybe Blue neg_coul c))
 
 (*
 Retourne un couple (r,b) où:
@@ -90,10 +90,7 @@ let get_coul_sum (bsp : bsp) =
        if not v
        then if is_l then y' else x'
        else (rx+ry,bx+by)
-    | R x ->
-       match x with
-         None -> (0,0)
-       | Some x -> switch_coul (1,0) (0,1) x
+    | R x -> maybe (0,0) (switch_coul (1,0) (0,1)) x
   in
   match bsp with
   | R _ -> (0,0)
