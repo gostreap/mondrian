@@ -11,6 +11,10 @@ type bsp = R of color option
 
 type point = (int * int)
 
+type linetree =
+  | Leef
+  | Line of point * point * color option * linetree * linetree
+
 (* Affichage rudimentaire de BSP *)
 let rec string_of_bsp (bsp : bsp) =
   match bsp with
@@ -31,8 +35,9 @@ NOTE: Pour l'instant, toutes les arrêtes sont visibles
  *)
 let rec random_bsp_naive ?(v=true) ?(minsize=20) ?(start_larg=0)
                          ?(start_haut=0) (prof : int) (larg : int) (haut : int) =
+  let red2 = rgb 211 19 2 in
   if prof = 0 || larg-start_larg <= minsize*2 || haut-start_haut <= minsize*2
-  then R (Some (if Random.bool () then blue else red))
+  then R (Some (if Random.bool () then blue else red2))
   else
     let lab =
       { coord =
@@ -116,6 +121,20 @@ let rec get_coul ?(v=true) (is_l : bool) (bsp : bsp) =
      then if is_l then y' else x'
      else (rx+ry,bx+by)
 
+(* Renvoie la couleur naturel de la ligne correspondant à la racine de bsp*)
+let get_color_line (* (v:bool) *) (bsp : bsp) =
+  match bsp with
+  | R _ -> None
+  | L (_, l, r) ->    
+     let (lr,lb) = get_coul true l in
+     let (rr,rb) = get_coul false r in
+     if lr + rr = lb + rb then
+         Some yellow
+     else if lr + rr < lb + rb then
+         Some blue
+     else
+         Some red
+
 (*
 Vérifie si deux colorations sont équivalentes
  *)
@@ -143,3 +162,30 @@ let rec check_current (bsp1 : bsp) (bsp2 : bsp) =
      match bsp2 with
        R _ -> true
      | _ -> false
+
+let rec linetree_of_bsp ?(v=true) ?(infx = 0) ?(infy = 0)
+                        (bsp : bsp) (supx:int) (supy:int) =
+  match bsp with
+  | R _ -> Leef
+  | L (lab, left, right) ->
+     let color = get_color_line (* v *) bsp in
+     if v then
+         let
+             left_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:infy
+                                             left lab.coord supy 
+           and
+             right_linetree = linetree_of_bsp ~v:(not v) ~infx:lab.coord ~infy:infy
+                                              right supx supy
+         in
+         Line ((lab.coord, infy), (lab.coord, supy), color, left_linetree, right_linetree)
+     else
+         let
+             left_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:infy
+                                             left supx lab.coord
+           and
+             right_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:lab.coord
+                                              right supx supy
+         in
+         Line ((infx, lab.coord), (supx, lab.coord), color, left_linetree, right_linetree)
+
+    
