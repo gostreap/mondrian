@@ -98,46 +98,48 @@ let rec compare_bsp (bsp1 : bsp) (bsp2 : bsp) =
      end
 
 (*
-Retourn un couple (r,b) où:
-
-r est le nombre de rectangle rouge sur la partie gauche (resp droite)
-b est le nombre de rectangle bleue sur la partie gauche (resp droite)
-
-resp si is_l = false
+Retourne un couple (r,b) où:
+ * r est le nombre de rectangle rouge adjacents
+ * y est le nombre de rectangle bleu adjacents
  *)
-let rec get_coul ?(v=true) (is_l : bool) (bsp : bsp) =
+let get_coul_sum (bsp : bsp) =
+  let rec get_coul ?(v=true) (is_l : bool) (bsp : bsp) =
+    match bsp with
+    | R x ->
+       begin
+         match x with
+           None -> (0,0)
+         | Some x ->
+            if x = blue then (0,1) else (1,0)
+       end
+    | L (_,x,y) ->
+       let rx,bx as x' = get_coul ~v:(not v) is_l x in
+       let ry,by as y' = get_coul ~v:(not v) is_l y in
+       if not v
+       then if is_l then y' else x'
+       else (rx+ry,bx+by)
+  in
   match bsp with
-  | R x ->
-     begin
-       match x with
-         None -> (0,0)
-       | Some x ->
-          if x = blue then (0,1) else (1,0)
-     end
-  | L (_,x,y) ->
-     let rx,bx as x' = get_coul ~v:(not v) is_l x in
-     let ry,by as y' = get_coul ~v:(not v) is_l y in
-     if not v
-     then if is_l then y' else x'
-     else (rx+ry,bx+by)
-
-(* Renvoie la couleur naturel de la ligne correspondant à la racine de bsp*)
-let get_color_line (bsp : bsp) =
-  match bsp with
-  | R _ -> None
-  | L (_, l, r) ->    
+  | R _ -> (0,0)
+  | L (_,l,r) ->
      let (lr,lb) = get_coul true l in
      let (rr,rb) = get_coul false r in
-     if lr + rr = lb + rb then
-         Some yellow
-     else if lr + rr < lb + rb then
-         Some blue
-     else
-         Some red
+     (lr+rr,lb+rb)
 
-(*
-Vérifie si deux colorations sont équivalentes
- *)
+(* Renvoie la couleur naturel de la ligne correspondant à la racine de bsp *)
+let get_color_line (bsp : bsp) =
+  let (r,b) = get_coul_sum bsp in
+  if r = 0 && b = 0
+  then None
+  else
+    if r = b then
+      Some yellow
+    else if r < b then
+      Some blue
+    else
+      Some red
+
+(* Vérifie si deux colorations sont équivalentes *)
 let rec check_current (bsp1 : bsp) (bsp2 : bsp) =
   match bsp1 with
   | L (_,x,y) ->
@@ -145,10 +147,8 @@ let rec check_current (bsp1 : bsp) (bsp2 : bsp) =
        match bsp2 with
          L (_,x',y') ->
           let cond =
-            let lx', ly' = get_coul true x', get_coul false y' in
-            let lx, ly = get_coul true x, get_coul false y in
-            let r',b' = fst lx' + fst ly' , snd lx' + snd ly' in
-            let r ,b =  fst lx + fst ly , snd lx + snd ly in
+            let r ,b =  get_coul_sum bsp1 in
+            let r',b' = get_coul_sum bsp2 in
             if r' = b'
             then r = b
             else
@@ -170,22 +170,20 @@ let rec linetree_of_bsp ?(v=true) ?(infx = 0) ?(infy = 0)
   | L (lab, left, right) ->
      let color = get_color_line bsp in
      if v then
-         let
-             left_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:infy
-                                             left lab.coord supy 
-           and
-             right_linetree = linetree_of_bsp ~v:(not v) ~infx:lab.coord ~infy:infy
-                                              right supx supy
-         in
-         Line ((lab.coord, infy), (lab.coord, supy), color, left_linetree, right_linetree)
+       let
+         left_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:infy
+                           left lab.coord supy
+       and
+         right_linetree = linetree_of_bsp ~v:(not v) ~infx:lab.coord ~infy:infy
+                            right supx supy
+       in
+       Line ((lab.coord, infy), (lab.coord, supy), color, left_linetree, right_linetree)
      else
-         let
-             left_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:infy
-                                             left supx lab.coord
-           and
-             right_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:lab.coord
-                                              right supx supy
-         in
-         Line ((infx, lab.coord), (supx, lab.coord), color, left_linetree, right_linetree)
-
-    
+       let
+         left_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:infy
+                           left supx lab.coord
+       and
+         right_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:lab.coord
+                            right supx supy
+       in
+       Line ((infx, lab.coord), (supx, lab.coord), color, left_linetree, right_linetree)
