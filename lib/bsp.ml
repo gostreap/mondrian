@@ -164,4 +164,54 @@ let rec linetree_of_bsp ?(v=true) ?(infx = 0) ?(infy = 0)
 let rec empty_copy_of_bsp (bsp : bsp) =
   match bsp with
   | R _ -> R None
-  | L (lab,left,right) -> L (lab, empty_copy_of_bsp left, empty_copy_of_bsp right) 
+  | L (lab,left,right) -> L (lab, empty_copy_of_bsp left, empty_copy_of_bsp right)
+
+(* bsp for SAT *)
+type bsp_sat =
+  | R_sat of string * int * couleur
+  | L_sat of couleur_l option * bsp_sat * bsp_sat
+
+let rec string_of_bsp_sat (bsp : bsp_sat) =
+  match bsp with
+  | L_sat (lab,l,r) ->
+     "(" ^ (string_of_bsp_sat l) ^ " " ^ (maybe "black" string_of_couleur_l lab) ^ " " ^ (string_of_bsp_sat r) ^ ")"
+  | R_sat (n,x,c) -> n ^ "*" ^ string_of_int x ^ "*" ^ (switch_coul "b" "r" c)
+
+let translate_bsp (bsp : bsp) =
+  let rec aux v bsp =
+    match bsp with
+    | R x ->
+       let c =
+         match x with
+         | None -> failwith "translate_bsp"
+         | Some x -> x in
+       (v+1,R_sat (string_of_int v,1,c))
+    | L (lab,l,r) ->
+       let (n,ll) = aux v l in
+       let (m,rr) = aux n r in
+       let c =
+         if lab.colored
+         then get_color_line bsp
+         else None in
+       (m,L_sat (c,ll,rr))
+  in snd (aux 0 bsp)
+
+let rec reduce_bsp_sat (bsp : bsp_sat) =
+  match bsp with
+  | L_sat (c,l,r) ->
+     let lr =
+       match l,r with
+       | R_sat (n,x,co),R_sat (_,y,_) -> Some (n,(x+y),co)
+       | _ -> None in
+     if maybe false (switch_coul_l false (fun _ -> true)) c
+     then
+       match lr with
+       | Some (n,x,y) -> R_sat (n,x,y)
+       | _ -> L_sat (c,reduce_bsp_sat l,reduce_bsp_sat r)
+     else L_sat (c,reduce_bsp_sat l,reduce_bsp_sat r)
+  | i -> i
+
+let rec loop_sat (n : int) (b : bsp_sat) =
+  if n <= 0
+  then b
+  else loop_sat (n-1) (reduce_bsp_sat b)
