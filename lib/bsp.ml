@@ -161,11 +161,17 @@ let rec linetree_of_bsp ?(v=true) ?(infx = 0) ?(infy = 0)
        in
        Line ((infx, lab.coord), (supx, lab.coord), color, left_linetree, right_linetree)
 
+(* Renvoie une copie de bsp avec toute les régions non coloriées *)
 let rec empty_copy_of_bsp (bsp : bsp) =
   match bsp with
   | R _ -> R None
   | L (lab,left,right) -> L (lab, empty_copy_of_bsp left, empty_copy_of_bsp right)
 
+
+(* ------------------------------------------------------------------------------------
+   PARTIE SAT 
+   ------------------------------------------------------------------------------------ *)
+                       
 (* bsp for SAT *)
 type bsp_sat =
   | R_sat of string * int * couleur
@@ -174,18 +180,18 @@ type bsp_sat =
 let rec string_of_bsp_sat (bsp : bsp_sat) =
   match bsp with
   | L_sat (lab,l,r) ->
-     "(" ^ (string_of_bsp_sat l) ^ " " ^ (maybe "black" string_of_couleur_l lab) ^ " " ^ (string_of_bsp_sat r) ^ ")"
+     "(" ^ (string_of_bsp_sat l) ^ " " ^ (maybe "black" string_of_couleur_l lab) ^
+         " " ^ (string_of_bsp_sat r) ^ ")"
   | R_sat (n,x,c) -> n ^ "*" ^ string_of_int x ^ "*" ^ (switch_coul "b" "r" c)
 
-let translate_bsp (bsp : bsp) =
+let bsp_sat_of_bsp (bsp : bsp) =
   let rec aux v bsp =
     match bsp with
     | R x ->
        let c =
          match x with
          | None -> failwith "translate_bsp"
-         | Some x -> x in
-       (v+1,R_sat (string_of_int v,1,c))
+         | Some x -> x in (v+1,R_sat (string_of_int v,1,c))
     | L (lab,l,r) ->
        let (n,ll) = aux v l in
        let (m,rr) = aux n r in
@@ -200,8 +206,8 @@ let rec reduce_bsp_sat (bsp : bsp_sat) =
   match bsp with
   | L_sat (c,l,r) ->
      let lr =
-       match l,r with
-       | R_sat (n,x,co),R_sat (_,y,_) -> Some (n,(x+y),co)
+       match l, r with
+       | R_sat (n,x,co), R_sat (_,y,_) -> Some (n,(x+y),co)
        | _ -> None in
      if maybe false (switch_coul_l false (fun _ -> true)) c
      then
@@ -211,7 +217,109 @@ let rec reduce_bsp_sat (bsp : bsp_sat) =
      else L_sat (c,reduce_bsp_sat l,reduce_bsp_sat r)
   | i -> i
 
+(* Renvoie un bsp ou les feuilles ont un indice différent de 1 si leur couleur est fixé *)
+let rec secure_bsp_sat (bsp : bsp_sat) =
+    match bsp with
+  | L_sat (c,l,r) ->
+     let lr =
+       match l, r with
+       | R_sat (n,x,co), R_sat (_,y,_) -> Some (n,(x+y),co)
+       | _ -> None in
+     if maybe false (switch_coul_l false (fun _ -> true)) c
+     then
+       match lr with
+       | Some (n,x,co) -> L_sat (c, R_sat (n,x,co), R_sat(n,x,co))
+       | _ -> L_sat (c,secure_bsp_sat l,secure_bsp_sat r)
+     else L_sat (c,secure_bsp_sat l,secure_bsp_sat r)
+  | i -> i
+
 let rec loop_sat (n : int) (b : bsp_sat) =
   if n <= 0
   then b
-  else loop_sat (n-1) (reduce_bsp_sat b)
+  else loop_sat (n-1) (secure_bsp_sat b)
+
+(* Renvoie un couple (r, b, list) où:
+ * r est le nombre de rectangle rouge adjacents sécurisés
+ * b est le nombre de rectangle bleu adjacents sécurisés
+ * list est la liste des rectangles non sécurisés*)
+let get_adja_stat (bsp_sat : bsp_sat) =
+  let rec get_stat ?(v=true) (is_l : bool) (bsp_sat : bsp_sat) =
+    match bsp_sat with
+    | L_sat (_,x,y) ->
+       let rx,bx,ll as x' = get_stat ~v:(not v) is_l x in
+       let ry,by,lr as y' = get_stat ~v:(not v) is_l y in
+       if not v
+       then if is_l then y' else x'
+       else (rx+ry,bx+by,ll@lr)
+    | R_sat (_,s,x) ->
+       if s != 1 then
+           let (r,b) = maybe (0,0) (switch_coul (1,0) (0,1)) (Some x) in
+           (r, b, [])
+       else (0,0,[bsp_sat])
+  in
+  match bsp_sat with
+  | R_sat _ -> (0,0,[])
+  | L_sat (_,l,r) ->
+     let (lr,lb,llist) = get_stat true l in
+     let (rr,rb,rlist) = get_stat false r in
+     (lr+rr,lb+rb,llist@rlist)
+
+(* Renvoie une liste de liste à n élément contenant toutes les 
+   possiblités de choisir n éléments dans list*)      
+let rec get_n_tuples_in_list (n : int) (list : bsp_sat list) =
+  let rec aux x l res =
+    match l with
+    | [] -> res
+    | ll::q -> aux x q ((x::ll)::res)
+  in
+  if n != 0 then
+      match list with
+      | [] -> []
+      | x::q -> (aux x (get_n_tuples_in_list (n-1) q) [])@(get_n_tuples_in_list n q)
+  else [[]]
+
+(* Renvoie une liste de liste de string correspondant
+   à une fnd satisfaisable ssi il existe un choix de
+   coloration possible pour la ligne bsp_sat
+   ATTENTION : seulement pour cette ligne, pas pour ces fils
+*)
+let get_fnd_of_bsp_sat (bsp_sat : bsp_sat) =
+  let r, b, list = get_adja_stat bsp_sat in
+  let size = r + b + List.length list in
+  let rec aux (blue : bool) (list : bsp_sat list) =
+    match list with
+    | [] -> []
+    | x::q ->
+       match x with
+       | R_sat (n,_,_) ->
+          if blue then 
+              ("-" ^ n)::(aux blue q)
+          else
+              n::(aux blue q)
+       | _ -> failwith "Get_fnd_of_bsp_sat"
+  in
+  let rec aux2 (blue:bool) (list : bsp_sat list list) =
+    match list with
+    | [] -> []
+    | l::q -> (aux blue l)::(aux2 blue q)
+  in
+  match bsp_sat with
+  | R_sat (_,_,_) -> []
+  | L_sat (c,_,_) ->
+     begin
+         match c with
+         (* noter que, dans le cas, Purplesize est pair *)
+         | Some Purple -> aux2 false (get_n_tuples_in_list (size/2) list) 
+         | Some C co ->
+            begin
+                match co with
+                | Red ->
+                   if r > size/2 then []
+                   else aux2 false (get_n_tuples_in_list (size/2+1-r) list)
+                | Blue ->
+                   if b > size/2 then []
+                   else aux2 true (get_n_tuples_in_list (size/2+1-b) list)
+            end
+         | None -> []
+     end
+ 

@@ -69,16 +69,50 @@ let rec loop (offset : int) (origin_bsp : bsp) (bsp : bsp)
       loop offset origin_bsp bsp linetree larg haut
     else loop offset origin_bsp bsp linetree larg haut
 
+let rec print_fnd (fnd : string list list) =
+  let aux (s:string) =
+    print_string s;
+    print_string " et ";
+  in
+  let print_string_list list =
+    print_string "(";
+    List.iter aux list;
+    print_string ") OU ";
+  in
+  match fnd with
+  | [] -> print_endline "FIN";
+  | l::q ->
+     begin
+         print_string_list l;
+         print_fnd q;
+     end
+
+let rec print_all_fnd (bsp_sat : bsp_sat) =
+  print_fnd (get_fnd_of_bsp_sat bsp_sat);
+  match bsp_sat with
+  | R_sat (_,_,_) -> ()
+  | L_sat (_,l,r) ->
+     print_all_fnd l;
+     print_all_fnd r
+    
+  
 let main () =
   let larg = 800
   and haut = 800
   and offset = 25 in
   Random.self_init ();
   open_graph (" " ^ string_of_int (larg + 2 * offset) ^ "x" ^ string_of_int (haut + 2 * offset)) ;
-  let origin_bsp = random_bsp_naive 4 larg haut in
+  let origin_bsp = random_bsp_naive 3 larg haut in
   let linetree = linetree_of_bsp origin_bsp larg haut in
   let working_bsp = empty_copy_of_bsp origin_bsp in
-  (* print_endline (string_of_bsp bsp); *)
+  print_endline (string_of_bsp origin_bsp);
+  print_endline "#########################";
+  let bsp_sat = bsp_sat_of_bsp origin_bsp in
+  let bsp_sat = loop_sat 50 bsp_sat in
+  print_endline (string_of_bsp_sat bsp_sat);
+  print_endline "#########################";
+  (* let fnd = get_fnd_of_bsp_sat bsp_sat in *)
+  print_all_fnd bsp_sat;
   loop offset origin_bsp working_bsp linetree larg haut
 
 let _ = main()
