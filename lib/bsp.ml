@@ -171,6 +171,8 @@ let rec empty_copy_of_bsp (bsp : bsp) =
 (* ------------------------------------------------------------------------------------
    PARTIE SAT 
    ------------------------------------------------------------------------------------ *)
+
+
                        
 (* bsp for SAT *)
 type bsp_sat =
@@ -245,7 +247,7 @@ let get_adja_stat (bsp_sat : bsp_sat) =
        then if is_l then y' else x'
        else (rx+ry,bx+by,ll@lr)
     | R_sat (_,s,x) ->
-       if not s then
+       if s then
            let (r,b) = maybe (0,0) (switch_coul (1,0) (0,1)) (Some x) in
            (r, b, [])
        else (0,0,[bsp_sat])
@@ -260,7 +262,32 @@ let get_adja_stat (bsp_sat : bsp_sat) =
 (* ------------------------------------------------------------------------------------
    FORMULE
    ------------------------------------------------------------------------------------ *)
- 
+
+type formule =
+  | Var of string
+  | Neg of formule
+  | Et of formule * formule
+  | Ou of formule * formule
+
+        
+let rec string_of_formule f =
+  match f with
+  | Var x -> x
+  | Neg x -> "Neg " ^ (string_of_formule x)
+  | Et (x,y) -> "(" ^ (string_of_formule x) ^ " Et " ^ (string_of_formule y) ^ ")"
+  | Ou (x,y) -> "(" ^ (string_of_formule x) ^ " Ou " ^ (string_of_formule y) ^ ")"
+  
+let print_formule (f : formule option) =
+  match f with
+  | None -> print_endline "VRAI"
+  | Some f -> print_endline (string_of_formule f)
+
+(* Renvoie vrai ssi il x et y sont des Var et si x = y *)
+let same_var x y =
+  match x, y with
+  | Var x, Var y -> x = y
+  | _ -> false
+  
 let rec get_n_tuples_in_list (n : int) (list : 'a list) =
   let rec aux x l res =
     match l with
@@ -273,49 +300,49 @@ let rec get_n_tuples_in_list (n : int) (list : 'a list) =
       | x::q -> (aux x (get_n_tuples_in_list (n-1) q) [])@(get_n_tuples_in_list n q)
   else [[]]
 
-let rec string_list_of_bsp_sat_list (blue : bool) (list : bsp_sat list) =
+let rec formule_list_of_bsp_sat_list (blue : bool) (list : bsp_sat list) =
     match list with
     | [] -> []
     | x::q ->
        match x with
        | R_sat (n,_,_) ->
           if blue then 
-              ("-" ^ n)::(string_list_of_bsp_sat_list blue q)
+              (Neg (Var n))::(formule_list_of_bsp_sat_list blue q)
           else
-              n::(string_list_of_bsp_sat_list blue q)
+              (Var n)::(formule_list_of_bsp_sat_list blue q)
        | _ -> failwith "Get_fnd_of_bsp_sat"
   
-let get_compl (t : string list) (list  : bsp_sat list) =
-  let rec filtre (x : string) (l : string list) =
+let get_compl (t : formule list) (list  : bsp_sat list) =
+  let rec filtre (x : formule) (l : formule list) =
     match l with
     | [] -> true
     | y::q ->
-       if x = y then false
+       if same_var x y then false
        else filtre x q
   in
   let rec neg ?(res = []) l =
       match l with
       | [] -> res
-      | x::q -> neg ~res:(("-"^x)::res) q 
+      | x::q -> neg ~res:((Neg x)::res) q 
   in
-  let compl = List.filter (fun x -> filtre x t) (string_list_of_bsp_sat_list false list) in
+  let compl = List.filter (fun x -> filtre x t) (formule_list_of_bsp_sat_list false list) in
   neg compl
 
-let get_all_compl (red : string list list) (list : bsp_sat list) =
+let get_all_compl (red : formule list list) (list : bsp_sat list) =
   List.map (fun x -> x@(get_compl x list)) red
 
 (* Renvoie une liste de liste de string correspondant
    à une fnd satisfaisable ssi il existe un choix de
    coloration possible pour la ligne bsp_sat
-   ATTENTION : seulement pour cette ligne, pas pour ces fils
-*)
-let get_fnd_of_bsp_sat (bsp_sat : bsp_sat) : string list list =
+   ATTENTION : seulement pour cette ligne, pas pour ces fils *)
+  
+let get_list_list_of_bsp_sat (bsp_sat : bsp_sat) : formule list list =
   let r, b, list = get_adja_stat bsp_sat in
   let size = r + b + List.length list in
-  let rec aux (blue:bool) (list : bsp_sat list list) : string list list =
+  let rec aux (blue:bool) (list : bsp_sat list list) : formule list list =
     match list with
     | [] -> []
-    | l::q -> (string_list_of_bsp_sat_list blue l)::(aux blue q)
+    | l::q -> (formule_list_of_bsp_sat_list blue l)::(aux blue q)
   in
   match bsp_sat with
   | R_sat (_,_,_) -> []
@@ -339,59 +366,53 @@ let get_fnd_of_bsp_sat (bsp_sat : bsp_sat) : string list list =
          | None -> []
      end
 
-let rec get_all_fnd (bsp_sat : bsp_sat) =
-  let list =
+(* Prend une liste de liste de formule et retourne une formule de la forme
+ * (_ et _ et ... et _) ou (_ et _ et ... et _) ou ... ou (_ et _ et ... et _)*)
+let get_formule_of_list_list (ll : formule list list) : formule option =
+  let rec conj_all (list : formule list) : formule option =
+    match list with
+    | [] -> None
+    | x::q ->
+       let f = conj_all q in
+       match f with
+       | None -> Some x
+       | Some a -> Some (Et (x,a))
+  in
+  let rec disj_all (list : formule list list) : formule option =
+    match list with
+    | [] -> None
+    | x::q ->
+       let f = disj_all q in
+       let g = conj_all x in
+       match f with
+       | None -> g
+       | Some a ->
+          match g with
+          | None -> Some a
+          | Some b -> Some (Ou (a,b))
+  in
+  let f = disj_all ll in
+  print_formule f;
+  f
+
+let rec get_all_fnd (bsp_sat : bsp_sat) : formule option =
+  let formfils =
     match bsp_sat with
-    | R_sat (_,_,_) -> []
+    | R_sat (_,_,_) -> None
     | L_sat (_,_,l,r) ->
-       get_all_fnd l @ get_all_fnd r in
-  get_fnd_of_bsp_sat bsp_sat @ list
-
-type formule =
-  | Var of string
-  | Neg of formule
-  | Et of formule * formule
-  | Ou of formule * formule
-
-let rec translate_fnd (fnd : string list list) =
-  match fnd with
-    [] -> failwith "empty"
-  | x::xs ->
-     match x with
-       [] ->
-        begin
-          match xs with
-            [] -> failwith "empty"
-          | _ -> translate_fnd xs
-        end
-     | (x'::xs') ->
-       let c1 = List.fold_left (fun acc e -> Et (acc,Var e)) (Var x') xs'
-     in match xs with
-          [] -> c1
-        | _ -> Ou (c1,translate_fnd xs)
-
-let rec translate_fnc (fnc : formule) =
-  let get_v v =
-    match v with
-    | Var x -> x
-    | _ -> failwith "v" in
-  let rec get_ou f =
-    match f with
-    | Ou (a,b) ->
-       begin
-         match a with
-         | Ou _ -> get_ou a @ get_ou b
-         | _ -> get_v a :: get_ou b
-       end
-    | _ -> [] in
-  match fnc with
-  | Et (a,b) ->
-     begin
-         match a with
-         | Et _ -> translate_fnc a @ translate_fnc b
-         | _ -> get_ou a :: translate_fnc b
-     end
-  | _ -> []
+       let fl = get_all_fnd l and fr = get_all_fnd r in
+       match fl, fr  with
+       | None, None -> None
+       | Some a, None -> Some a
+       | None, Some b -> Some b
+       | Some a, Some b -> Some (Et (a,b))
+  in
+  let form = (get_formule_of_list_list(get_list_list_of_bsp_sat bsp_sat)) in
+  match form, formfils with
+  | None, None -> None
+  | Some a, None -> Some a
+  | None, Some b -> Some b
+  | Some a, Some b -> Some (Et (a,b))
 
 let rec desc_neg f =
   let neg x = match x with
@@ -414,33 +435,14 @@ let rec desc_ou f = match f with
     | _ -> match desc_ou b with
       | Et (x,y) -> desc_ou (Et ((Ou (x,a)),(Ou (y,a))))
       | _ -> Ou (a,b)
-
-let fnc f = desc_ou (desc_neg f)
+          
+let fnc f =
+  match f with
+  | None -> None
+  | Some x -> Some (desc_ou (desc_neg x))
 
 let get_fnc_of_bsp (bsp : bsp) =
-  bsp_sat_of_bsp bsp |> loop_sat 20 |> get_all_fnd |> translate_fnd |> fnc |> translate_fnc
-    
-let rec print_fnc (l : string list list) =
-  let rec print_ou l =
-    match l with
-    | [] -> ()
-    | x::xs ->
-       match xs with
-       | [] -> print_string x;
-       | _ ->
-          begin
-            print_string x;
-            print_string " OU ";
-            print_ou xs
-          end in
-  match l with
-    [] -> ()
-  | x::xs ->
-     match xs with
-     | [] -> print_ou x;
-     | _ ->
-        begin
-          print_ou x;
-          print_string " ET ";
-          print_fnc xs
-        end
+  let f = bsp_sat_of_bsp bsp |> loop_sat 20 |> get_all_fnd in
+  print_formule f;
+  print_endline "#########################";
+  fnc f 
