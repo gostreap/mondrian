@@ -174,7 +174,7 @@ let rec empty_copy_of_bsp (bsp : bsp) =
                        
 (* bsp for SAT *)
 type bsp_sat =
-  | R_sat of string * int * couleur
+  | R_sat of string * bool * couleur
   | L_sat of couleur_l option * bsp_sat * bsp_sat
 
 let rec string_of_bsp_sat (bsp : bsp_sat) =
@@ -182,7 +182,7 @@ let rec string_of_bsp_sat (bsp : bsp_sat) =
   | L_sat (lab,l,r) ->
      "(" ^ (string_of_bsp_sat l) ^ " " ^ (maybe "black" string_of_couleur_l lab) ^
          " " ^ (string_of_bsp_sat r) ^ ")"
-  | R_sat (n,x,c) -> n ^ "*" ^ string_of_int x ^ "*" ^ (switch_coul "b" "r" c)
+  | R_sat (n,x,c) -> n ^ "*" ^ string_of_bool x ^ "*" ^ (switch_coul "b" "r" c)
 
 let bsp_sat_of_bsp (bsp : bsp) =
   let rec aux v bsp =
@@ -191,7 +191,7 @@ let bsp_sat_of_bsp (bsp : bsp) =
        let c =
          match x with
          | None -> failwith "translate_bsp"
-         | Some x -> x in (v+1,R_sat (string_of_int v,1,c))
+         | Some x -> x in (v+1,R_sat (string_of_int v,false,c))
     | L (lab,l,r) ->
        let (n,ll) = aux v l in
        let (m,rr) = aux n r in
@@ -202,33 +202,18 @@ let bsp_sat_of_bsp (bsp : bsp) =
        (m,L_sat (c,ll,rr))
   in snd (aux 0 bsp)
 
-let rec reduce_bsp_sat (bsp : bsp_sat) =
-  match bsp with
-  | L_sat (c,l,r) ->
-     let lr =
-       match l, r with
-       | R_sat (n,x,co), R_sat (_,y,_) -> Some (n,(x+y),co)
-       | _ -> None in
-     if maybe false (switch_coul_l false (fun _ -> true)) c
-     then
-       match lr with
-       | Some (n,x,y) -> R_sat (n,x,y)
-       | _ -> L_sat (c,reduce_bsp_sat l,reduce_bsp_sat r)
-     else L_sat (c,reduce_bsp_sat l,reduce_bsp_sat r)
-  | i -> i
-
 (* Renvoie un bsp ou les feuilles ont un indice différent de 1 si leur couleur est fixé *)
 let rec secure_bsp_sat (bsp : bsp_sat) =
     match bsp with
   | L_sat (c,l,r) ->
      let lr =
        match l, r with
-       | R_sat (n,x,co), R_sat (_,y,_) -> Some (n,(x+y),co)
+       | R_sat (n,_,co), R_sat (m,_,_) -> Some (n,m,co)
        | _ -> None in
      if maybe false (switch_coul_l false (fun _ -> true)) c
      then
        match lr with
-       | Some (n,x,co) -> L_sat (c, R_sat (n,x,co), R_sat(n,x,co))
+       | Some (n,m,co) -> L_sat (c, R_sat (n,true,co), R_sat(m,true,co))
        | _ -> L_sat (c,secure_bsp_sat l,secure_bsp_sat r)
      else L_sat (c,secure_bsp_sat l,secure_bsp_sat r)
   | i -> i
@@ -252,7 +237,7 @@ let get_adja_stat (bsp_sat : bsp_sat) =
        then if is_l then y' else x'
        else (rx+ry,bx+by,ll@lr)
     | R_sat (_,s,x) ->
-       if s != 1 then
+       if not s then
            let (r,b) = maybe (0,0) (switch_coul (1,0) (0,1)) (Some x) in
            (r, b, [])
        else (0,0,[bsp_sat])
