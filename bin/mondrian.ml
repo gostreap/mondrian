@@ -102,7 +102,7 @@ let main () =
   and offset = 25 in
   Random.self_init ();
   open_graph (" " ^ string_of_int (larg + 2 * offset) ^ "x" ^ string_of_int (haut + 2 * offset)) ;
-  let origin_bsp = random_bsp_naive 3 larg haut in
+  let origin_bsp = random_bsp_naive 2 larg haut in
   let linetree = linetree_of_bsp origin_bsp larg haut in
   let working_bsp = empty_copy_of_bsp origin_bsp in
   print_endline (string_of_bsp origin_bsp);
