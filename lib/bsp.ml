@@ -322,13 +322,60 @@ let get_fnd_of_bsp_sat (bsp_sat : bsp_sat) =
             end
          | None -> []
      end
- 
+
+let rec get_all_fnd (bsp_sat : bsp_sat) =
+  let list =
+    match bsp_sat with
+    | R_sat (_,_,_) -> []
+    | L_sat (_,l,r) ->
+       get_all_fnd l @ get_all_fnd r in
+  get_fnd_of_bsp_sat bsp_sat @ list
 
 type formule =
   | Var of string
   | Neg of formule
   | Et of formule * formule
   | Ou of formule * formule
+
+let rec translate_fnd (fnd : string list list) =
+  match fnd with
+    [] -> failwith "empty"
+  | x::xs ->
+     match x with
+       [] ->
+        begin
+          match xs with
+            [] -> failwith "empty"
+          | _ -> translate_fnd xs
+        end
+     | (x'::xs') ->
+       let c1 = List.fold_left (fun acc e -> Et (acc,Var e)) (Var x') xs'
+     in match xs with
+          [] -> c1
+        | _ -> Ou (c1,translate_fnd xs)
+
+let rec translate_fnc (fnc : formule) =
+  let get_v v =
+    match v with
+    | Var x -> x
+    | _ -> failwith "v" in
+  let rec get_ou f =
+    match f with
+    | Ou (a,b) ->
+       begin
+         match a with
+         | Ou _ -> get_ou a @ get_ou b
+         | _ -> get_v a :: get_ou b
+       end
+    | _ -> [] in
+  match fnc with
+  | Et (a,b) ->
+     begin
+         match a with
+         | Et _ -> translate_fnc a @ translate_fnc b
+         | _ -> get_ou a :: translate_fnc b
+     end
+  | _ -> []
 
 let rec desc_neg f =
   let neg x = match x with
@@ -353,3 +400,21 @@ let rec desc_ou f = match f with
       | _ -> Ou (a,b)
 
 let fnc f = desc_ou (desc_neg f)
+
+let get_fnc_of_bsp (bsp : bsp) =
+  bsp_sat_of_bsp bsp |> loop_sat 20 |> get_all_fnd |> translate_fnd |> fnc |> translate_fnc
+    
+let rec print_fnc (l : string list list) =
+  let rec print_ou l =
+    match l with
+    | [] -> print_string "FIN"
+    | x::xs ->
+       print_string x;
+       print_string " OU ";
+       print_ou xs in
+  match l with
+    [] -> ()
+  | x::xs ->
+     print_ou x;
+     print_string " ET ";
+     print_fnc xs

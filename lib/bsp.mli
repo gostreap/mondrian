@@ -22,3 +22,5 @@ val loop_sat : int -> bsp_sat -> bsp_sat
 val get_adja_stat : bsp_sat -> int * int * bsp_sat list
 val get_n_tuples_in_list : int -> bsp_sat list -> bsp_sat list list
 val get_fnd_of_bsp_sat : bsp_sat -> string list list
+val get_fnc_of_bsp : bsp -> string list list
+val print_fnc  : string list list -> unit
