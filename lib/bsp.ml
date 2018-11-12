@@ -175,12 +175,12 @@ let rec empty_copy_of_bsp (bsp : bsp) =
 (* bsp for SAT *)
 type bsp_sat =
   | R_sat of string * bool * couleur
-  | L_sat of couleur_l option * bsp_sat * bsp_sat
+  | L_sat of couleur_l option * bool * bsp_sat * bsp_sat
 
 let rec string_of_bsp_sat (bsp : bsp_sat) =
   match bsp with
-  | L_sat (lab,l,r) ->
-     "(" ^ (string_of_bsp_sat l) ^ " " ^ (maybe "black" string_of_couleur_l lab) ^
+  | L_sat (lab,b,l,r) ->
+     "(" ^ (string_of_bsp_sat l) ^ " " ^string_of_bool b  ^ "*" ^ (maybe "black" string_of_couleur_l lab) ^
          " " ^ (string_of_bsp_sat r) ^ ")"
   | R_sat (n,x,c) -> n ^ "*" ^ string_of_bool x ^ "*" ^ (switch_coul "b" "r" c)
 
@@ -199,23 +199,29 @@ let bsp_sat_of_bsp (bsp : bsp) =
          if lab.colored
          then get_color_line bsp
          else None in
-       (m,L_sat (c,ll,rr))
+       (m,L_sat (c,false,ll,rr))
   in snd (aux 0 bsp)
 
 (* Renvoie un bsp ou les feuilles ont un indice différent de 1 si leur couleur est fixé *)
 let rec secure_bsp_sat (bsp : bsp_sat) =
     match bsp with
-  | L_sat (c,l,r) ->
+  | L_sat (c,_,l,r) ->
      let lr =
        match l, r with
-       | R_sat (n,_,co), R_sat (m,_,_) -> Some (n,m,co)
-       | _ -> None in
+       | R_sat (n,_,co), R_sat (m,_,_) -> Some (L_sat (c,true,R_sat (n,true,co),R_sat (m,true,co)))
+       | L_sat (_,b,_,_) as l, (L_sat (_,b',_,_) as r) ->
+          if b && b'
+          then Some (L_sat (c,true,l,r))
+          else None
+       | _ -> None
+
+     in
      if maybe false (switch_coul_l false (fun _ -> true)) c
      then
        match lr with
-       | Some (n,m,co) -> L_sat (c, R_sat (n,true,co), R_sat(m,true,co))
-       | _ -> L_sat (c,secure_bsp_sat l,secure_bsp_sat r)
-     else L_sat (c,secure_bsp_sat l,secure_bsp_sat r)
+       | Some x -> x
+       | _ -> L_sat (c,false,secure_bsp_sat l,secure_bsp_sat r)
+     else L_sat (c,false,secure_bsp_sat l,secure_bsp_sat r)
   | i -> i
 
 let rec loop_sat (n : int) (b : bsp_sat) =
@@ -230,7 +236,7 @@ let rec loop_sat (n : int) (b : bsp_sat) =
 let get_adja_stat (bsp_sat : bsp_sat) =
   let rec get_stat ?(v=true) (is_l : bool) (bsp_sat : bsp_sat) =
     match bsp_sat with
-    | L_sat (_,x,y) ->
+    | L_sat (_,_,x,y) ->
        let rx,bx,ll as x' = get_stat ~v:(not v) is_l x in
        let ry,by,lr as y' = get_stat ~v:(not v) is_l y in
        if not v
@@ -244,7 +250,7 @@ let get_adja_stat (bsp_sat : bsp_sat) =
   in
   match bsp_sat with
   | R_sat _ -> (0,0,[])
-  | L_sat (_,l,r) ->
+  | L_sat (_,_,l,r) ->
      let (lr,lb,llist) = get_stat true l in
      let (rr,rb,rlist) = get_stat false r in
      (lr+rr,lb+rb,llist@rlist)
@@ -311,7 +317,7 @@ let get_fnd_of_bsp_sat (bsp_sat : bsp_sat) : string list list =
   in
   match bsp_sat with
   | R_sat (_,_,_) -> []
-  | L_sat (c,_,_) ->
+  | L_sat (c,_,_,_) ->
      begin
          match c with
          (* noter que, dans le cas Purple, size est pair *)
@@ -335,7 +341,7 @@ let rec get_all_fnd (bsp_sat : bsp_sat) =
   let list =
     match bsp_sat with
     | R_sat (_,_,_) -> []
-    | L_sat (_,l,r) ->
+    | L_sat (_,_,l,r) ->
        get_all_fnd l @ get_all_fnd r in
   get_fnd_of_bsp_sat bsp_sat @ list
 

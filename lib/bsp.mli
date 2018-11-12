@@ -13,7 +13,7 @@ val linetree_of_bsp : ?v:bool -> ?infx:int -> ?infy:int -> bsp -> int -> int -> 
 val empty_copy_of_bsp : bsp -> bsp
 
 type bsp_sat = R_sat of string * bool * Couleur.couleur
-             | L_sat of Couleur.couleur_l option * bsp_sat * bsp_sat
+             | L_sat of Couleur.couleur_l option * bool * bsp_sat * bsp_sat
 val secure_bsp_sat : bsp_sat -> bsp_sat
 val string_of_bsp_sat : bsp_sat -> string
 val bsp_sat_of_bsp : bsp -> bsp_sat
