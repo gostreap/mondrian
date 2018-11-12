@@ -112,7 +112,7 @@ let get_color_line (bsp : bsp) =
     else
       Some (C Red)
 
-(* Vérifie si deux colorations sont équivalentes *)
+(* Vérifie si bsp2 est une solution par rapport à bsp1 *)
 let rec check_current (bsp1 : bsp) (bsp2 : bsp) =
   match bsp1 with
   | L (_,x,y) ->
@@ -133,7 +133,7 @@ let rec check_current (bsp1 : bsp) (bsp2 : bsp) =
      end
   | R _ ->
      match bsp2 with
-       R _ -> true
+       R x -> maybe false (fun _ -> true) x
      | _ -> false
 
 let rec linetree_of_bsp ?(v=true) ?(infx = 0) ?(infy = 0)
