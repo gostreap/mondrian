@@ -421,14 +421,24 @@ let get_fnc_of_bsp (bsp : bsp) =
 let rec print_fnc (l : string list list) =
   let rec print_ou l =
     match l with
-    | [] -> print_string "FIN"
+    | [] -> ()
     | x::xs ->
-       print_string x;
-       print_string " OU ";
-       print_ou xs in
+       match xs with
+       | [] -> print_string x;
+       | _ ->
+          begin
+            print_string x;
+            print_string " OU ";
+            print_ou xs
+          end in
   match l with
     [] -> ()
   | x::xs ->
-     print_ou x;
-     print_string " ET ";
-     print_fnc xs
+     match xs with
+     | [] -> print_ou x;
+     | _ ->
+        begin
+          print_ou x;
+          print_string " ET ";
+          print_fnc xs
+        end
