@@ -229,6 +229,8 @@ let rec loop_sat (n : int) (b : bsp_sat) =
   then b
   else loop_sat (n-1) (secure_bsp_sat b)
 
+(* TOOOOODDDDDDOOOOOO Compter en utilisant les lignes sécurisées ? *)
+
 (* Renvoie un couple (r, b, list) où:
  * r est le nombre de rectangle rouge adjacents sécurisés
  * b est le nombre de rectangle bleu adjacents sécurisés
