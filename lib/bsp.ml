@@ -482,7 +482,7 @@ let print_possible_sol n =
     match t with
     | [] -> ()
     | x::xs ->
-       print_string ((string_of_bool (fst x)) ^ ", " ^ snd x^ " ");
+       print_string (("("^string_of_bool (fst x)) ^ ", " ^ snd x^ ") ");
        pr_rec xs in
   match n with
   | None -> print_endline "None"
