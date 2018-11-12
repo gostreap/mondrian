@@ -264,9 +264,11 @@ let get_adja_stat (bsp_sat : bsp_sat) =
      let (rr,rb,rlist) = get_stat false r in
      (lr+rr,lb+rb,llist@rlist)
 
-(* Renvoie une liste de liste à n élément contenant toutes les 
-   possiblités de choisir n éléments dans list*)      
-let rec get_n_tuples_in_list (n : int) (list : bsp_sat list) =
+(* ------------------------------------------------------------------------------------
+   FORMULE
+   ------------------------------------------------------------------------------------ *)
+ 
+let rec get_n_tuples_in_list (n : int) (list : 'a list) =
   let rec aux x l res =
     match l with
     | [] -> res
@@ -278,47 +280,68 @@ let rec get_n_tuples_in_list (n : int) (list : bsp_sat list) =
       | x::q -> (aux x (get_n_tuples_in_list (n-1) q) [])@(get_n_tuples_in_list n q)
   else [[]]
 
-(* Renvoie une liste de liste de string correspondant
-   à une fnd satisfaisable ssi il existe un choix de
-   coloration possible pour la ligne bsp_sat
-   ATTENTION : seulement pour cette ligne, pas pour ces fils
-*)
-let get_fnd_of_bsp_sat (bsp_sat : bsp_sat) =
-  let r, b, list = get_adja_stat bsp_sat in
-  let size = r + b + List.length list in
-  let rec aux (blue : bool) (list : bsp_sat list) =
+let rec string_list_of_bsp_sat_list (blue : bool) (list : bsp_sat list) =
     match list with
     | [] -> []
     | x::q ->
        match x with
        | R_sat (n,_,_) ->
           if blue then 
-              ("-" ^ n)::(aux blue q)
+              ("-" ^ n)::(string_list_of_bsp_sat_list blue q)
           else
-              n::(aux blue q)
+              n::(string_list_of_bsp_sat_list blue q)
        | _ -> failwith "Get_fnd_of_bsp_sat"
+  
+let get_compl (t : string list) (list  : bsp_sat list) =
+  let rec filtre (x : string) (l : string list) =
+    match l with
+    | [] -> true
+    | y::q ->
+       if x = y then false
+       else filtre x q
   in
-  let rec aux2 (blue:bool) (list : bsp_sat list list) =
+  let rec neg ?(res = []) l =
+      match l with
+      | [] -> res
+      | x::q -> neg ~res:(("-"^x)::res) q 
+  in
+  let compl = List.filter (fun x -> filtre x t) (string_list_of_bsp_sat_list false list) in
+  neg compl
+
+let get_all_compl (red : string list list) (list : bsp_sat list) =
+  List.map (fun x -> x@(get_compl x list)) red
+
+(* Renvoie une liste de liste de string correspondant
+   à une fnd satisfaisable ssi il existe un choix de
+   coloration possible pour la ligne bsp_sat
+   ATTENTION : seulement pour cette ligne, pas pour ces fils
+*)
+let get_fnd_of_bsp_sat (bsp_sat : bsp_sat) : string list list =
+  let r, b, list = get_adja_stat bsp_sat in
+  let size = r + b + List.length list in
+  let rec aux (blue:bool) (list : bsp_sat list list) : string list list =
     match list with
     | [] -> []
-    | l::q -> (aux blue l)::(aux2 blue q)
+    | l::q -> (string_list_of_bsp_sat_list blue l)::(aux blue q)
   in
   match bsp_sat with
   | R_sat (_,_,_) -> []
   | L_sat (c,_,_) ->
      begin
          match c with
-         (* noter que, dans le cas, Purplesize est pair *)
-         | Some Purple -> aux2 false (get_n_tuples_in_list (size/2) list) 
+         (* noter que, dans le cas Purple, size est pair *)
+         | Some Purple ->
+            let red  = aux false (get_n_tuples_in_list (size/2) list) in
+            get_all_compl red list
          | Some C co ->
             begin
                 match co with
                 | Red ->
                    if r > size/2 then []
-                   else aux2 false (get_n_tuples_in_list (size/2+1-r) list)
+                   else aux false (get_n_tuples_in_list (size/2+1-r) list)
                 | Blue ->
                    if b > size/2 then []
-                   else aux2 true (get_n_tuples_in_list (size/2+1-b) list)
+                   else aux true (get_n_tuples_in_list (size/2+1-b) list)
             end
          | None -> []
      end
