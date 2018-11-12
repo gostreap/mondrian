@@ -323,3 +323,33 @@ let get_fnd_of_bsp_sat (bsp_sat : bsp_sat) =
          | None -> []
      end
  
+
+type formule =
+  | Var of string
+  | Neg of formule
+  | Et of formule * formule
+  | Ou of formule * formule
+
+let rec desc_neg f =
+  let neg x = match x with
+    | Neg p -> desc_neg p
+    | Et (a,b) -> desc_neg (Ou ((Neg a),(Neg b)))
+    | Ou (a,b) -> desc_neg (Et ((Neg a),(Neg b)))
+    | _ -> Neg x
+  in match f with
+  | Var x -> Var x
+  | Neg x -> neg x
+  | Et (a,b) -> Et ((desc_neg a),(desc_neg b))
+  | Ou (a,b) -> Ou ((desc_neg a),(desc_neg b))
+
+let rec desc_ou f = match f with
+  | Var _ -> f
+  | Neg _ -> f
+  | Et (a,b) -> Et ((desc_ou a),(desc_ou b))
+  | Ou (a,b) -> match desc_ou a with
+    | Et (x,y) -> desc_ou (Et ((Ou (x,b)),(Ou (y,b))))
+    | _ -> match desc_ou b with
+      | Et (x,y) -> desc_ou (Et ((Ou (x,a)),(Ou (y,a))))
+      | _ -> Ou (a,b)
+
+let fnc f = desc_ou (desc_neg f)
