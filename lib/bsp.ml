@@ -169,11 +169,9 @@ let rec empty_copy_of_bsp (bsp : bsp) =
 
 
 (* ------------------------------------------------------------------------------------
-   PARTIE SAT 
+   PARTIE SAT
    ------------------------------------------------------------------------------------ *)
 
-
-                       
 (* bsp for SAT *)
 type bsp_sat =
   | R_sat of string * bool * couleur
@@ -269,14 +267,13 @@ type formule =
   | Et of formule * formule
   | Ou of formule * formule
 
-        
 let rec string_of_formule f =
   match f with
   | Var x -> x
   | Neg x -> "Neg " ^ (string_of_formule x)
   | Et (x,y) -> "(" ^ (string_of_formule x) ^ " Et " ^ (string_of_formule y) ^ ")"
   | Ou (x,y) -> "(" ^ (string_of_formule x) ^ " Ou " ^ (string_of_formule y) ^ ")"
-  
+
 let print_formule (f : formule option) =
   match f with
   | None -> print_endline "VRAI"
@@ -287,7 +284,7 @@ let same_var x y =
   match x, y with
   | Var x, Var y -> x = y
   | _ -> false
-  
+
 let rec get_n_tuples_in_list (n : int) (list : 'a list) =
   let rec aux x l res =
     match l with
@@ -306,12 +303,12 @@ let rec formule_list_of_bsp_sat_list (blue : bool) (list : bsp_sat list) =
     | x::q ->
        match x with
        | R_sat (n,_,_) ->
-          if blue then 
+          if blue then
               (Neg (Var n))::(formule_list_of_bsp_sat_list blue q)
           else
               (Var n)::(formule_list_of_bsp_sat_list blue q)
        | _ -> failwith "Get_fnd_of_bsp_sat"
-  
+
 let get_compl (t : formule list) (list  : bsp_sat list) =
   let rec filtre (x : formule) (l : formule list) =
     match l with
@@ -323,7 +320,7 @@ let get_compl (t : formule list) (list  : bsp_sat list) =
   let rec neg ?(res = []) l =
       match l with
       | [] -> res
-      | x::q -> neg ~res:((Neg x)::res) q 
+      | x::q -> neg ~res:((Neg x)::res) q
   in
   let compl = List.filter (fun x -> filtre x t) (formule_list_of_bsp_sat_list false list) in
   neg compl
@@ -335,7 +332,7 @@ let get_all_compl (red : formule list list) (list : bsp_sat list) =
    à une fnd satisfaisable ssi il existe un choix de
    coloration possible pour la ligne bsp_sat
    ATTENTION : seulement pour cette ligne, pas pour ces fils *)
-  
+
 let get_list_list_of_bsp_sat (bsp_sat : bsp_sat) : formule list list =
   let r, b, list = get_adja_stat bsp_sat in
   let size = r + b + List.length list in
@@ -435,14 +432,69 @@ let rec desc_ou f = match f with
     | _ -> match desc_ou b with
       | Et (x,y) -> desc_ou (Et ((Ou (x,a)),(Ou (y,a))))
       | _ -> Ou (a,b)
-          
+
 let fnc f =
   match f with
   | None -> None
   | Some x -> Some (desc_ou (desc_neg x))
 
-let get_fnc_of_bsp (bsp : bsp) =
-  let f = bsp_sat_of_bsp bsp |> loop_sat 20 |> get_all_fnd in
-  print_formule f;
-  print_endline "#########################";
-  fnc f 
+let get_fnc_of_bsp (bsp : bsp) =  bsp_sat_of_bsp bsp |> loop_sat 20 |> get_all_fnd |> fnc
+
+let rec list_of_fnc (f : formule) =
+  let get_var f =
+    match f with
+    | Var x -> (false,x)
+    | Neg (Var x) -> (true,x)
+    | _ -> failwith "list_of_fnc VAR"
+  in
+  let rec get_ou f =
+    match f with
+    | Ou (a,b) ->
+       begin
+         match a with
+         | Ou _ -> get_ou a @ get_ou b
+         | _ -> get_var a :: get_ou b
+       end
+    | _ -> [get_var f]
+  in
+  match f with
+  | Et (a,b) ->
+     begin
+       match a with
+       | Et _ -> list_of_fnc a @ list_of_fnc b
+       | _ -> get_ou a :: list_of_fnc b
+     end
+  | Ou _ -> [get_ou f]
+  | _ ->
+     [[get_var f]]
+
+(* SAT_SOLVER *)
+
+module Variables = struct
+  type t = string
+  let compare x y = compare x y
+end
+
+module Sat = Sat_solver.Make(Variables)
+
+let print_possible_sol n =
+  let rec pr_rec t =
+    match t with
+    | [] -> ()
+    | x::xs ->
+       print_string ((string_of_bool (fst x)) ^ ", " ^ snd x^ " ");
+       pr_rec xs in
+  match n with
+  | None -> print_endline "None"
+  | Some x ->
+     pr_rec x;
+     print_endline ""
+
+let sat_solve (bsp : bsp) =
+  match get_fnc_of_bsp bsp with
+  | None -> None
+  | Some f -> Sat.solve (list_of_fnc f)
+
+let is_uniq bsp = maybe true (fun _ -> false) (sat_solve bsp)
+
+let print_maybe_other_sol bsp = print_possible_sol (sat_solve bsp)

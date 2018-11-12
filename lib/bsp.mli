@@ -3,7 +3,7 @@ type bsp = R of Couleur.couleur option | L of label * bsp * bsp
 type point = int * int
 type linetree = Leef | Line of point * point * Couleur.couleur_l option * linetree * linetree
 type formule = Var of string | Neg of formule | Et of formule * formule | Ou of formule * formule
-                                                                              
+
 val string_of_bsp : bsp -> string
 val random_bsp_naive :
   ?v:bool -> ?minsize:int -> ?start_larg:int -> ?start_haut:int -> int -> int -> int -> bsp
@@ -23,3 +23,7 @@ val get_adja_stat : bsp_sat -> int * int * bsp_sat list
 val get_n_tuples_in_list : int -> bsp_sat list -> bsp_sat list list
 val get_fnc_of_bsp : bsp -> formule option
 val print_formule  : formule option -> unit
+val list_of_fnc : formule -> (bool*string) list list
+
+val is_uniq : bsp -> bool
+val print_maybe_other_sol : bsp -> unit
