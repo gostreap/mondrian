@@ -48,26 +48,44 @@ let affiche_cadre (offset : int) (larg : int) (haut : int) =
                  (larg + offset, haut + offset, larg + offset, offset);
                  (larg + offset, offset, offset, offset)|]
 
+(* Génère un bsp et sa copie vide  *)
+let init (prof : int) (larg : int) (haut : int) =
+  let origin_bsp = random_bsp_naive prof larg haut in
+  let linetree = linetree_of_bsp origin_bsp larg haut in
+  let working_bsp = empty_copy_of_bsp origin_bsp in
+  (origin_bsp,linetree,working_bsp)
+
+let print_victory (offset : int)  (larg : int) (haut : int) loop =
+  clear_graph ();
+  moveto 0 0;
+  draw_string "BRAVO ! VOUS AVEZ COMPLÉTÉ LE PUZZLE !";
+  let _ = wait_next_event [Button_down ; Key_pressed] in
+  let (o,l,w) = init 5 larg haut in
+  loop offset o w l larg haut
+
 let rec loop (offset : int) (origin_bsp : bsp) (bsp : bsp)
              (linetree : linetree) (larg : int) (haut : int) =
-  if check_current origin_bsp bsp then
-      print_endline "BRAVO ! VOUS AVEZ COMPLETE LE PUZZLE !";
-  clear_graph ();
-  affiche_linetree offset linetree;
-  affiche_cadre offset larg haut;
-  affiche_coloration offset larg haut bsp;
-  let e = wait_next_event  [ Button_down ; Key_pressed ] in
-  if e.keypressed
-  then
-    match e.key with
-    | 'q' -> ()
-    | _ -> loop offset origin_bsp bsp linetree larg haut
+  if check_current origin_bsp bsp
+  then print_victory offset larg haut loop
   else
-    if e.button
-    then
-      let bsp = change_color bsp (e.mouse_x - offset, e.mouse_y - offset) in
-      loop offset origin_bsp bsp linetree larg haut
-    else loop offset origin_bsp bsp linetree larg haut
+    begin
+      clear_graph ();
+      affiche_linetree offset linetree;
+      affiche_cadre offset larg haut;
+      affiche_coloration offset larg haut bsp;
+      let e = wait_next_event  [ Button_down ; Key_pressed ] in
+      if e.keypressed
+      then
+        match e.key with
+        | 'q' -> ()
+        | _ -> loop offset origin_bsp bsp linetree larg haut
+      else
+        if e.button
+        then
+          let bsp = change_color bsp (e.mouse_x - offset, e.mouse_y - offset) in
+          loop offset origin_bsp bsp linetree larg haut
+        else loop offset origin_bsp bsp linetree larg haut
+    end
 
 let rec print_fnd (fnd : string list list) =
   let aux (s:string) =
@@ -94,17 +112,15 @@ let rec print_all_fnd (bsp_sat : bsp_sat) =
   | L_sat (_,_,l,r) ->
      print_all_fnd l;
      print_all_fnd r
-    
-  
+
+
 let main () =
   let larg = 800
   and haut = 800
   and offset = 25 in
   Random.self_init ();
   open_graph (" " ^ string_of_int (larg + 2 * offset) ^ "x" ^ string_of_int (haut + 2 * offset)) ;
-  let origin_bsp = random_bsp_naive 2 larg haut in
-  let linetree = linetree_of_bsp origin_bsp larg haut in
-  let working_bsp = empty_copy_of_bsp origin_bsp in
+  let (origin_bsp,linetree,working_bsp) = init 2 larg haut in
   print_endline (string_of_bsp origin_bsp);
   print_endline "#########################";
   let bsp_sat = loop_sat 10 (bsp_sat_of_bsp origin_bsp) in
