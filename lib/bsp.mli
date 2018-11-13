@@ -2,7 +2,7 @@ type label = { coord : int; colored : bool; }
 type bsp = R of Couleur.couleur option | L of label * bsp * bsp
 type point = int * int
 type linetree = Leef | Line of point * point * Couleur.couleur_l option * linetree * linetree
-type formule = Var of int | Neg of formule | Et of formule * formule | Ou of formule * formule
+type formule = Var of int | Neg of int | Et of formule * formule | Ou of formule * formule
 
 val string_of_bsp : bsp -> string
 val random_bsp_naive :
@@ -27,3 +27,4 @@ val list_of_fnc : formule -> (bool*int) list list
 
 val is_uniq : int -> bsp -> bool
 val print_maybe_other_sol : int -> bsp -> unit
+val tseitin : formule -> formule
