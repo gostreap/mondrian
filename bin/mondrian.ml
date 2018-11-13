@@ -66,26 +66,24 @@ let print_victory (offset : int)  (larg : int) (haut : int) loop =
 let rec loop (offset : int) (origin_bsp : bsp) (bsp : bsp)
              (linetree : linetree) (larg : int) (haut : int) =
   if check_current origin_bsp bsp
-  then print_victory offset larg haut loop
+  then
+    print_endline "victory"; (*print_victory offset larg haut loop *)
+  clear_graph ();
+  affiche_linetree offset linetree;
+  affiche_cadre offset larg haut;
+  affiche_coloration offset larg haut bsp;
+  let e = wait_next_event [ Button_down ; Key_pressed ] in
+  if e.keypressed
+  then
+    match e.key with
+    | 'q' -> ()
+    | _ -> loop offset origin_bsp bsp linetree larg haut
   else
-    begin
-      clear_graph ();
-      affiche_linetree offset linetree;
-      affiche_cadre offset larg haut;
-      affiche_coloration offset larg haut bsp;
-      let e = wait_next_event  [ Button_down ; Key_pressed ] in
-      if e.keypressed
-      then
-        match e.key with
-        | 'q' -> ()
-        | _ -> loop offset origin_bsp bsp linetree larg haut
-      else
-        if e.button
-        then
-          let bsp = change_color bsp (e.mouse_x - offset, e.mouse_y - offset) in
-          loop offset origin_bsp bsp linetree larg haut
-        else loop offset origin_bsp bsp linetree larg haut
-    end
+    if e.button
+    then
+      let bsp = change_color bsp (e.mouse_x - offset, e.mouse_y - offset) in
+      loop offset origin_bsp bsp linetree larg haut
+    else loop offset origin_bsp bsp linetree larg haut
 
 let main () =
   let larg = 800
