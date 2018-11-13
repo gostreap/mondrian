@@ -438,7 +438,16 @@ let fnc f =
   | None -> None
   | Some x -> Some (desc_ou (desc_neg x))
 
-let get_fnc_of_bsp (prof : int) (bsp : bsp) =  bsp_sat_of_bsp bsp |> loop_sat prof |> get_all_fnd |> fnc
+let rec get_actual_sol (orig : bsp_sat) =
+  match orig with
+  | R_sat (i,_,x) -> switch_coul (Var i) (Neg (Var i)) x
+  | L_sat (_,_,l,r) -> Et (get_actual_sol l, get_actual_sol r)
+
+let get_fnc_of_bsp (prof : int) (bsp : bsp) =
+  let sat = bsp_sat_of_bsp bsp |> loop_sat prof in
+  let f = get_all_fnd sat in
+  let sol = get_actual_sol sat in
+  maybe None (fun f -> fnc (Some (Et (f,Neg sol)))) f
 
 let rec list_of_fnc (f : formule) =
   let get_var f =
