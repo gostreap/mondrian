@@ -348,7 +348,7 @@ let get_list_list_of_bsp_sat (bsp_sat : bsp_sat) : formule list list =
          match c with
          (* noter que, dans le cas Purple, size est pair *)
          | Some Purple ->
-            let red  = aux false (get_n_tuples_in_list (size/2) list) in
+            let red  = aux false (get_n_tuples_in_list (size/2-r) list) in
             get_all_compl red list
          | Some C co ->
             begin
