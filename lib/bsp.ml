@@ -174,15 +174,15 @@ let rec empty_copy_of_bsp (bsp : bsp) =
 
 (* bsp for SAT *)
 type bsp_sat =
-  | R_sat of string * bool * couleur
-  | L_sat of couleur_l option * bool * bsp_sat * bsp_sat
+  | R_sat of int * bool * couleur (* id * secure * coul *)
+  | L_sat of couleur_l option * bool * bsp_sat * bsp_sat (* coul * secure * left * right *)
 
 let rec string_of_bsp_sat (bsp : bsp_sat) =
   match bsp with
   | L_sat (lab,b,l,r) ->
      "(" ^ (string_of_bsp_sat l) ^ " " ^string_of_bool b  ^ "*" ^ (maybe "black" string_of_couleur_l lab) ^
          " " ^ (string_of_bsp_sat r) ^ ")"
-  | R_sat (n,x,c) -> n ^ "*" ^ string_of_bool x ^ "*" ^ (switch_coul "b" "r" c)
+  | R_sat (n,x,c) -> string_of_int n ^ "*" ^ string_of_bool x ^ "*" ^ (switch_coul "b" "r" c)
 
 let bsp_sat_of_bsp (bsp : bsp) =
   let rec aux v bsp =
@@ -191,7 +191,7 @@ let bsp_sat_of_bsp (bsp : bsp) =
        let c =
          match x with
          | None -> failwith "translate_bsp"
-         | Some x -> x in (v+1,R_sat (string_of_int v,false,c))
+         | Some x -> x in (v+1,R_sat (v,false,c))
     | L (lab,l,r) ->
        let (n,ll) = aux v l in
        let (m,rr) = aux n r in
@@ -262,14 +262,14 @@ let get_adja_stat (bsp_sat : bsp_sat) =
    ------------------------------------------------------------------------------------ *)
 
 type formule =
-  | Var of string
+  | Var of int
   | Neg of formule
   | Et of formule * formule
   | Ou of formule * formule
 
 let rec string_of_formule f =
   match f with
-  | Var x -> x
+  | Var x -> string_of_int x
   | Neg x -> "Neg " ^ (string_of_formule x)
   | Et (x,y) -> "(" ^ (string_of_formule x) ^ " Et " ^ (string_of_formule y) ^ ")"
   | Ou (x,y) -> "(" ^ (string_of_formule x) ^ " Ou " ^ (string_of_formule y) ^ ")"
@@ -471,7 +471,7 @@ let rec list_of_fnc (f : formule) =
 (* SAT_SOLVER *)
 
 module Variables = struct
-  type t = string
+  type t = int
   let compare x y = compare x y
 end
 
@@ -482,7 +482,7 @@ let print_possible_sol n =
     match t with
     | [] -> ()
     | x::xs ->
-       print_string (("("^string_of_bool (fst x)) ^ ", " ^ snd x^ ") ");
+       print_string (("("^string_of_bool (fst x)) ^ ", " ^string_of_int (snd x)^ ") ");
        pr_rec xs in
   match n with
   | None -> print_endline "None"
