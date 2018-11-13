@@ -263,14 +263,14 @@ let get_adja_stat (bsp_sat : bsp_sat) =
 
 type formule =
   | Var of int
-  | Neg of formule
+  | Neg of int
   | Et of formule * formule
   | Ou of formule * formule
 
 let rec string_of_formule f =
   match f with
   | Var x -> string_of_int x
-  | Neg x -> "Neg " ^ (string_of_formule x)
+  | Neg x -> "Neg " ^ (string_of_int x)
   | Et (x,y) -> "(" ^ (string_of_formule x) ^ " Et " ^ (string_of_formule y) ^ ")"
   | Ou (x,y) -> "(" ^ (string_of_formule x) ^ " Ou " ^ (string_of_formule y) ^ ")"
 
@@ -304,7 +304,7 @@ let rec formule_list_of_bsp_sat_list (blue : bool) (list : bsp_sat list) =
        match x with
        | R_sat (n,_,_) ->
           if blue then
-              (Neg (Var n))::(formule_list_of_bsp_sat_list blue q)
+              (Neg n)::(formule_list_of_bsp_sat_list blue q)
           else
               (Var n)::(formule_list_of_bsp_sat_list blue q)
        | _ -> failwith "Get_fnd_of_bsp_sat"
@@ -320,7 +320,10 @@ let get_compl (t : formule list) (list  : bsp_sat list) =
   let rec neg ?(res = []) l =
       match l with
       | [] -> res
-      | x::q -> neg ~res:((Neg x)::res) q
+      | x::q ->
+         match x with
+         | Var x -> neg ~res:((Neg x)::res) q
+         | _ -> failwith "neg"
   in
   let compl = List.filter (fun x -> filtre x t) (formule_list_of_bsp_sat_list false list) in
   neg compl
@@ -411,49 +414,24 @@ let rec get_all_fnd (bsp_sat : bsp_sat) : formule option =
   | None, Some b -> Some b
   | Some a, Some b -> Some (Et (a,b))
 
-let rec desc_neg f =
-  let neg x = match x with
-    | Neg p -> desc_neg p
-    | Et (a,b) -> desc_neg (Ou ((Neg a),(Neg b)))
-    | Ou (a,b) -> desc_neg (Et ((Neg a),(Neg b)))
-    | _ -> Neg x
-  in match f with
-  | Var x -> Var x
-  | Neg x -> neg x
-  | Et (a,b) -> Et ((desc_neg a),(desc_neg b))
-  | Ou (a,b) -> Ou ((desc_neg a),(desc_neg b))
-
-let rec desc_ou f = match f with
-  | Var _ -> f
-  | Neg _ -> f
-  | Et (a,b) -> Et ((desc_ou a),(desc_ou b))
-  | Ou (a,b) -> match desc_ou a with
-    | Et (x,y) -> desc_ou (Et ((Ou (x,b)),(Ou (y,b))))
-    | _ -> match desc_ou b with
-      | Et (x,y) -> desc_ou (Et ((Ou (x,a)),(Ou (y,a))))
-      | _ -> Ou (a,b)
-
-let fnc f =
-  match f with
-  | None -> None
-  | Some x -> Some (desc_ou (desc_neg x))
-
 let rec get_actual_sol (orig : bsp_sat) =
   match orig with
-  | R_sat (i,_,x) -> switch_coul (Var i) (Neg (Var i)) x
-  | L_sat (_,_,l,r) -> Et (get_actual_sol l, get_actual_sol r)
+  | R_sat (i,_,x) -> switch_coul (Neg i) (Var i) x (* TODO V2RIFIER *)
+  | L_sat (_,_,l,r) -> Ou (get_actual_sol l, get_actual_sol r)
+
+let fnc f = failwith "TODO"
 
 let get_fnc_of_bsp (prof : int) (bsp : bsp) =
   let sat = bsp_sat_of_bsp bsp |> loop_sat prof in
   let f = get_all_fnd sat in
   let sol = get_actual_sol sat in
-  maybe None (fun f -> fnc (Some (Et (f,Neg sol)))) f
+  maybe None (fun f -> fnc (Some (Et (f,sol)))) f
 
 let rec list_of_fnc (f : formule) =
   let get_var f =
     match f with
     | Var x -> (false,x)
-    | Neg (Var x) -> (true,x)
+    | Neg x -> (true,x)
     | _ -> failwith "list_of_fnc VAR"
   in
   let rec get_ou f =
