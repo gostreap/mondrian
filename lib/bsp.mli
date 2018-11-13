@@ -21,9 +21,9 @@ val bsp_sat_of_bsp : bsp -> bsp_sat
 val loop_sat : int -> bsp_sat -> bsp_sat
 val get_adja_stat : bsp_sat -> int * int * bsp_sat list
 val get_n_tuples_in_list : int -> bsp_sat list -> bsp_sat list list
-val get_fnc_of_bsp : bsp -> formule option
+val get_fnc_of_bsp : int -> bsp -> formule option
 val print_formule  : formule option -> unit
 val list_of_fnc : formule -> (bool*int) list list
 
-val is_uniq : bsp -> bool
-val print_maybe_other_sol : bsp -> unit
+val is_uniq : int -> bsp -> bool
+val print_maybe_other_sol : int -> bsp -> unit

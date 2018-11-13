@@ -93,7 +93,8 @@ let main () =
   and offset = 25 in
   Random.self_init ();
   open_graph (" " ^ string_of_int (larg + 2 * offset) ^ "x" ^ string_of_int (haut + 2 * offset)) ;
-  let (origin_bsp,linetree,working_bsp) = init 4 larg haut in
+  let prof = 4 in
+  let (origin_bsp,linetree,working_bsp) = init prof larg haut in
   print_endline (string_of_bsp origin_bsp);
   print_endline "#########################";
   let bsp_sat = loop_sat 10 (bsp_sat_of_bsp origin_bsp) in
@@ -101,9 +102,9 @@ let main () =
   print_endline "#########################";
   print_endline (string_of_bsp_sat bsp_sat);
   print_endline "#########################";
-  print_formule (get_fnc_of_bsp origin_bsp);
+  print_formule (get_fnc_of_bsp prof origin_bsp);
   print_endline "#########################";
-  print_maybe_other_sol origin_bsp;
+  print_maybe_other_sol prof origin_bsp;
   loop offset origin_bsp working_bsp linetree larg haut
 
 let _ = main()

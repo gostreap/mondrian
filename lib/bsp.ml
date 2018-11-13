@@ -438,7 +438,7 @@ let fnc f =
   | None -> None
   | Some x -> Some (desc_ou (desc_neg x))
 
-let get_fnc_of_bsp (bsp : bsp) =  bsp_sat_of_bsp bsp |> loop_sat 20 |> get_all_fnd |> fnc
+let get_fnc_of_bsp (prof : int) (bsp : bsp) =  bsp_sat_of_bsp bsp |> loop_sat prof |> get_all_fnd |> fnc
 
 let rec list_of_fnc (f : formule) =
   let get_var f =
@@ -490,11 +490,11 @@ let print_possible_sol n =
      pr_rec x;
      print_endline ""
 
-let sat_solve (bsp : bsp) =
-  match get_fnc_of_bsp bsp with
+let sat_solve (prof : int) (bsp : bsp) =
+  match get_fnc_of_bsp prof bsp with
   | None -> None
   | Some f -> Sat.solve (list_of_fnc f)
 
-let is_uniq bsp = maybe true (fun _ -> false) (sat_solve bsp)
+let is_uniq prof bsp = maybe true (fun _ -> false) (sat_solve prof bsp)
 
-let print_maybe_other_sol bsp = print_possible_sol (sat_solve bsp)
+let print_maybe_other_sol prof bsp = print_possible_sol (sat_solve prof bsp)
