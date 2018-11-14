@@ -1,5 +1,6 @@
 open Bsp
-open Couleur
+open Bsp__.Formule
+open Bsp__.Couleur
 open Graphics
 
 let rec affiche_coloration ?(v=true) ?(infx=0) ?(infy=0) (offset : int) (supx : int)
