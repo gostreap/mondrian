@@ -263,6 +263,8 @@ let get_adja_stat (bsp_sat : bsp_sat) =
    FORMULE
    ------------------------------------------------------------------------------------ *)
 
+(* Renvoie la liste de tout les tuples à n éléments que l'on 
+   peut former avec les éléments de list *)
 let rec get_n_tuples_in_list (n : int) (list : 'a list) =
   let rec aux x l res =
     match l with
@@ -275,6 +277,12 @@ let rec get_n_tuples_in_list (n : int) (list : 'a list) =
       | x::q -> (aux x (get_n_tuples_in_list (n-1) q) [])@(get_n_tuples_in_list n q)
   else [[]]
 
+(* Renvoie une liste de formule où chaque formule est de la forme :
+   - Var n si blue est faux
+   - Neg n si blue est vrai
+   Cette fonction prend en argument une liste de Rectangle et échoue si 
+   la liste contient une Ligne
+ *)
 let rec formule_list_of_bsp_sat_list (blue : bool) (list : bsp_sat list) =
     match list with
     | [] -> []
@@ -287,9 +295,12 @@ let rec formule_list_of_bsp_sat_list (blue : bool) (list : bsp_sat list) =
               (Var n)::(formule_list_of_bsp_sat_list blue q)
        | _ -> failwith "Get_fnd_of_bsp_sat"
 
-let get_compl (t : formule list) (list  : bsp_sat list) =
-  let rec filtre (x : formule) (l : formule list) =
-    match l with
+(* Prend en argument une liste red de Var n et une liste list de Rectangle 
+   et renvoie le complémentaire de red dans list. C'est à dire une liste 
+   de Neg n correspondant au rectangle non contenu dans red *)
+let get_compl (red : formule list) (rect : bsp_sat list) =
+  let rec filtre (x : formule) (red : formule list) =
+    match red with
     | [] -> true
     | y::q ->
        if same_var x y then false
@@ -303,7 +314,7 @@ let get_compl (t : formule list) (list  : bsp_sat list) =
          | Var x -> neg ~res:((Neg x)::res) q
          | _ -> failwith "neg"
   in
-  let compl = List.filter (fun x -> filtre x t) (formule_list_of_bsp_sat_list false list) in
+  let compl = List.filter (fun x -> filtre x red) (formule_list_of_bsp_sat_list false rect) in
   neg compl
 
 let get_all_compl (red : formule list list) (list : bsp_sat list) =
@@ -313,16 +324,15 @@ let get_all_compl (red : formule list list) (list : bsp_sat list) =
    à une fnd satisfaisable ssi il existe un choix de
    coloration possible pour la ligne bsp_sat
    ATTENTION : seulement pour cette ligne, pas pour ces fils *)
-
-let get_list_list_of_bsp_sat (bsp_sat : bsp_sat) : formule list list =
-  let r, b, list = get_adja_stat bsp_sat in
+let get_list_list_of_bsp_sat (ligne : bsp_sat) : formule list list =
+  let r, b, list = get_adja_stat ligne in
   let size = r + b + List.length list in
   let rec aux (blue:bool) (list : bsp_sat list list) : formule list list =
     match list with
     | [] -> []
     | l::q -> (formule_list_of_bsp_sat_list blue l)::(aux blue q)
   in
-  match bsp_sat with
+  match ligne with
   | R_sat (_,_,_) -> []
   | L_sat (c,_,_,_) ->
      begin
@@ -372,12 +382,14 @@ let get_formule_of_list_list (ll : formule list list) : formule option =
   let f = disj_all ll in
   f
 
-let rec get_all_fnd (bsp_sat : bsp_sat) : formule option =
+(* Renvoie la formule correspondant à la conjonction des contraintes de bsp_sat
+ et de tout ses fils*)
+let rec get_formule_complete (bsp_sat : bsp_sat) : formule option =
   let formfils =
     match bsp_sat with
     | R_sat (_,_,_) -> None
     | L_sat (_,_,l,r) ->
-       let fl = get_all_fnd l and fr = get_all_fnd r in
+       let fl = get_formule_complete l and fr = get_formule_complete r in
        match fl, fr  with
        | None, None -> None
        | Some a, None -> Some a
@@ -391,18 +403,22 @@ let rec get_all_fnd (bsp_sat : bsp_sat) : formule option =
   | None, Some b -> Some b
   | Some a, Some b -> Some (Et (a,b))
 
+(* Renvoie la formule correspondant à la solution encodé dans bsp_sat*)
 let rec get_actual_sol (orig : bsp_sat) =
   match orig with
   | R_sat (i,_,x) -> switch_coul (Neg i) (Var i) x
   | L_sat (_,_,l,r) -> Ou (get_actual_sol l, get_actual_sol r)
 
+(* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution*)
 let get_fnc_of_bsp (prof : int) (bsp : bsp) =
   let sat = bsp_sat_of_bsp bsp |> loop_sat prof in
-  let f = get_all_fnd sat in
+  let f = get_formule_complete sat in
   let sol = get_actual_sol sat in
   maybe None (fun f -> Some (Et (tseitin f,sol))) f
 
-let rec list_of_fnc (f : formule) =
+(* Renvoie une liste de formule correspondant à une découpe de toute les clauses
+   disjonctives de la fnc*)
+let rec list_of_fnc (fnc : formule) =
   let get_var f =
     match f with
     | Var x -> (false,x)
@@ -419,18 +435,20 @@ let rec list_of_fnc (f : formule) =
        end
     | _ -> [get_var f]
   in
-  match f with
+  match fnc with
   | Et (a,b) ->
      begin
        match a with
        | Et _ -> list_of_fnc a @ list_of_fnc b
        | _ -> get_ou a :: list_of_fnc b
      end
-  | Ou _ -> [get_ou f]
+  | Ou _ -> [get_ou fnc]
   | _ ->
-     [[get_var f]]
+     [[get_var fnc]]
 
-(* SAT_SOLVER *)
+(* ------------------------------------------------------------------------------------
+   SAT SOLVER
+   ------------------------------------------------------------------------------------ *)
 
 module Variables = struct
   type t = int
@@ -439,24 +457,28 @@ end
 
 module Sat = Sat_solver.Make(Variables)
 
-let print_possible_sol n =
+(* Affiche une solution donnée par le sat solver *)
+let print_possible_sol solution =
   let rec pr_rec t =
     match t with
     | [] -> ()
     | x::xs ->
        print_string (("("^string_of_bool (fst x)) ^ ", " ^string_of_int (snd x)^ ") ");
        pr_rec xs in
-  match n with
+  match solution with
   | None -> print_endline "None"
   | Some x ->
      pr_rec x;
      print_endline ""
 
+(* Renvoie None si le bsp possède une unique solution et une deuxième solution sinon *)
 let sat_solve (prof : int) (bsp : bsp) =
   match get_fnc_of_bsp prof bsp with
   | None -> None
   | Some f -> Sat.solve (list_of_fnc f)
 
+(* Renvoie vrai si le bsp possède une unique solution et faux sinon *)
 let is_uniq prof bsp = maybe true (fun _ -> false) (sat_solve prof bsp)
 
+(* Test si le bsp possède une unique solution et affiche le résultat *)
 let print_maybe_other_sol prof bsp = print_possible_sol (sat_solve prof bsp)
