@@ -1,3 +1,3 @@
 (library
-  (name bsp)
+  (name lib)
   (libraries sat_solver graphics))

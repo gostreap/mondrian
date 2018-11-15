@@ -1,4 +1,4 @@
-open Formule
+open Couleur
 
 type label = { coord : int; colored : bool; }
 type bsp = R of Couleur.couleur option | L of label * bsp * bsp
@@ -10,24 +10,10 @@ val random_bsp_naive :
 val change_color : ?v:bool -> bsp -> point -> bsp
 val check_current : bsp -> bsp -> bool
 val empty_copy_of_bsp : bsp -> bsp
+val get_color_line : bsp -> couleur_l option
 
 (* ################################################################################### *)
   
 type linetree = Leef | Line of point * point * Couleur.couleur_l option * linetree * linetree
                              
 val linetree_of_bsp : ?v:bool -> ?infx:int -> ?infy:int -> bsp -> int -> int -> linetree
-
-(* ################################################################################### *)
-
-type bsp_sat = R_sat of int * bool * Couleur.couleur
-             | L_sat of Couleur.couleur_l option * bool * bsp_sat * bsp_sat
-
-val string_of_bsp_sat : bsp_sat -> string
-val bsp_sat_of_bsp : bsp -> bsp_sat
-val loop_sat : int -> bsp_sat -> bsp_sat
-val get_fnc_of_bsp : int -> bsp -> formule option
-
-(* ################################################################################### *)
-
-val is_uniq : int -> bsp -> bool
-val print_maybe_other_sol : int -> bsp -> unit
