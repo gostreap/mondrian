@@ -77,24 +77,22 @@ let get_list_list_of_bsp_sat (ligne : bsp_sat) : formule list list =
   match ligne with
   | R_sat (_,_,_) -> []
   | L_sat (c,_,_,_) ->
-     begin
-         match c with
-         (* noter que, dans le cas Purple, size est pair *)
-         | Some Purple ->
-            let red  = aux false (get_n_tuples_in_list (size/2-r) list) in
-            get_all_compl red list
-         | Some C co ->
-            begin
-                match co with
-                | Red ->
-                   if r > size/2 then []
-                   else aux false (get_n_tuples_in_list (size/2+1-r) list)
-                | Blue ->
-                   if b > size/2 then []
-                   else aux true (get_n_tuples_in_list (size/2+1-b) list)
-            end
-         | None -> []
-     end
+     match c with
+     | None -> []
+     | Some c ->
+        match c with
+     (* noter que, dans le cas Purple, size est pair *)
+        | Purple ->
+           let red  = aux false (get_n_tuples_in_list (size/2-r) list) in
+           get_all_compl red list
+        | C co ->
+           match co with
+           | Red ->
+              if r > size/2 then []
+              else aux false (get_n_tuples_in_list (size/2+1-r) list)
+           | Blue ->
+              if b > size/2 then []
+              else aux true (get_n_tuples_in_list (size/2+1-b) list)
 
 (* Prend une liste de liste de formule et retourne une formule de la forme
  * (_ et _ et ... et _) ou (_ et _ et ... et _) ou ... ou (_ et _ et ... et _)*)
