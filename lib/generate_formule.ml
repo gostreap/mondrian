@@ -126,24 +126,28 @@ let get_formule_of_list_list (ll : formule list list) : formule option =
 
 (* Renvoie la formule correspondant à la conjonction des contraintes de bsp_sat
  et de tout ses fils*)
-let rec get_formule_complete (bsp_sat : bsp_sat) : formule option =
-  let formfils =
+let rec get_formule_complete ?(nvar=(-1)) (bsp_sat : bsp_sat) : int * formule option =
+  let (nvar2,formfils) =
     match bsp_sat with
-    | R_sat (_,_,_) -> None
+    | R_sat (_,_,_) -> (nvar, None)
     | L_sat (_,_,l,r) ->
-       let fl = get_formule_complete l and fr = get_formule_complete r in
-       match fl, fr  with
-       | None, None -> None
-       | Some a, None -> Some a
-       | None, Some b -> Some b
-       | Some a, Some b -> Some (Et (a,b))
+       let (nvar1,fl) = get_formule_complete ~nvar:nvar l in
+       let (nvar2,fr) = get_formule_complete ~nvar:nvar1 r in
+       let f = match fl, fr with
+         | None, None -> None
+         | Some a, None -> Some a
+         | None, Some b -> Some b
+         | Some a, Some b -> Some (Et (a,b)) in
+       (nvar2,f)
   in
-  let form = (get_formule_of_list_list(get_list_list_of_bsp_sat bsp_sat)) in
-  match form, formfils with
-  | None, None -> None
-  | Some a, None -> Some a
-  | None, Some b -> Some b
-  | Some a, Some b -> Some (Et (a,b))
+  let form = get_formule_of_list_list (get_list_list_of_bsp_sat bsp_sat) in
+  (* on met sous FNC form *)
+  let fnc_form = maybe None (fun x -> Some (tseitin ~nvar:nvar2 x)) form in
+  match fnc_form, formfils with
+  | None, None -> (nvar2,None)
+  | Some (n,a), None -> (n,Some a)
+  | None, Some b -> (nvar2,Some b)
+  | Some (n,a), Some b -> (n,Some (Et (a,b)))
 
 (* Renvoie la formule correspondant à la solution encodé dans bsp_sat*)
 let rec get_actual_sol (orig : bsp_sat) =
@@ -154,6 +158,6 @@ let rec get_actual_sol (orig : bsp_sat) =
 (* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution*)
 let get_fnc_of_bsp (prof : int) (bsp : bsp) =
   let sat = bsp_sat_of_bsp bsp |> loop_sat prof in
-  let f = get_formule_complete sat in
+  let (_,f) = get_formule_complete sat in
   let sol = get_actual_sol sat in
-  maybe None (fun f -> let (_,fnc) = tseitin f in Some (Et (fnc,sol))) f
+  maybe None (fun fnc -> Some (Et (fnc,sol))) f
