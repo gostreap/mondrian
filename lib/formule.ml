@@ -21,3 +21,10 @@ let same_var x y =
   match x, y with
   | Var x, Var y -> x = y
   | _ -> false
+
+let rec size_of_formule (f : formule) =
+  match f with
+  | Var _ -> 1
+  | Neg _ -> 1
+  | Et (a,b) -> size_of_formule a + size_of_formule b
+  | Ou (a,b) -> size_of_formule a + size_of_formule b

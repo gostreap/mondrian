@@ -6,3 +6,4 @@ type formule =
 val string_of_formule : formule -> string
 val print_formule : formule option -> unit
 val same_var : formule -> formule -> bool
+val size_of_formule : formule -> int
