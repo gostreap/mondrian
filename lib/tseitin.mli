@@ -1,1 +1,3 @@
-val tseitin : Formule.formule -> Formule.formule
+open Formule
+
+val tseitin : ?nvar:int -> formule -> int*formule

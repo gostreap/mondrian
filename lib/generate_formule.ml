@@ -156,4 +156,4 @@ let get_fnc_of_bsp (prof : int) (bsp : bsp) =
   let sat = bsp_sat_of_bsp bsp |> loop_sat prof in
   let f = get_formule_complete sat in
   let sol = get_actual_sol sat in
-  maybe None (fun f -> Some (Et (tseitin f,sol))) f
+  maybe None (fun f -> let (_,fnc) = tseitin f in Some (Et (fnc,sol))) f

@@ -29,7 +29,7 @@ let neg a =
   | N x -> V x
 
 (* Auxiliaire de Tseitin *)
-let rec tseitin' ?(nvar=(-1)) (f : formule') =
+let rec tseitin' (nvar : int) (f : formule') =
   match f with
   | B b ->
      if b
@@ -40,8 +40,8 @@ let rec tseitin' ?(nvar=(-1)) (f : formule') =
        Var p -> nvar,V p,B true
      | Neg p -> nvar,N p,B true
      | Ou (a,b) ->
-        let (x,la,a) = tseitin' ~nvar:nvar (F a) in
-        let (x',lb,b) = tseitin' ~nvar:x (F b) in
+        let (x,la,a) = tseitin' nvar (F a) in
+        let (x',lb,b) = tseitin' x (F b) in
         let q = V x' in
         let clause =
           let c1 = F (Ou (to_f (neg q),ou la lb)) in
@@ -50,8 +50,8 @@ let rec tseitin' ?(nvar=(-1)) (f : formule') =
           et a (et b (et c3 (et c2 c1))) in
         x'-1,q,clause
      | Et (a,b) ->
-        let (x,la,a) = tseitin' ~nvar:nvar (F a) in
-        let (x',lb,b) = tseitin' ~nvar:x (F b) in
+        let (x,la,a) = tseitin' nvar (F a) in
+        let (x',lb,b) = tseitin' x (F b) in
         let q = V x' in
         let clause =
           let c1 = F (Ou (to_f (neg la), (ou (neg lb) q))) in
@@ -61,12 +61,14 @@ let rec tseitin' ?(nvar=(-1)) (f : formule') =
         x'-1,q,clause
 
 (* Algorithme de Tseitin (1970), transforme une formule en FNC de manière efficace *)
-let tseitin (f : formule) =
-  let (_,l,f) = tseitin' (F f) in
+let tseitin ?(nvar=(-1)) (f : formule) =
+  let (n,l,f) = tseitin' nvar (F f) in
   let l = to_f l in
-  match f with
-  | B b ->
-     if b
-     then l
-     else Et (Var 0, Neg 0)
-  | F f -> Et (l,f)
+  let fnc =
+    match f with
+    | B b ->
+       if b
+       then l
+       else Et (Var 0, Neg 0)
+    | F f -> Et (l,f) in
+  (n-1,fnc)
