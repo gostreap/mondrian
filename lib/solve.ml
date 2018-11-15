@@ -17,28 +17,17 @@ let rec list_of_fnc (fnc : formule) =
     match f with
     | Var x -> (false,x)
     | Neg x -> (true,x)
-    | _ -> failwith "list_of_fnc VAR"
   in
   let rec get_ou f =
     match f with
-    | Ou (a,b) ->
-       begin
-         match a with
-         | Ou _ -> get_ou a @ get_ou b
-         | _ -> get_var a :: get_ou b
-       end
-    | _ -> [get_var f]
+    | Et _ -> failwith "Was not in fnc"
+    | Lit x -> [get_var x]
+    | Ou (a,b) -> get_ou a @ get_ou b
   in
   match fnc with
-  | Et (a,b) ->
-     begin
-       match a with
-       | Et _ -> list_of_fnc a @ list_of_fnc b
-       | _ -> get_ou a :: list_of_fnc b
-     end
-  | Ou _ -> [get_ou fnc]
-  | _ ->
-     [[get_var fnc]]
+  | Et (a,b) ->  list_of_fnc a @ list_of_fnc b
+  | Ou _  -> [get_ou fnc]
+  | Lit x -> [[get_var x]]
 
 (* Affiche une solution donnée par le sat solver *)
 let print_possible_sol solution =

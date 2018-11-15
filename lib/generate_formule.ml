@@ -5,7 +5,7 @@ open Formule
 open Bsp_sat
 open Tseitin
 
-(* Renvoie la liste de tout les tuples à n éléments que l'on 
+(* Renvoie la liste de tout les tuples à n éléments que l'on
    peut former avec les éléments de list *)
 let rec get_n_tuples_in_list (n : int) (list : 'a list) =
   let rec aux x l res =
@@ -22,7 +22,7 @@ let rec get_n_tuples_in_list (n : int) (list : 'a list) =
 (* Renvoie une liste de formule où chaque formule est de la forme :
    - Var n si blue est faux
    - Neg n si blue est vrai
-   Cette fonction prend en argument une liste de Rectangle et échoue si 
+   Cette fonction prend en argument une liste de Rectangle et échoue si
    la liste contient une Ligne
  *)
 let rec formule_list_of_bsp_sat_list (blue : bool) (list : bsp_sat list) =
@@ -37,39 +37,36 @@ let rec formule_list_of_bsp_sat_list (blue : bool) (list : bsp_sat list) =
               (Var n)::(formule_list_of_bsp_sat_list blue q)
        | _ -> failwith "Get_fnd_of_bsp_sat"
 
-(* Prend en argument une liste red de Var n et une liste list de Rectangle 
-   et renvoie le complémentaire de red dans list. C'est à dire une liste 
+(* Prend en argument une liste red de Var n et une liste list de Rectangle
+   et renvoie le complémentaire de red dans list. C'est à dire une liste
    de Neg n correspondant au rectangle non contenu dans red *)
-let get_compl (red : formule list) (rect : bsp_sat list) =
-  let rec filtre (x : formule) (red : formule list) =
+let get_compl (red : lit list) (rect : bsp_sat list) =
+  let rec filtre (x : lit) (red : lit list) =
     match red with
     | [] -> true
     | y::q ->
        if same_var x y then false
        else filtre x q
   in
-  let rec neg ?(res = []) l =
+  let rec neg_l ?(res = []) l =
       match l with
       | [] -> res
-      | x::q ->
-         match x with
-         | Var x -> neg ~res:((Neg x)::res) q
-         | _ -> failwith "neg"
+      | x::q -> neg_l ~res:((neg x)::res) q
   in
   let compl = List.filter (fun x -> filtre x red) (formule_list_of_bsp_sat_list false rect) in
-  neg compl
+  neg_l compl
 
-let get_all_compl (red : formule list list) (list : bsp_sat list) =
+let get_all_compl (red : lit list list) (list : bsp_sat list) =
   List.map (fun x -> x@(get_compl x list)) red
 
 (* Renvoie une liste de liste de string correspondant
    à une fnd satisfaisable ssi il existe un choix de
    coloration possible pour la ligne bsp_sat
    ATTENTION : seulement pour cette ligne, pas pour ces fils *)
-let get_list_list_of_bsp_sat (ligne : bsp_sat) : formule list list =
+let get_list_list_of_bsp_sat (ligne : bsp_sat) : lit list list =
   let r, b, list = get_adja_stat ligne in
   let size = r + b + List.length list in
-  let rec aux (blue:bool) (list : bsp_sat list list) : formule list list =
+  let rec aux (blue:bool) (list : bsp_sat list list) : lit list list =
     match list with
     | [] -> []
     | l::q -> (formule_list_of_bsp_sat_list blue l)::(aux blue q)
@@ -96,17 +93,17 @@ let get_list_list_of_bsp_sat (ligne : bsp_sat) : formule list list =
 
 (* Prend une liste de liste de formule et retourne une formule de la forme
  * (_ et _ et ... et _) ou (_ et _ et ... et _) ou ... ou (_ et _ et ... et _)*)
-let get_formule_of_list_list (ll : formule list list) : formule option =
-  let rec conj_all (list : formule list) : formule option =
+let get_formule_of_list_list (ll : lit list list) : formule option =
+  let rec conj_all (list : lit list) : formule option =
     match list with
     | [] -> None
     | x::q ->
        let f = conj_all q in
        match f with
-       | None -> Some x
-       | Some a -> Some (Et (x,a))
+       | None -> Some (Lit x)
+       | Some a -> Some (Et (Lit x,a))
   in
-  let rec disj_all (list : formule list list) : formule option =
+  let rec disj_all (list : lit list list) : formule option =
     match list with
     | [] -> None
     | x::q ->
@@ -150,7 +147,7 @@ let rec get_formule_complete ?(nvar=(-1)) (bsp_sat : bsp_sat) : int * formule op
 (* Renvoie la formule correspondant à la solution encodé dans bsp_sat*)
 let rec get_actual_sol (orig : bsp_sat) =
   match orig with
-  | R_sat (i,_,x) -> switch_coul (Neg i) (Var i) x
+  | R_sat (i,_,x) -> Lit (switch_coul (Neg i) (Var i) x)
   | L_sat (_,_,l,r) -> Ou (get_actual_sol l, get_actual_sol r)
 
 (* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution*)
