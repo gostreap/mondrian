@@ -1,7 +1,18 @@
 open Formule
 
+(* Nouveu type formule encapsulant aussi les booléens *)
 type formule' = F of formule | B of bool
 
+(* type littéral *)
+type lit = V of int | N of int
+
+(* Transforme un littéral en formule *)
+let to_f a =
+  match a with
+  | V x -> Var x
+  | N x -> Neg x
+
+(* redéfinitions opérateurs *)
 let et a b =
   match a with
     B c -> if c then b else B false
@@ -10,62 +21,51 @@ let et a b =
        B c -> if c then a else B false
      | F g -> F (Et (f,g))
 
-let ou a b =
-  match a with
-    B c -> if c then B true else b
-  | F f ->
-     match b with
-       B c -> if c then B true else a
-     | F g -> F (Ou (f,g))
+let ou a b = (Ou (to_f a, to_f b))
 
 let neg a =
   match a with
-    B bool -> B (not bool)
-  | F f ->
-     match f with
-     | Var x -> F (Neg x)
-     | Neg x -> F (Var x)
-     | _ -> failwith "neg'"
+  | V x -> N x
+  | N x -> V x
 
+(* Auxiliaire de Tseitin *)
 let rec tseitin' ?(nvar=(-1)) (f : formule') =
   match f with
   | B b ->
      if b
-     then (nvar-1,F (Var nvar),F (Var nvar))
-     else (nvar-1,F (Var nvar),F (Neg nvar))
+     then (nvar-1,(V nvar),F (Var nvar))
+     else (nvar-1,(V nvar),F (Neg nvar))
   | F f ->
      match f with
-       Var p -> nvar,F (Var p),B true
+       Var p -> nvar,V p,B true
      | Neg p ->
         let (x,la,a) = tseitin' ~nvar:nvar (F (Var p)) in
         (x,neg la,a)
      | Ou (a,b) ->
         let (x,la,a) = tseitin' ~nvar:nvar (F a) in
         let (x',lb,b) = tseitin' ~nvar:x (F b) in
-        let q = F (Var x') in
+        let q = V x' in
         let clause =
-          let c1 = ou (neg q) (ou la lb) in
-          let c2 = ou (neg lb) q in
-          let c3 = ou (neg la) q in
+          let c1 = F (Ou (to_f (neg q),ou la lb)) in
+          let c2 = F (ou (neg lb) q) in
+          let c3 = F (ou (neg la) q) in
           et a (et b (et c3 (et c2 c1))) in
         x'-1,q,clause
      | Et (a,b) ->
         let (x,la,a) = tseitin' ~nvar:nvar (F a) in
         let (x',lb,b) = tseitin' ~nvar:x (F b) in
-        let q = F (Var x') in
+        let q = V x' in
         let clause =
-          let c1 = ou (neg la) (ou (neg lb) q) in
-          let c2 = ou (neg q) lb in
-          let c3 = ou (neg q) la in
+          let c1 = F (Ou (to_f (neg la), (ou (neg lb) q))) in
+          let c2 = F (ou (neg q) lb) in
+          let c3 = F (ou (neg q) la) in
           et a (et b (et c1 (et c3 c2))) in
         x'-1,q,clause
 
+(* Algorithme de Tseitin (1970), transforme une formule en FNC de manière efficace *)
 let tseitin (f : formule) =
   let (_,l,f) = tseitin' (F f) in
-  let l =
-    match l with
-    | F l -> l
-    | _ -> failwith "" in
+  let l = to_f l in
   match f with
   | B b ->
      if b
