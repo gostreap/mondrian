@@ -21,7 +21,7 @@ let et a b =
        B c -> if c then a else B false
      | F g -> F (Et (f,g))
 
-let ou a b = (Ou (to_f a, to_f b))
+let ou a b = Ou (to_f a, to_f b)
 
 let neg a =
   match a with
@@ -38,9 +38,7 @@ let rec tseitin' ?(nvar=(-1)) (f : formule') =
   | F f ->
      match f with
        Var p -> nvar,V p,B true
-     | Neg p ->
-        let (x,la,a) = tseitin' ~nvar:nvar (F (Var p)) in
-        (x,neg la,a)
+     | Neg p -> nvar,N p,B true
      | Ou (a,b) ->
         let (x,la,a) = tseitin' ~nvar:nvar (F a) in
         let (x',lb,b) = tseitin' ~nvar:x (F b) in
