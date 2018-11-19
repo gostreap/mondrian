@@ -128,6 +128,7 @@ let rec get_formule_complete ?(nvar=(-1)) (bsp_sat : bsp_sat) : int * formule op
   | Some (n,a), Some b -> (n,Some (Et (a,b)))
 
 (* Renvoie la formule correspondant à la solution encodé dans bsp_sat*)
+(* DÉJA SOUS FNC ET NIÉ*)
 let rec get_actual_sol (orig : bsp_sat) =
   match orig with
   | R_sat (i,_,x) ->
