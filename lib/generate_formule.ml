@@ -39,7 +39,20 @@ let get_compl (red : lit list) (rect : int list) =
 let get_all_compl (red : lit list list) (list : bsp_sat list) =
   List.map (fun x -> x@(get_compl x list)) red
     *)
-
+let get_compl c list =
+  List.filter (fun a -> not (List.mem a c)) list
+  
+let generate_config r g b rs gs bs list =
+  let red = get_n_tuples_in_list (r-rs) list in
+  let redform = List.map (fun x -> List.map (fun n -> choose Red n) x) red in
+  let green = List.map (fun x -> (get_n_tuples_in_list (g-gs) (get_compl x list))) red in
+  let greenform = List.map (fun x -> List.map (fun y -> List.map (fun n -> choose Green n) y) x) green in
+  let blue = List.map2 (fun r x -> List.map (fun g -> (get_n_tuples_in_list (b-bs) (get_compl (r@g) list))) x) red green in
+  let blueform = List.map (fun x -> List.map (fun y -> List.map (fun z -> List.map (fun n -> choose Blue n) z) y ) x) blue in
+  let greenblueform = List.map2 (fun x y -> List.map2 (fun g z -> List.map (fun b -> g@b) z) x y) greenform blueform in
+  let form = List.map2 (fun r x -> List.map (fun y -> List.map (fun z -> r@z) y) x) redform greenblueform in
+  form |> List.flatten |> List.flatten
+             
 (* Renvoie une liste de liste de string correspondant
    à une fnd satisfaisable ssi il existe un choix de
    coloration possible pour la ligne bsp_sat
