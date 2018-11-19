@@ -39,6 +39,7 @@ let get_compl (red : lit list) (rect : int list) =
 let get_all_compl (red : lit list list) (list : bsp_sat list) =
   List.map (fun x -> x@(get_compl x list)) red
     *)
+
 let get_compl c list =
   List.filter (fun a -> not (List.mem a c)) list
   
@@ -53,6 +54,23 @@ let generate_config r g b rs gs bs list =
   let form = List.map2 (fun r x -> List.map (fun y -> List.map (fun z -> r@z) y) x) redform greenblueform in
   form |> List.flatten |> List.flatten
              
+(* Genère les triplets (x,y,z) tels que (si coul = Red)
+ - x+y+z = nadja
+ - x > y && x > z
+ - i >= is && i <= nadja \forall i \in {x,y,z}
+*)
+let generate_triplet coul nadja rs gs bs =
+  let rec genl f l =
+    if f > l
+    then []
+    else f :: (genl (f+1) l) in
+  let xl = genl rs (switch_coul nadja (nadja/2) (nadja/2) coul) in
+  let yl = genl gs (switch_coul (nadja/2) nadja (nadja/2) coul) in
+  let zl = genl bs (switch_coul (nadja/2) (nadja/2) nadja coul) in
+  let is_valid (x,y,z) = x+y+z = nadja && x > y && x > z in
+  let all_l = List.map (fun x -> List.map (fun y -> List.map (fun z -> (x,y,z)) zl) yl ) xl in
+  List.filter is_valid (List.concat (List.concat all_l))
+
 (* Renvoie une liste de liste de string correspondant
    à une fnd satisfaisable ssi il existe un choix de
    coloration possible pour la ligne bsp_sat
@@ -141,6 +159,7 @@ let rec get_formule_complete ?(nvar=(-1)) (bsp_sat : bsp_sat) : int * formule op
   | Some (n,a), Some b -> (n,Some (Et (a,b)))
 
 (* Renvoie la formule correspondant à la solution encodé dans bsp_sat*)
+(* DÉJA SOUS FNC ET NIÉ*)
 let rec get_actual_sol (orig : bsp_sat) =
   match orig with
   | R_sat (i,_,x) ->
