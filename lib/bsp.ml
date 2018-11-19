@@ -31,7 +31,12 @@ let rec string_of_bsp (bsp : bsp) =
 let rec random_bsp_naive ?(v=true) ?(minsize=20) ?(start_larg=0)
                          ?(start_haut=0) (prof : int) (larg : int) (haut : int) =
   if prof = 0 || larg-start_larg <= minsize*2 || haut-start_haut <= minsize*2
-  then R (Some (if Random.bool () then Blue else Red))
+  then R (Some (
+              match Random.int 3 with
+              | 0 -> Red
+              | 1 -> Green
+              | 2 -> Blue
+              | _ -> failwith "random"))
   else
     let lab =
       { coord =
@@ -69,7 +74,7 @@ let rec change_color ?(v=true) (bsp : bsp) ((x,y) as p : point) =
      else if y < lab.coord
      then L (lab, change_color ~v:(not v) left p, right)
      else L (lab, left, change_color ~v:(not v) right p)
-  | R c -> R (Some (maybe Blue neg_coul c))
+  | R c -> R (Some (maybe Blue next_coul c))
 
 (*
 Retourne un couple (r,b) où:
@@ -80,32 +85,33 @@ let get_coul_sum (bsp : bsp) =
   let rec get_coul ?(v=true) (is_l : bool) (bsp : bsp) =
     match bsp with
     | L (_,x,y) ->
-       let rx,bx as x' = get_coul ~v:(not v) is_l x in
-       let ry,by as y' = get_coul ~v:(not v) is_l y in
+       let rx,gx,bx as x' = get_coul ~v:(not v) is_l x in
+       let ry,gy,by as y' = get_coul ~v:(not v) is_l y in
        if not v
        then if is_l then y' else x'
-       else (rx+ry,bx+by)
-    | R x -> maybe (0,0) (switch_coul (1,0) (0,1)) x
+       else (rx+ry,gx+gy,bx+by)
+    | R x -> maybe (0,0,0) (switch_coul (1,0,0) (0,1,0) (0,0,1)) x
   in
   match bsp with
-  | R _ -> (0,0)
+  | R _ -> (0,0,0)
   | L (_,l,r) ->
-     let (lr,lb) = get_coul true l in
-     let (rr,rb) = get_coul false r in
-     (lr+rr,lb+rb)
+     let (lr,lg,lb) = get_coul true l in
+     let (rr,rg,rb) = get_coul false r in
+     (lr+rr,lg+rg,lb+rb)
 
 (* Renvoie la couleur naturel de la ligne correspondant à la racine de bsp *)
 let get_color_line (bsp : bsp) =
-  let (r,b) = get_coul_sum bsp in
-  if r = 0 && b = 0
+  let (r,g,b) = get_coul_sum bsp in
+  if r = 0 && b = 0 && g=0
   then None
   else
-    if r = b then
-      Some Purple
-    else if r < b then
-      Some (C Blue)
-    else
-      Some (C Red)
+    if r = b && b = g then Some White
+    else if r > b && r > g then Some (C Red)
+    else if g > r && g > b then Some (C Green)
+    else if b > r && b > g then Some (C Blue)
+    else if r = b then Some Purple
+    else if r = g then Some Yellow
+    else Some Cyan
 
 (* Vérifie si bsp2 est une solution par rapport à bsp1 *)
 let rec check_current (bsp1 : bsp) (bsp2 : bsp) =
@@ -115,14 +121,15 @@ let rec check_current (bsp1 : bsp) (bsp2 : bsp) =
        match bsp2 with
          L (_,x',y') ->
           let cond =
-            let r ,b =  get_coul_sum bsp1 in
-            let r',b' = get_coul_sum bsp2 in
-            if r' = b'
-            then r = b
-            else
-              if r' < b'
-              then r < b
-              else r > b
+            let r ,g,b =  get_coul_sum bsp1 in
+            let r',g',b' = get_coul_sum bsp2 in
+            if r = b && b = g then r' = b' && b' = g'
+            else if r > b && r > g then r' > b' && r' > g'
+            else if g > r && g > b then g' > r' && g' > b'
+            else if b > r && b > g then b' > r' && b' > g'
+            else if r = b then r'=b'
+            else if r = g then r'=g'
+            else b'=g'
           in check_current x x' && check_current y y' && cond
        | _ -> false
      end

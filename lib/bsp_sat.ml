@@ -12,7 +12,7 @@ let rec string_of_bsp_sat (bsp : bsp_sat) =
   | L_sat (lab,b,l,r) ->
      "(" ^ (string_of_bsp_sat l) ^ " " ^string_of_bool b  ^ "*" ^ (maybe "black" string_of_couleur_l lab) ^
          " " ^ (string_of_bsp_sat r) ^ ")"
-  | R_sat (n,x,c) -> string_of_int n ^ "*" ^ string_of_bool x ^ "*" ^ (switch_coul "b" "r" c)
+  | R_sat (n,x,c) -> string_of_int n ^ "*" ^ string_of_bool x ^ "*" ^ (switch_coul "r" "g" "b" c)
 
 let bsp_sat_of_bsp (bsp : bsp) =
   let rec aux v bsp =
@@ -46,7 +46,7 @@ let rec secure_bsp_sat (bsp : bsp_sat) =
        | _ -> None
 
      in
-     if maybe false (switch_coul_l false (fun _ -> true)) c
+     if maybe false (switch_coul_l false false false false (fun _ -> true)) c
      then
        match lr with
        | Some x -> x
@@ -61,28 +61,30 @@ let rec loop_sat (n : int) (b : bsp_sat) =
 
 (* TOOOOODDDDDDOOOOOO Compter en utilisant les lignes sécurisées ? *)
 
-(* Renvoie un couple (r, b, list) où:
+(* Renvoie un couple (r, g, b, list) où:
  * r est le nombre de rectangle rouge adjacents sécurisés
+ * g est le nombre de rectangle vert adjacents sécurisés
  * b est le nombre de rectangle bleu adjacents sécurisés
  * list est la liste des rectangles non sécurisés*)
 let get_adja_stat (bsp_sat : bsp_sat) =
-  let rec get_stat ?(v=true) (is_l : bool) (bsp_sat : bsp_sat) =
+  let rec get_stat ?(v=true) (is_l : bool) (bsp_sat : bsp_sat)
+          : (int * int * int * int list) =
     match bsp_sat with
     | L_sat (_,_,x,y) ->
-       let rx,bx,ll as x' = get_stat ~v:(not v) is_l x in
-       let ry,by,lr as y' = get_stat ~v:(not v) is_l y in
+       let rx,gx,bx,ll as x' = get_stat ~v:(not v) is_l x in
+       let ry,gy,by,lr as y' = get_stat ~v:(not v) is_l y in
        if not v
        then if is_l then y' else x'
-       else (rx+ry,bx+by,ll@lr)
-    | R_sat (_,s,x) ->
+       else (rx+ry,gx+gy,bx+by,ll@lr)
+    | R_sat (n,s,x) ->
        if s then
-           let (r,b) = maybe (0,0) (switch_coul (1,0) (0,1)) (Some x) in
-           (r, b, [])
-       else (0,0,[bsp_sat])
+           let (r,g,b) = switch_coul (1,0,0) (0,1,0) (0,0,1) x in
+           (r,g, b, [])
+       else (0,0,0,[n])
   in
   match bsp_sat with
-  | R_sat _ -> (0,0,[])
+  | R_sat _ -> (0,0,0,[])
   | L_sat (_,_,l,r) ->
-     let (lr,lb,llist) = get_stat true l in
-     let (rr,rb,rlist) = get_stat false r in
-     (lr+rr,lb+rb,llist@rlist)
+     let (lr,lg,lb,llist) = get_stat true l in
+     let (rr,rg,rb,rlist) = get_stat false r in
+     (lr+rr,lg+rg,lb+rb,llist@rlist)

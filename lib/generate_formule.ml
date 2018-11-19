@@ -19,57 +19,36 @@ let rec get_n_tuples_in_list (n : int) (list : 'a list) =
       | x::q -> (aux x (get_n_tuples_in_list (n-1) q) [])@(get_n_tuples_in_list n q)
   else [[]]
 
-(* Renvoie une liste de formule où chaque formule est de la forme :
-   - Var n si blue est faux
-   - Neg n si blue est vrai
-   Cette fonction prend en argument une liste de Rectangle et échoue si
-   la liste contient une Ligne
+let choose coul n =
+  match coul with
+  | Red -> (Var (2*n),Var(2*n+1))
+  | Green -> (Var (2*n),Neg (2*n+1))
+  | Blue -> (Neg (2*n),Neg (2*n+1))
+  
+(* Convertie une liste d'identifiant de rectangle en une liste de tuple de littéraux, qui une fois conjoncté sont vrais si et seulement si les rectangles sont de couleurs coul.
  *)
-let rec formule_list_of_bsp_sat_list (blue : bool) (list : bsp_sat list) =
-    match list with
-    | [] -> []
-    | x::q ->
-       match x with
-       | R_sat (n,_,_) ->
-          if blue then
-              (Neg n)::(formule_list_of_bsp_sat_list blue q)
-          else
-              (Var n)::(formule_list_of_bsp_sat_list blue q)
-       | _ -> failwith "Get_fnd_of_bsp_sat"
+let formule_list_of_bsp_sat_list (coul : couleur) (list : int list) =
+  List.map (choose coul) list
 
-(* Prend en argument une liste red de Var n et une liste list de Rectangle
-   et renvoie le complémentaire de red dans list. C'est à dire une liste
-   de Neg n correspondant au rectangle non contenu dans red *)
-let get_compl (red : lit list) (rect : bsp_sat list) =
-  let rec filtre (x : lit) (red : lit list) =
-    match red with
-    | [] -> true
-    | y::q ->
-       if same_var x y then false
-       else filtre x q
-  in
-  let rec neg_l ?(res = []) l =
-      match l with
-      | [] -> res
-      | x::q -> neg_l ~res:((neg x)::res) q
-  in
-  let compl = List.filter (fun x -> filtre x red) (formule_list_of_bsp_sat_list false rect) in
-  neg_l compl
+(* Prend en argument une liste de tuple de littéraux  et une liste liste d'identifiant
+   et renvoie la liste des identifiants des rectangles qui ne sont pas dans la liste de littéraux
+let get_compl (red : lit list) (rect : int list) =
+ *)
 
+   (*
 let get_all_compl (red : lit list list) (list : bsp_sat list) =
   List.map (fun x -> x@(get_compl x list)) red
+    *)
 
 (* Renvoie une liste de liste de string correspondant
    à une fnd satisfaisable ssi il existe un choix de
    coloration possible pour la ligne bsp_sat
    ATTENTION : seulement pour cette ligne, pas pour ces fils *)
-let get_list_list_of_bsp_sat (ligne : bsp_sat) : lit list list =
-  let r, b, list = get_adja_stat ligne in
-  let size = r + b + List.length list in
-  let rec aux (blue:bool) (list : bsp_sat list list) : lit list list =
-    match list with
-    | [] -> []
-    | l::q -> (formule_list_of_bsp_sat_list blue l)::(aux blue q)
+let get_list_list_of_bsp_sat (ligne : bsp_sat) : formule list list =
+  let r,g,b, list = get_adja_stat ligne in
+  let size = r + g + b + List.length list in
+  let aux (coul:couleur) (list : int list list) : formule list list =
+    List.map (fun u -> List.map (fun (x,y) -> Et (Lit x,Lit y)) (formule_list_of_bsp_sat_list coul u)) list
   in
   match ligne with
   | R_sat (_,_,_) -> []
@@ -78,32 +57,36 @@ let get_list_list_of_bsp_sat (ligne : bsp_sat) : lit list list =
      | None -> []
      | Some c ->
         match c with
+        | Yellow -> failwith ""
+        | Cyan -> failwith ""
+        | White -> failwith ""
      (* noter que, dans le cas Purple, size est pair *)
-        | Purple ->
-           let red  = aux false (get_n_tuples_in_list (size/2-r) list) in
-           get_all_compl red list
+        | Purple -> failwith ""
         | C co ->
            match co with
            | Red ->
               if r > size/2 then []
-              else aux false (get_n_tuples_in_list (size/2+1-r) list)
+              else aux Red (get_n_tuples_in_list (size/2+1-r) list)
+           | Green ->
+              if g > size/2 then []
+              else aux Green (get_n_tuples_in_list (size/2+1-g) list)
            | Blue ->
               if b > size/2 then []
-              else aux true (get_n_tuples_in_list (size/2+1-b) list)
+              else aux Blue (get_n_tuples_in_list (size/2+1-b) list)
 
 (* Prend une liste de liste de formule et retourne une formule de la forme
  * (_ et _ et ... et _) ou (_ et _ et ... et _) ou ... ou (_ et _ et ... et _)*)
-let get_formule_of_list_list (ll : lit list list) : formule option =
-  let rec conj_all (list : lit list) : formule option =
+let get_formule_of_list_list (ll : formule list list) : formule option =
+  let rec conj_all (list : formule list) : formule option =
     match list with
     | [] -> None
     | x::q ->
        let f = conj_all q in
        match f with
-       | None -> Some (Lit x)
-       | Some a -> Some (Et (Lit x,a))
+       | None -> Some x
+       | Some a -> Some (Et (x,a))
   in
-  let rec disj_all (list : lit list list) : formule option =
+  let rec disj_all (list : formule list list) : formule option =
     match list with
     | [] -> None
     | x::q ->
@@ -147,7 +130,9 @@ let rec get_formule_complete ?(nvar=(-1)) (bsp_sat : bsp_sat) : int * formule op
 (* Renvoie la formule correspondant à la solution encodé dans bsp_sat*)
 let rec get_actual_sol (orig : bsp_sat) =
   match orig with
-  | R_sat (i,_,x) -> Lit (switch_coul (Neg i) (Var i) x)
+  | R_sat (i,_,x) ->
+     let x,y = choose x i
+     in Et (Lit x, Lit y)
   | L_sat (_,_,l,r) -> Ou (get_actual_sol l, get_actual_sol r)
 
 (* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution*)

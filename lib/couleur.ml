@@ -1,23 +1,44 @@
-type couleur = Red | Blue
+type couleur = Red | Green | Blue
 
-type couleur_l = Purple | C of couleur
+type couleur_l =
+  Purple
+| Yellow
+| Cyan
+| White
+| C of couleur
 
-let switch_coul_l e f c =
+let switch_coul_l p y c w f coul =
+  match coul with
+  | Purple -> p
+  | Yellow -> y
+  | Cyan   -> c
+  | White  -> w
+  | C c    -> f c
+
+let switch_coul r g b c =
   match c with
-  | Purple -> e
-  | C c -> f c
-
-let switch_coul r b c =
-    match c with
   | Red -> r
+  | Green -> g
   | Blue -> b
 
-let get_rgb = switch_coul Graphics.red Graphics.blue
+let get_rgb = switch_coul Graphics.red Graphics.green Graphics.blue
 
-let get_rgb_l = switch_coul_l (Graphics.rgb 255 0 255) get_rgb
+let get_rgb_l =
+  switch_coul_l
+    (Graphics.rgb 255 0 255)
+    (Graphics.rgb 255 255 0)
+    (Graphics.rgb 0 255 255)
+    (Graphics.rgb 255 255 255)
+    get_rgb
 
-let string_of_couleur = switch_coul "red" "blue"
+let string_of_couleur = switch_coul "red" "green" "blue"
 
-let string_of_couleur_l = switch_coul_l "purple" string_of_couleur
+let string_of_couleur_l =
+  switch_coul_l
+    "purple"
+    "yellow"
+    "cyan"
+    "white"
+    string_of_couleur
 
-let neg_coul = switch_coul Blue Red
+let next_coul = switch_coul Green Blue Red
