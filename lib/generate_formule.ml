@@ -43,7 +43,7 @@ let get_all_compl (red : lit list list) (list : bsp_sat list) =
 let get_compl c list =
   List.filter (fun a -> not (List.mem a c)) list
   
-let generate_config r g b rs gs bs list =
+let generate_config (r,g,b) (rs,gs,bs) list =
   let red = get_n_tuples_in_list (r-rs) list in
   let redform = List.map (fun x -> List.map (fun n -> choose Red n) x) red in
   let green = List.map (fun x -> (get_n_tuples_in_list (g-gs) (get_compl x list))) red in
@@ -71,6 +71,12 @@ let generate_triplet coul nadja rs gs bs =
   let all_l = List.map (fun x -> List.map (fun y -> List.map (fun z -> (x,y,z)) zl) yl ) xl in
   List.filter is_valid (List.concat (List.concat all_l))
 
+let generate_all_config coul nadja rs gs bs list=
+  let triplets = generate_triplet coul nadja rs gs bs in
+  let configs = List.map (fun x -> generate_config x (rs,gs,bs) list) triplets in
+  List.flatten configs
+
+  
 (* Renvoie une liste de liste de string correspondant
    à une fnd satisfaisable ssi il existe un choix de
    coloration possible pour la ligne bsp_sat
