@@ -13,7 +13,7 @@ let rec get_n_tuples_in_list (n : int) (list : 'a list) : 'a list list=
   if n != 0 then
     match list with
     | [] -> []
-    | x::q -> (aux x (get_n_tuples_in_list (n-1) q))@(get_n_tuples_in_list n q)
+    | x::q -> List.rev_append (aux x (get_n_tuples_in_list (n-1) q)) (get_n_tuples_in_list n q)
   else [[]]
 
 let choose coul n =
@@ -21,36 +21,37 @@ let choose coul n =
   | Red -> (Var (2*n),Var(2*n+1))
   | Green -> (Var (2*n),Neg (2*n+1))
   | Blue -> (Neg (2*n),Neg (2*n+1))
-  
+
 (* Convertie une liste d'identifiant de rectangle en une liste de tuple de littéraux, qui une fois conjoncté sont vrais si et seulement si les rectangles sont de couleurs coul.
  *)
 (* let formule_list_of_bsp_sat_list (coul : couleur) (list : int list) =
  *   List.map (choose coul) list *)
 
-(* Prend en argument une liste de tuple de littéraux  et une liste liste d'identifiant
-   et renvoie la liste des identifiants des rectangles qui ne sont pas dans la liste de littéraux
-let get_compl (red : lit list) (rect : int list) =
- *)
-
-   (*
-let get_all_compl (red : lit list list) (list : bsp_sat list) =
-  List.map (fun x -> x@(get_compl x list)) red
-    *)
-
 let get_compl c list =
   List.filter (fun a -> not (List.mem a c)) list
-  
+
+(* Similaire à rev_map mais ajoute une liste en fin*)
+let rev_map_ap f l xs =
+  let rec rmap_f accu = function
+    | [] -> accu
+    | a::l -> rmap_f (f a :: accu) l
+  in rmap_f xs l
+
+let concat_map_term f l = List.fold_left (fun acc x -> List.rev_append (f x) acc) [] l
+
 let generate_config (r,g,b) (rs,gs,bs) list =
   let red = get_n_tuples_in_list (r-rs) list in
-  let redform = List.rev_map (fun x -> List.rev_map (fun n -> choose Red n) x) red in
-  let green = List.rev_map (fun x -> (get_n_tuples_in_list (g-gs) (get_compl x list))) red in
-  let greenform = List.rev_map (fun x -> List.rev_map (fun y -> List.rev_map (fun n -> choose Green n) y) x) green in
-  let blue = List.rev_map2 (fun r x -> List.rev_map (fun g -> (get_n_tuples_in_list (b-bs) (get_compl (r@g) list))) x) red green in
-  let blueform = List.rev_map (fun x -> List.rev_map (fun y -> List.rev_map (fun z -> List.rev_map (fun n -> choose Blue n) z) y ) x) blue in
-  let greenblueform = List.rev_map2 (fun x y -> List.rev_map2 (fun g z -> List.rev_map (fun b -> g@b) z) x y) greenform blueform in
-  let form = List.rev_map2 (fun r x -> List.rev_map (fun y -> List.rev_map (fun z -> r@z) y) x) redform greenblueform in
-  form |> List.flatten |> List.flatten
-             
+  let mkredform = rev_map_ap (fun n -> choose Red n) in
+  let mkgreen r = get_n_tuples_in_list (g-gs) (get_compl r list) in
+  let mkgreenform =  List.map (fun n -> choose Green n) in
+  let mkblue r g = get_n_tuples_in_list (b-bs) (get_compl (List.rev_append r g) list) in
+  let mkblueform = rev_map_ap (fun n -> choose Blue n) in
+  let mkgreenblueform r =
+    List.map
+      (fun g -> let g' = mkgreenform g in List.map (fun b -> mkblueform b g') (mkblue r g))
+      (mkgreen r) in
+  concat_map_term (fun r -> concat_map_term (fun y -> List.map (fun z -> mkredform r z) y) (mkgreenblueform r)) red
+  
 (* Genère les triplets (x,y,z) tels que (si coul = Red)
  - x+y+z = nadja
  - x > y && x > z
@@ -84,10 +85,8 @@ let generate_all_config coul nadja rs gs bs list=
        | Blue -> r+g+b = nadja && b > r && b > g  
   in
   let triplets = generate_triplet is_valid coul nadja rs gs bs in
-  let configs = List.rev_map (fun x -> generate_config x (rs,gs,bs) list) triplets in
-  List.flatten configs
+  concat_map_term (fun x -> generate_config x (rs,gs,bs) list) triplets
 
-  
 (* Renvoie une liste de liste de string correspondant
    à une fnd satisfaisable ssi il existe un choix de
    coloration possible pour la ligne bsp_sat
