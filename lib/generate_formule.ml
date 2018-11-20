@@ -42,18 +42,16 @@ let rev_map_ap f l xs =
 let generate_config (r,g,b) (rs,gs,bs) list =
   let red = get_n_tuples_in_list (r-rs) list in
   let mkredform = rev_map_ap (fun n -> choose Red n) in
-  let green = List.map (fun x -> (get_n_tuples_in_list (g-gs) (get_compl x list))) red in
+  let mkgreen r = get_n_tuples_in_list (g-gs) (get_compl r list) in
   let mkgreenform =  List.map (fun n -> choose Green n) in
   let mkblue r x = List.map (fun g -> (get_n_tuples_in_list (b-bs) (get_compl (List.rev_append r g) list))) x in
   let mkblueform = rev_map_ap (fun n -> choose Blue n) in
-  let greenblueform = List.map2
-                        (fun g r ->
-                          List.map2
-                            (fun g -> let g = mkgreenform g in List.map (fun b -> mkblueform b g))
-                             g (mkblue r g)
-                        )
-                        green red in
-  let form = List.map2 (fun r x -> List.map (fun y -> List.map (fun z -> mkredform r z) y) x) red greenblueform in
+  let mkgreenblueform r =
+    let g = mkgreen r in
+    List.map2
+      (fun g -> let g = mkgreenform g in List.map (fun b -> mkblueform b g))
+      g (mkblue r g) in
+  let form = List.map (fun r -> List.map (fun y -> List.map (fun z -> mkredform r z) y) (mkgreenblueform r)) red in
   form |> concat_term |> concat_term
 
 (* Genère les triplets (x,y,z) tels que (si coul = Red)
