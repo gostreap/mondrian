@@ -46,12 +46,12 @@ let generate_config (r,g,b) (rs,gs,bs) list =
   let mkgreenform =  List.map (fun n -> choose Green n) in
   let mkblue r g = get_n_tuples_in_list (b-bs) (get_compl (List.rev_append r g) list) in
   let mkblueform = rev_map_ap (fun n -> choose Blue n) in
-  let mkgreenblueform r =
-    List.map
-      (fun g -> let g' = mkgreenform g in List.map (fun b -> mkblueform b g') (mkblue r g))
-      (mkgreen r) in
-  concat_map_term (fun r -> concat_map_term (fun y -> List.map (fun z -> mkredform r z) y) (mkgreenblueform r)) red
-  
+  let mkgreenblueform r g =
+    let g' = mkgreenform g in
+    List.map (fun b ->  mkredform r (mkblueform b g')) (mkblue r g)
+  in
+  concat_map_term (fun r -> concat_map_term (mkgreenblueform r) (mkgreen r)) red
+
 (* Genère les triplets (x,y,z) tels que (si coul = Red)
  - x+y+z = nadja
  - x > y && x > z
@@ -82,7 +82,7 @@ let generate_all_config coul nadja rs gs bs list=
        match co with
        | Red -> r+g+b = nadja && r > g && r > b
        | Green -> r+g+b = nadja && g > r && g > b
-       | Blue -> r+g+b = nadja && b > r && b > g  
+       | Blue -> r+g+b = nadja && b > r && b > g
   in
   let triplets = generate_triplet is_valid coul nadja rs gs bs in
   concat_map_term (fun x -> generate_config x (rs,gs,bs) list) triplets
