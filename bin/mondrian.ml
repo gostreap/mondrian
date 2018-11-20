@@ -2,8 +2,9 @@ open Lib.Bsp
 open Lib.Bsp_sat
 open Lib.Couleur
 (* open Lib.Solve
-open Lib.Formule
-open Lib.Generate_formule *)
+open Lib.Formule *)
+open Lib.Utils
+open Lib.Generate_formule
 open Graphics
 
 let rec affiche_coloration ?(v=true) ?(infx=0) ?(infy=0) (offset : int) (supx : int)
@@ -108,6 +109,7 @@ let main () =
   print_endline "#########################";
   print_maybe_other_sol prof origin_bsp;
   print_endline "#########################";*)
+  let _ = generate_all_config Red 15 0 0 0 (genl 1 15) in
   loop offset origin_bsp working_bsp linetree larg haut
 
 let _ = main()
