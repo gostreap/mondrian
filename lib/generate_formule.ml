@@ -63,13 +63,17 @@ let generate_triplet is_valid coul nadja rs gs bs =
     then []
     else f :: (genl (f+1) l) in
   let rl = genl rs (switch_coul_l (nadja/2) (nadja/2) (nadja/3) (nadja/3)
-                                  (switch_coul nadja (nadja/2) (nadja/2)) coul) in
+                                  (switch_coul (nadja/2) (nadja/2) (nadja/2)) coul) in
   let gl = genl gs (switch_coul_l (nadja/3) (nadja/2) (nadja/2) (nadja/3)
-                                  (switch_coul (nadja/2) nadja (nadja/2)) coul) in
+                                  (switch_coul (nadja/2) (nadja/2) (nadja/2)) coul) in
   let bl = genl bs (switch_coul_l (nadja/2) (nadja/3) (nadja/2) (nadja/3)
-                                  (switch_coul (nadja/2) (nadja/2) nadja) coul) in
+                                  (switch_coul (nadja/2) (nadja/2) (nadja/2)) coul) in
   let all_l = List.rev_map (fun x -> List.rev_map (fun y -> List.rev_map (fun z -> (x,y,z)) bl) gl ) rl in
-  List.filter is_valid (List.concat (List.concat all_l))
+  match coul with
+  | C Red -> (nadja/2+1,gs,bs)::List.filter is_valid (List.concat (List.concat all_l))
+  | C Green -> (rs,nadja/2+1,bs)::List.filter is_valid (List.concat (List.concat all_l))
+  | C Blue -> (rs,gs,nadja/2+1)::List.filter is_valid (List.concat (List.concat all_l))
+  | _ ->List.filter is_valid (List.concat (List.concat all_l))
 
 let generate_all_config coul nadja rs gs bs list=
   let is_valid (r,g,b) =
