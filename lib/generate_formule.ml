@@ -34,13 +34,13 @@ let concat_term l = List.fold_left (List.rev_append) [] l
 
 let generate_config (r,g,b) (rs,gs,bs) list =
   let red = get_n_tuples_in_list (r-rs) list in
-  let redform = List.map (fun x -> List.map (fun n -> choose Red n) x) red in
+  let mkredform = List.map (fun n -> choose Red n) in
   let green = List.map (fun x -> (get_n_tuples_in_list (g-gs) (get_compl x list))) red in
-  let greenform = List.map (fun x -> List.map (fun y -> List.map (fun n -> choose Green n) y) x) green in
+  let mkgreenform =  List.map (fun y -> List.map (fun n -> choose Green n) y) in
   let blue = List.map2 (fun r x -> List.map (fun g -> (get_n_tuples_in_list (b-bs) (get_compl (List.rev_append r g) list))) x) red green in
-  let blueform = List.map (fun x -> List.map (fun y -> List.map (fun z -> List.map (fun n -> choose Blue n) z) y ) x) blue in
-  let greenblueform = List.map2 (fun x y -> List.map2 (fun g z -> List.map (fun b -> List.rev_append g b) z) x y) greenform blueform in
-  let form = List.map2 (fun r x -> List.map (fun y -> List.map (fun z -> List.rev_append r z) y) x) redform greenblueform in
+  let mkblueform = List.map (fun y -> List.map (fun z -> List.map (fun n -> choose Blue n) z) y ) in
+  let greenblueform = List.map2 (fun x y -> List.map2 (fun g z -> List.map (fun b -> List.rev_append g b) z) (mkgreenform x) (mkblueform y)) green blue in
+  let form = List.map2 (fun r x -> List.map (fun y -> List.map (fun z -> List.rev_append (mkredform r) z) y) x) red greenblueform in
   form |> concat_term |> concat_term
 
 (* Genère les triplets (x,y,z) tels que (si coul = Red)
