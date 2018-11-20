@@ -109,7 +109,7 @@ let main () =
   print_endline "#########################";
   print_maybe_other_sol prof origin_bsp;
   print_endline "#########################";*)
-  let _ = generate_all_config Red 15 0 0 0 (genl 1 15) in
+  let _ = generate_all_config Red 17 0 0 0 (genl 1 17) in
   loop offset origin_bsp working_bsp linetree larg haut
 
 let _ = main()
