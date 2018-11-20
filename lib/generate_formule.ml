@@ -27,8 +27,8 @@ let choose coul n =
   
 (* Convertie une liste d'identifiant de rectangle en une liste de tuple de littéraux, qui une fois conjoncté sont vrais si et seulement si les rectangles sont de couleurs coul.
  *)
-let formule_list_of_bsp_sat_list (coul : couleur) (list : int list) =
-  List.map (choose coul) list
+(* let formule_list_of_bsp_sat_list (coul : couleur) (list : int list) =
+ *   List.map (choose coul) list *)
 
 (* Prend en argument une liste de tuple de littéraux  et une liste liste d'identifiant
    et renvoie la liste des identifiants des rectangles qui ne sont pas dans la liste de littéraux
@@ -59,20 +59,34 @@ let generate_config (r,g,b) (rs,gs,bs) list =
  - x > y && x > z
  - i >= is && i <= nadja \forall i \in {x,y,z}
 *)
-let generate_triplet coul nadja rs gs bs =
+let generate_triplet is_valid coul nadja rs gs bs =
   let rec genl f l =
     if f > l
     then []
     else f :: (genl (f+1) l) in
-  let xl = genl rs (switch_coul nadja (nadja/2) (nadja/2) coul) in
-  let yl = genl gs (switch_coul (nadja/2) nadja (nadja/2) coul) in
-  let zl = genl bs (switch_coul (nadja/2) (nadja/2) nadja coul) in
-  let is_valid (x,y,z) = x+y+z = nadja && x > y && x > z in
-  let all_l = List.map (fun x -> List.map (fun y -> List.map (fun z -> (x,y,z)) zl) yl ) xl in
+  let rl = genl rs (switch_coul_l (nadja/2) (nadja/2) (nadja/3) (nadja/3)
+                                  (switch_coul nadja (nadja/2) (nadja/2)) coul) in
+  let gl = genl gs (switch_coul_l (nadja/3) (nadja/2) (nadja/2) (nadja/3)
+                                  (switch_coul (nadja/2) nadja (nadja/2)) coul) in
+  let bl = genl bs (switch_coul_l (nadja/2) (nadja/3) (nadja/2) (nadja/3)
+                                  (switch_coul (nadja/2) (nadja/2) nadja) coul) in
+  let all_l = List.map (fun x -> List.map (fun y -> List.map (fun z -> (x,y,z)) bl) gl ) rl in
   List.filter is_valid (List.concat (List.concat all_l))
 
 let generate_all_config coul nadja rs gs bs list=
-  let triplets = generate_triplet coul nadja rs gs bs in
+  let is_valid (r,g,b) =
+    match coul with
+    | Purple -> r+g+b = nadja && r = b && r > g
+    | Yellow -> r+g+b = nadja && r = g && r > b
+    | Cyan -> r+g+b = nadja && g = b && g > r
+    | White -> r+g+b = nadja && r = g && g = b
+    | C co ->
+       match co with
+       | Red -> r+g+b = nadja && r > g && r > b
+       | Green -> r+g+b = nadja && g > r && g > b
+       | Blue -> r+g+b = nadja && b > r && b > g  
+  in
+  let triplets = generate_triplet is_valid coul nadja rs gs bs in
   let configs = List.map (fun x -> generate_config x (rs,gs,bs) list) triplets in
   List.flatten configs
 
@@ -82,10 +96,10 @@ let generate_all_config coul nadja rs gs bs list=
    coloration possible pour la ligne bsp_sat
    ATTENTION : seulement pour cette ligne, pas pour ces fils *)
 let get_list_list_of_bsp_sat (ligne : bsp_sat) : formule list list =
-  let r,g,b, list = get_adja_stat ligne in
-  let size = r + g + b + List.length list in
-  let aux (coul:couleur) (list : int list list) : formule list list =
-    List.map (fun u -> List.map (fun (x,y) -> Et (Lit x,Lit y)) (formule_list_of_bsp_sat_list coul u)) list
+  let rs,gs,bs,list = get_adja_stat ligne in
+  let size = rs + gs + bs + List.length list in
+  let aux (list : (lit*lit) list list) : formule list list =
+    List.map (fun listll -> List.map (fun (x,y) -> Et(Lit x, Lit y)) listll) list
   in
   match ligne with
   | R_sat (_,_,_) -> []
@@ -94,22 +108,22 @@ let get_list_list_of_bsp_sat (ligne : bsp_sat) : formule list list =
      | None -> []
      | Some c ->
         match c with
-        | Yellow -> failwith ""
-        | Cyan -> failwith ""
-        | White -> failwith ""
+        | Purple -> aux (generate_all_config Purple size rs gs bs list)
+        | Yellow -> aux (generate_all_config Yellow size rs gs bs list)
+        | Cyan -> aux (generate_all_config Cyan size rs gs bs list)
+        | White -> aux (generate_all_config White size rs gs bs list)
      (* noter que, dans le cas Purple, size est pair *)
-        | Purple -> failwith ""
         | C co ->
            match co with
            | Red ->
-              if r > size/2 then []
-              else aux Red (get_n_tuples_in_list (size/2+1-r) list)
+              if rs > size/2 then []
+              else aux (generate_all_config (C Red) size rs gs bs list)
            | Green ->
-              if g > size/2 then []
-              else aux Green (get_n_tuples_in_list (size/2+1-g) list)
+              if gs > size/2 then []
+              else aux (generate_all_config (C Green) size rs gs bs list)
            | Blue ->
-              if b > size/2 then []
-              else aux Blue (get_n_tuples_in_list (size/2+1-b) list)
+              if bs > size/2 then []
+              else aux (generate_all_config (C Blue) size rs gs bs list)
 
 (* Prend une liste de liste de formule et retourne une formule de la forme
  * (_ et _ et ... et _) ou (_ et _ et ... et _) ou ... ou (_ et _ et ... et _)*)
@@ -157,12 +171,12 @@ let rec get_formule_complete ?(nvar=(-1)) (bsp_sat : bsp_sat) : int * formule op
   in
   let form = get_formule_of_list_list (get_list_list_of_bsp_sat bsp_sat) in
   (* on met sous FNC form *)
-  let fnc_form = maybe None (fun x -> Some (tseitin ~nvar:nvar2 x)) form in
-  match fnc_form, formfils with
+  (* let fnc_form = maybe None (fun x -> Some (tseitin ~nvar:nvar2 x)) form in *)
+  match form, formfils with
   | None, None -> (nvar2,None)
-  | Some (n,a), None -> (n,Some a)
+  | Some (a), None -> (nvar2, Some a)
   | None, Some b -> (nvar2,Some b)
-  | Some (n,a), Some b -> (n,Some (Et (a,b)))
+  | Some (a), Some b -> (nvar2, Some (Et (a,b)))
 
 (* Renvoie la formule correspondant à la solution encodé dans bsp_sat*)
 (* DÉJA SOUS FNC ET NIÉ*)
@@ -178,4 +192,4 @@ let get_fnc_of_bsp (prof : int) (bsp : bsp) =
   let sat = bsp_sat_of_bsp bsp |> loop_sat prof in
   let (_,f) = get_formule_complete sat in
   let sol = get_actual_sol sat in
-  maybe None (fun fnc -> Some (Et (fnc,sol))) f
+  maybe None (fun fnc -> Some (snd (tseitin (Et (fnc, sol))))) f

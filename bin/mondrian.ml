@@ -1,9 +1,9 @@
 open Lib.Bsp
 open Lib.Bsp_sat
 open Lib.Couleur
-(* open Lib.Solve
-open Lib.Formule
-open Lib.Generate_formule *)
+open Lib.Solve
+(* open Lib.Formule
+ * open Lib.Generate_formule *)
 open Graphics
 
 let rec affiche_coloration ?(v=true) ?(infx=0) ?(infy=0) (offset : int) (supx : int)
@@ -95,7 +95,7 @@ let main () =
   and offset = 25 in
   Random.self_init ();
   open_graph (" " ^ string_of_int (larg + 2 * offset) ^ "x" ^ string_of_int (haut + 2 * offset)) ;
-  let prof = 3 in
+  let prof = 4 in
   let (origin_bsp,linetree,working_bsp) = init prof larg haut in
   print_endline (string_of_bsp origin_bsp);
   print_endline "#########################";
@@ -103,11 +103,11 @@ let main () =
   print_endline (string_of_bsp_sat bsp_sat);
   print_endline "#########################";
   print_endline (string_of_bsp_sat bsp_sat);
-  print_endline "#########################";
-  (*print_formule (get_fnc_of_bsp prof origin_bsp);
+  (* print_endline "#########################"; *)
+  (* print_formule (get_fnc_of_bsp prof origin_bsp); *)
   print_endline "#########################";
   print_maybe_other_sol prof origin_bsp;
-  print_endline "#########################";*)
+  print_endline "#########################";
   loop offset origin_bsp working_bsp linetree larg haut
 
 let _ = main()
