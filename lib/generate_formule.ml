@@ -7,16 +7,13 @@ open Tseitin
 
 (* Renvoie la liste de tout les tuples à n éléments que l'on
    peut former avec les éléments de list *)
-let rec get_n_tuples_in_list (n : int) (list : 'a list) =
-  let rec aux x l res =
-    match l with
-    | [] -> res
-    | ll::q -> aux x q ((x::ll)::res)
+let rec get_n_tuples_in_list (n : int) (list : 'a list) : 'a list list=
+  let aux x = List.fold_left (fun acc ll -> (x::ll)::acc) []
   in
   if n != 0 then
-      match list with
-      | [] -> []
-      | x::q -> (aux x (get_n_tuples_in_list (n-1) q) [])@(get_n_tuples_in_list n q)
+    match list with
+    | [] -> []
+    | x::q -> (aux x (get_n_tuples_in_list (n-1) q))@(get_n_tuples_in_list n q)
   else [[]]
 
 let choose coul n =
