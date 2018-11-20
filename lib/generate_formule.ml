@@ -44,13 +44,12 @@ let generate_config (r,g,b) (rs,gs,bs) list =
   let mkredform = rev_map_ap (fun n -> choose Red n) in
   let mkgreen r = get_n_tuples_in_list (g-gs) (get_compl r list) in
   let mkgreenform =  List.map (fun n -> choose Green n) in
-  let mkblue r x = List.map (fun g -> (get_n_tuples_in_list (b-bs) (get_compl (List.rev_append r g) list))) x in
+  let mkblue r g = get_n_tuples_in_list (b-bs) (get_compl (List.rev_append r g) list) in
   let mkblueform = rev_map_ap (fun n -> choose Blue n) in
   let mkgreenblueform r =
-    let g = mkgreen r in
-    List.map2
-      (fun g -> let g = mkgreenform g in List.map (fun b -> mkblueform b g))
-      g (mkblue r g) in
+    List.map
+      (fun g -> let g' = mkgreenform g in List.map (fun b -> mkblueform b g') (mkblue r g))
+      (mkgreen r) in
   concat_map_term (fun r -> concat_map_term (fun y -> List.map (fun z -> mkredform r z) y) (mkgreenblueform r)) red
 
 (* Genère les triplets (x,y,z) tels que (si coul = Red)
@@ -72,8 +71,7 @@ let generate_triplet coul nadja rs gs bs =
 
 let generate_all_config coul nadja rs gs bs list=
   let triplets = generate_triplet coul nadja rs gs bs in
-  let configs = List.map (fun x -> generate_config x (rs,gs,bs) list) triplets in
-  List.flatten configs
+  concat_map_term (fun x -> generate_config x (rs,gs,bs) list) triplets
 
 (* Renvoie une liste de liste de string correspondant
    à une fnd satisfaisable ssi il existe un choix de
