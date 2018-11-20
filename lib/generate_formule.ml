@@ -30,14 +30,14 @@ let formule_list_of_bsp_sat_list (coul : couleur) (list : int list) =
 let get_compl c list =
   List.filter (fun a -> not (List.mem a c)) list
 
-let concat_term l = List.fold_left (List.rev_append) [] l
-
 (* Similaire à rev_map mais ajoute une liste en fin*)
 let rev_map_ap f l xs =
   let rec rmap_f accu = function
     | [] -> accu
     | a::l -> rmap_f (f a :: accu) l
   in rmap_f xs l
+
+let concat_map_term f l = List.fold_left (fun acc x -> List.rev_append (f x) acc) [] l
 
 let generate_config (r,g,b) (rs,gs,bs) list =
   let red = get_n_tuples_in_list (r-rs) list in
@@ -51,8 +51,7 @@ let generate_config (r,g,b) (rs,gs,bs) list =
     List.map2
       (fun g -> let g = mkgreenform g in List.map (fun b -> mkblueform b g))
       g (mkblue r g) in
-  let form = List.map (fun r -> List.map (fun y -> List.map (fun z -> mkredform r z) y) (mkgreenblueform r)) red in
-  form |> concat_term |> concat_term
+  concat_map_term (fun r -> concat_map_term (fun y -> List.map (fun z -> mkredform r z) y) (mkgreenblueform r)) red
 
 (* Genère les triplets (x,y,z) tels que (si coul = Red)
  - x+y+z = nadja
