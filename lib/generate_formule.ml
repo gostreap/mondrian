@@ -7,16 +7,13 @@ open Tseitin
 
 (* Renvoie la liste de tout les tuples à n éléments que l'on
    peut former avec les éléments de list *)
-let rec get_n_tuples_in_list (n : int) (list : 'a list) =
-  let rec aux x l res =
-    match l with
-    | [] -> res
-    | ll::q -> aux x q ((x::ll)::res)
+let rec get_n_tuples_in_list (n : int) (list : 'a list) : 'a list list=
+  let aux x = List.fold_left (fun acc ll -> (x::ll)::acc) []
   in
   if n != 0 then
-      match list with
-      | [] -> []
-      | x::q -> (aux x (get_n_tuples_in_list (n-1) q) [])@(get_n_tuples_in_list n q)
+    match list with
+    | [] -> []
+    | x::q -> (aux x (get_n_tuples_in_list (n-1) q))@(get_n_tuples_in_list n q)
   else [[]]
 
 let choose coul n =
@@ -45,13 +42,13 @@ let get_compl c list =
   
 let generate_config (r,g,b) (rs,gs,bs) list =
   let red = get_n_tuples_in_list (r-rs) list in
-  let redform = List.map (fun x -> List.map (fun n -> choose Red n) x) red in
-  let green = List.map (fun x -> (get_n_tuples_in_list (g-gs) (get_compl x list))) red in
-  let greenform = List.map (fun x -> List.map (fun y -> List.map (fun n -> choose Green n) y) x) green in
-  let blue = List.map2 (fun r x -> List.map (fun g -> (get_n_tuples_in_list (b-bs) (get_compl (r@g) list))) x) red green in
-  let blueform = List.map (fun x -> List.map (fun y -> List.map (fun z -> List.map (fun n -> choose Blue n) z) y ) x) blue in
-  let greenblueform = List.map2 (fun x y -> List.map2 (fun g z -> List.map (fun b -> g@b) z) x y) greenform blueform in
-  let form = List.map2 (fun r x -> List.map (fun y -> List.map (fun z -> r@z) y) x) redform greenblueform in
+  let redform = List.rev_map (fun x -> List.rev_map (fun n -> choose Red n) x) red in
+  let green = List.rev_map (fun x -> (get_n_tuples_in_list (g-gs) (get_compl x list))) red in
+  let greenform = List.rev_map (fun x -> List.rev_map (fun y -> List.rev_map (fun n -> choose Green n) y) x) green in
+  let blue = List.rev_map2 (fun r x -> List.rev_map (fun g -> (get_n_tuples_in_list (b-bs) (get_compl (r@g) list))) x) red green in
+  let blueform = List.rev_map (fun x -> List.rev_map (fun y -> List.rev_map (fun z -> List.rev_map (fun n -> choose Blue n) z) y ) x) blue in
+  let greenblueform = List.rev_map2 (fun x y -> List.rev_map2 (fun g z -> List.rev_map (fun b -> g@b) z) x y) greenform blueform in
+  let form = List.rev_map2 (fun r x -> List.rev_map (fun y -> List.rev_map (fun z -> r@z) y) x) redform greenblueform in
   form |> List.flatten |> List.flatten
              
 (* Genère les triplets (x,y,z) tels que (si coul = Red)
@@ -70,7 +67,7 @@ let generate_triplet is_valid coul nadja rs gs bs =
                                   (switch_coul (nadja/2) nadja (nadja/2)) coul) in
   let bl = genl bs (switch_coul_l (nadja/2) (nadja/3) (nadja/2) (nadja/3)
                                   (switch_coul (nadja/2) (nadja/2) nadja) coul) in
-  let all_l = List.map (fun x -> List.map (fun y -> List.map (fun z -> (x,y,z)) bl) gl ) rl in
+  let all_l = List.rev_map (fun x -> List.rev_map (fun y -> List.rev_map (fun z -> (x,y,z)) bl) gl ) rl in
   List.filter is_valid (List.concat (List.concat all_l))
 
 let generate_all_config coul nadja rs gs bs list=
@@ -87,7 +84,7 @@ let generate_all_config coul nadja rs gs bs list=
        | Blue -> r+g+b = nadja && b > r && b > g  
   in
   let triplets = generate_triplet is_valid coul nadja rs gs bs in
-  let configs = List.map (fun x -> generate_config x (rs,gs,bs) list) triplets in
+  let configs = List.rev_map (fun x -> generate_config x (rs,gs,bs) list) triplets in
   List.flatten configs
 
   
