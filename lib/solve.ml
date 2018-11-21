@@ -25,7 +25,7 @@ let rec list_of_fnc (fnc : formule) =
     | Ou (a,b) -> get_ou a @ get_ou b
   in
   match fnc with
-  | Et (a,b) ->  list_of_fnc a @ list_of_fnc b
+  | Et (a,b) -> list_of_fnc a @ list_of_fnc b
   | Ou _  -> [get_ou fnc]
   | Lit x -> [[get_var x]]
 

@@ -150,8 +150,7 @@ let get_formule_of_list_list (ll : formule list list) : formule option =
           | None -> Some a
           | Some b -> Some (Ou (a,b))
   in
-  let f = disj_all ll in
-  f
+  disj_all ll
 
 (* Renvoie la formule correspondant à la conjonction des contraintes de bsp_sat
  et de tout ses fils*)
@@ -171,12 +170,12 @@ let rec get_formule_complete ?(nvar=(-1)) (bsp_sat : bsp_sat) : int * formule op
   in
   let form = get_formule_of_list_list (get_list_list_of_bsp_sat bsp_sat) in
   (* on met sous FNC form *)
-  (* let fnc_form = maybe None (fun x -> Some (tseitin ~nvar:nvar2 x)) form in *)
-  match form, formfils with
+  let fnc_form = maybe None (fun x -> Some (tseitin ~nvar:nvar2 x)) form in
+  match fnc_form, formfils with
   | None, None -> (nvar2,None)
-  | Some (a), None -> (nvar2, Some a)
+  | Some (n,a), None -> (n,Some a)
   | None, Some b -> (nvar2,Some b)
-  | Some (a), Some b -> (nvar2, Some (Et (a,b)))
+  | Some (n,a), Some b -> (n,Some (Et (a,b)))
 
 (* Renvoie la formule correspondant à la solution encodé dans bsp_sat*)
 (* DÉJA SOUS FNC ET NIÉ*)
@@ -184,7 +183,7 @@ let rec get_actual_sol (orig : bsp_sat) =
   match orig with
   | R_sat (i,_,x) ->
      let x,y = choose x i
-     in Et (Lit x, Lit y)
+     in Ou (Lit (neg x), Lit (neg y))
   | L_sat (_,_,l,r) -> Ou (get_actual_sol l, get_actual_sol r)
 
 (* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution*)
@@ -192,4 +191,4 @@ let get_fnc_of_bsp (prof : int) (bsp : bsp) =
   let sat = bsp_sat_of_bsp bsp |> loop_sat prof in
   let (_,f) = get_formule_complete sat in
   let sol = get_actual_sol sat in
-  maybe None (fun fnc -> Some (snd (tseitin (Et (fnc, sol))))) f
+  maybe None (fun fnc -> Some (Et (fnc, sol))) f
