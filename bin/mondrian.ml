@@ -1,5 +1,5 @@
 open Lib.Bsp
-open Lib.Bsp_sat
+(* open Lib.Bsp_sat *)
 open Lib.Couleur
 open Lib.Solve
 (* open Lib.Formule
@@ -52,9 +52,12 @@ let affiche_cadre (offset : int) (larg : int) (haut : int) =
                  (larg + offset, haut + offset, larg + offset, offset);
                  (larg + offset, offset, offset, offset)|]
 
+let counterexample = L ({ coord=202; colored=true }, L ({ coord=333; colored=true }, L ({ coord=130; colored=true }, L ({ coord=240; colored=true }, R (Some Red), R (Some Red)), L ({ coord=200; colored=true }, R (Some Green), R (Some Blue))), L ({ coord=149; colored=true }, L ({ coord=622; colored=true }, R (Some Blue), R (Some Green)), L ({ coord=711; colored=true }, R (Some Red), R (Some Red)))), L ({ coord=314; colored=true }, L ({ coord=589; colored=true }, L ({ coord=202; colored=true }, R (Some Green), R (Some Green)), L ({ coord=28; colored=true }, R (Some Green), R (Some Red))), L ({ coord=484; colored=true }, L ({ coord=386; colored=true }, R (Some Green), R (Some Green)), L ({ coord=603; colored=true }, R (Some Red), R (Some Blue)))))
+
 (* Génère un bsp et sa copie vide  *)
-let init (prof : int) (larg : int) (haut : int) =
-  let origin_bsp = random_bsp_naive prof larg haut in
+let init (_ : int) (larg : int) (haut : int) =
+  (* let origin_bsp = random_bsp_naive prof larg haut in *)
+  let origin_bsp = counterexample in
   let linetree = linetree_of_bsp origin_bsp larg haut in
   let working_bsp = empty_copy_of_bsp origin_bsp in
   (origin_bsp,linetree,working_bsp)
@@ -97,14 +100,15 @@ let main () =
   open_graph (" " ^ string_of_int (larg + 2 * offset) ^ "x" ^ string_of_int (haut + 2 * offset)) ;
   let prof = 4 in
   let (origin_bsp,linetree,working_bsp) = init prof larg haut in
-  print_endline (string_of_bsp origin_bsp);
+  (*print_endline (string_of_bsp origin_bsp);
   print_endline "#########################";
   let bsp_sat = loop_sat 10 (bsp_sat_of_bsp origin_bsp) in
   print_endline (string_of_bsp_sat bsp_sat);
   print_endline "#########################";
   print_endline (string_of_bsp_sat bsp_sat);
-  (* print_endline "#########################"; *)
+  print_endline "#########################"; *)
   (* print_formule (get_fnc_of_bsp prof origin_bsp); *)
+  print_endline (machinestring_of_bsp origin_bsp);
   print_endline "#########################";
   print_maybe_other_sol prof origin_bsp;
   print_endline "#########################";

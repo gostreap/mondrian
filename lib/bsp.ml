@@ -24,6 +24,13 @@ let rec string_of_bsp (bsp : bsp) =
        " (" ^ (string_of_bsp r) ^ ")"
   | R x -> maybe "None" string_of_couleur x
 
+let rec machinestring_of_bsp (bsp : bsp) =
+  let machinestring_of_label lab = "{ coord=" ^ string_of_int (lab.coord) ^ "; colored="^ (string_of_bool lab.colored) ^ " }" in
+  match bsp with
+  | L (lab,l,r) ->
+     "L ("^ (machinestring_of_label lab) ^", " ^ machinestring_of_bsp l ^ ", " ^ machinestring_of_bsp r ^")"
+  | R x -> "R (" ^ (maybe "None" (fun x -> "Some " ^ string_of_couleur x ^ ")") x)
+
 (*
  Génère un BSP aléatoire de profondeur 'profondeur'
  NOTE: Pour l'instant, toutes les arrêtes sont visibles
