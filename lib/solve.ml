@@ -40,7 +40,7 @@ let print_possible_sol solution =
   match solution with
   | None -> print_endline "None"
   | Some x ->
-     pr_rec x;
+     pr_rec (List.sort (fun x y -> compare (snd x) (snd y)) x);
      print_endline ""
 
 (* Renvoie None si le bsp possède une unique solution et une deuxième solution sinon *)
