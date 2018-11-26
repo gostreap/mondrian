@@ -102,8 +102,6 @@ let main () =
   let bsp_sat = loop_sat 10 (bsp_sat_of_bsp origin_bsp) in
   print_endline (string_of_bsp_sat bsp_sat);
   print_endline "#########################";
-  print_endline (string_of_bsp_sat bsp_sat);
-  print_endline "#########################";
   print_formule (get_fnc_of_bsp prof origin_bsp);
   print_endline "#########################";
   print_endline (machinestring_of_bsp origin_bsp);
