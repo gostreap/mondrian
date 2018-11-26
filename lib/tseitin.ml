@@ -4,8 +4,6 @@ open Hashtbl
 (* Nouveu type formule encapsulant aussi les booléens *)
 type formule' = F of formule | B of bool
 
-(* )type ('a,'b) either = L of 'a | R of 'b *)
-
 (* redéfinitions opérateurs *)
 let et a b =
   match a with
@@ -51,6 +49,7 @@ let rec tseitin' (((_,tabl) as t ): tseitinD) (f : formule) =
         ((fst x')-1,snd x'),q,clause
 
 (* Algorithme de Tseitin (1970), transforme une formule en FNC de manière efficace *)
+(* Utilise une Hashtabl pour éviter d'avoir vraiment plein de variables, à appeler avec une table vite à l'initialisation puis la réutiliser *)
 let tseitin nvar (f : formule) =
   let ((n,t),l,f') = tseitin' nvar f in
   let l' = Lit l in
