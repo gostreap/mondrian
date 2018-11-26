@@ -58,13 +58,18 @@ let rec tseitin' (((nvar,tabl) as t ): tseitinD) (f : formule') =
 
 (* Algorithme de Tseitin (1970), transforme une formule en FNC de manière efficace *)
 let tseitin nvar (f : formule) =
-  let ((n,t),l,f) = tseitin' nvar (F f) in
-  let l = Lit l in
+  let ((n,t),l,f') = tseitin' nvar (F f) in
+  let l' = Lit l in
   let fnc =
-    match f with
+    match f' with
     | B b ->
        if b
-       then l
+       then l'
        else Et (var 0, non 0)
-    | F f -> Et (l,f) in
+    | F f -> Et (l',f) in
+  let l'' =
+    match l with
+    | Neg x -> x
+    | Var x -> x in
+  add t f l'';
   ((n-1,t),fnc)
