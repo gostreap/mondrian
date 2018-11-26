@@ -43,8 +43,14 @@ let rec tseitin' (((nvar,tabl) as t ): tseitinD) (f : formule') =
         add (snd x') f (fst x');
         ((fst x')-1,snd x'),q,clause
      | Et (a,b) ->
-        let (x,la,a) =  tseitin' t (F a) in
-        let (x',lb,b) = tseitin' x (F b) in
+        let (x,la,a) =
+          match find_opt tabl a with
+          | None -> tseitin' t (F a)
+          | Some la ->((nvar,tabl),Var la, F (Lit (Var la))) in
+        let (x',lb,b) =
+          match find_opt (snd x) b with
+          | None -> tseitin' x (F b)
+          | Some lb -> ((fst x,snd x),Var lb, F (Lit (Var lb))) in
         let q = Var (fst x') in
         let clause =
           let c1 = F (Ou (Lit (neg la), (ou (neg lb) q))) in
