@@ -143,12 +143,7 @@ let get_formule_of_list_list (ll : formule list list) : formule option =
     | x::q ->
        let f = disj_all q in
        let g = conj_all x in
-       match f with
-       | None -> g
-       | Some a ->
-          match g with
-          | None -> Some a
-          | Some b -> Some (Ou (a,b))
+       maybe2 (fun x y -> Ou (x,y)) f g
   in
   disj_all ll
 
@@ -161,11 +156,7 @@ let rec get_formule_complete ?(nvar=(-1)) (bsp_sat : bsp_sat) : int * formule op
     | L_sat (_,_,l,r) ->
        let (nvar1,fl) = get_formule_complete ~nvar:nvar l in
        let (nvar2,fr) = get_formule_complete ~nvar:nvar1 r in
-       let f = match fl, fr with
-         | None, None -> None
-         | Some a, None -> Some a
-         | None, Some b -> Some b
-         | Some a, Some b -> Some (Et (a,b)) in
+       let f = maybe2 (fun x y -> Et (x,y)) fl fr in
        (nvar2,f)
   in
   let form = get_formule_of_list_list (get_list_list_of_bsp_sat bsp_sat) in
@@ -190,11 +181,7 @@ let rec get_actual_sol (orig : bsp_sat) =
   | L_sat (_,s,l,r) ->
      if s
      then None
-     else
-       match (get_actual_sol l, get_actual_sol r) with
-         None, x -> x
-       | x, None -> x
-       | (Some x),(Some y) -> Some (Ou (x,y))
+     else maybe2 (fun x y -> Ou (x,y)) (get_actual_sol l) (get_actual_sol r)
 
 (* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution*)
 let get_fnc_of_bsp (prof : int) (bsp : bsp) =
