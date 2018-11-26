@@ -144,7 +144,7 @@ let get_formule_of_list_list (ll : formule list list) : formule option =
 (* L ({ coord=36; colored=true }, R (Some Blue), L ({ coord=596; colored=true }, R (Some Red), R (Some Red))) *)
 (* Renvoie la formule correspondant à la conjonction des contraintes de bsp_sat
  et de tout ses fils*)
-let rec get_formule_complete ?(nvar=(-1)) (bsp_sat : bsp_sat) : int * formule option =
+let rec get_formule_complete ?(nvar=tseitinDStart) (bsp_sat : bsp_sat) : tseitinD * formule option =
   let (nvar2,formfils) =
     match bsp_sat with
     | R_sat (_,_,_) -> (nvar, None)
