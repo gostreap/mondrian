@@ -20,45 +20,39 @@ let ou a b = Ou (Lit a, Lit b)
 type tseitinD = int * (formule, int) t
 
 (* Auxiliaire de Tseitin *)
-let rec tseitin' (((nvar,tabl) as t ): tseitinD) (f : formule') =
-  match f with
-  | B b ->
-     if b
-     then ((nvar-1, tabl), Var nvar, F (var nvar))
-     else ((nvar-1, tabl), Var nvar, F (non nvar))
-  | F f ->
-     match find_opt tabl f with
-     | Some e ->
-        (t,Var e, B true)
-     | None ->
-        match f with
-        | Lit x -> t,x,B true
-        | Ou (a,b) ->
-           let (x,la,a) =  tseitin' t (F a) in
-           let (x',lb,b) = tseitin' x (F b) in
-           let q = Var (fst x') in
-           let clause =
-             let c1 = F (Ou (Lit (neg q),ou la lb)) in
-             let c2 = F (ou (neg lb) q) in
-             let c3 = F (ou (neg la) q) in
-             et a (et b (et c3 (et c2 c1))) in
-           add (snd x') f (fst x');
-           ((fst x')-1,snd x'),q,clause
-        | Et (a,b) ->
-           let (x,la,a) = tseitin' t (F a) in
-           let (x',lb,b) = tseitin' x (F b) in
-           let q = Var (fst x') in
-           let clause =
-             let c1 = F (Ou (Lit (neg la), (ou (neg lb) q))) in
-             let c2 = F (ou (neg q) lb) in
-             let c3 = F (ou (neg q) la) in
-             et a (et b (et c1 (et c3 c2))) in
-           add (snd x') f (fst x');
-           ((fst x')-1,snd x'),q,clause
+let rec tseitin' (((_,tabl) as t ): tseitinD) (f : formule) =
+  match find_opt tabl f with
+  | Some e ->
+     (t,Var e, B true)
+  | None ->
+     match f with
+     | Lit x -> t,x,B true
+     | Ou (a,b) ->
+        let (x,la,a) =  tseitin' t a in
+        let (x',lb,b) = tseitin' x b in
+        let q = Var (fst x') in
+        let clause =
+          let c1 = F (Ou (Lit (neg q),ou la lb)) in
+          let c2 = F (ou (neg lb) q) in
+          let c3 = F (ou (neg la) q) in
+          et a (et b (et c3 (et c2 c1))) in
+        add (snd x') f (fst x');
+        ((fst x')-1,snd x'),q,clause
+     | Et (a,b) ->
+        let (x,la,a) = tseitin' t a in
+        let (x',lb,b) = tseitin' x b in
+        let q = Var (fst x') in
+        let clause =
+          let c1 = F (Ou (Lit (neg la), (ou (neg lb) q))) in
+          let c2 = F (ou (neg q) lb) in
+          let c3 = F (ou (neg q) la) in
+          et a (et b (et c1 (et c3 c2))) in
+        add (snd x') f (fst x');
+        ((fst x')-1,snd x'),q,clause
 
 (* Algorithme de Tseitin (1970), transforme une formule en FNC de manière efficace *)
 let tseitin nvar (f : formule) =
-  let ((n,t),l,f') = tseitin' nvar (F f) in
+  let ((n,t),l,f') = tseitin' nvar f in
   let l' = Lit l in
   let fnc =
     match f' with
