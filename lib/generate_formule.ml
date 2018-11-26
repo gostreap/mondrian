@@ -181,14 +181,27 @@ let rec get_formule_complete ?(nvar=(-1)) (bsp_sat : bsp_sat) : int * formule op
 (* DÉJA SOUS FNC ET NIÉ*)
 let rec get_actual_sol (orig : bsp_sat) =
   match orig with
-  | R_sat (i,_,x) ->
+  | R_sat (i,s,x) ->
+     if s
+     then None
+     else
      let x,y = choose x i
-     in Ou (Lit (neg x), Lit (neg y))
-  | L_sat (_,_,l,r) -> Ou (get_actual_sol l, get_actual_sol r)
+     in Some (Ou (Lit (neg x), Lit (neg y)))
+  | L_sat (_,s,l,r) ->
+     if s
+     then None
+     else
+       match (get_actual_sol l, get_actual_sol r) with
+         None, x -> x
+       | x, None -> x
+       | (Some x),(Some y) -> Some (Ou (x,y))
 
 (* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution*)
 let get_fnc_of_bsp (prof : int) (bsp : bsp) =
   let sat = bsp_sat_of_bsp bsp |> loop_sat prof in
-  let (_,f) = get_formule_complete sat in
   let sol = get_actual_sol sat in
-  maybe None (fun fnc -> Some (Et (fnc, sol))) f
+  match sol with
+    None -> None
+  | Some sol ->
+     let (_,f) = get_formule_complete sat in
+     maybe None (fun fnc -> Some (Et (fnc, sol))) f
