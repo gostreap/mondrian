@@ -63,11 +63,11 @@ let generate_triplet is_valid coul nadja rs gs bs =
     then []
     else f :: (genl (f+1) l) in
   let rl = genl rs (switch_coul_l (nadja/2) (nadja/2) (nadja/3) (nadja/3)
-                                  (switch_coul (nadja/2) (nadja/2) (nadja/2)) coul) in
+                                  (switch_coul nadja (nadja/2) (nadja/2)) coul) in
   let gl = genl gs (switch_coul_l (nadja/3) (nadja/2) (nadja/2) (nadja/3)
-                                  (switch_coul (nadja/2) (nadja/2) (nadja/2)) coul) in
+                                  (switch_coul (nadja/2) nadja (nadja/2)) coul) in
   let bl = genl bs (switch_coul_l (nadja/2) (nadja/3) (nadja/2) (nadja/3)
-                                  (switch_coul (nadja/2) (nadja/2) (nadja/2)) coul) in
+                                  (switch_coul (nadja/2) (nadja/2) nadja) coul) in
   let all_l = List.rev_map (fun x -> List.rev_map (fun y -> List.rev_map (fun z -> (x,y,z)) bl) gl ) rl in
   match coul with
   | C Red -> (nadja/2+1,gs,bs)::List.filter is_valid (List.concat (List.concat all_l))
@@ -115,15 +115,9 @@ let get_list_list_of_bsp_sat (ligne : bsp_sat) : formule list list =
      (* noter que, dans le cas Purple, size est pair *)
         | C co ->
            match co with
-           | Red ->
-              if rs > size/2 then []
-              else aux (generate_all_config (C Red) size rs gs bs list)
-           | Green ->
-              if gs > size/2 then []
-              else aux (generate_all_config (C Green) size rs gs bs list)
-           | Blue ->
-              if bs > size/2 then []
-              else aux (generate_all_config (C Blue) size rs gs bs list)
+           | Red -> aux (generate_all_config (C Red) size rs gs bs list)
+           | Green -> aux (generate_all_config (C Green) size rs gs bs list)
+           | Blue -> aux (generate_all_config (C Blue) size rs gs bs list)
 
 (* Prend une liste de liste de formule et retourne une formule de la forme
  * (_ et _ et ... et _) ou (_ et _ et ... et _) ou ... ou (_ et _ et ... et _)*)
@@ -151,7 +145,8 @@ let get_formule_of_list_list (ll : formule list list) : formule option =
           | Some b -> Some (Ou (a,b))
   in
   disj_all ll
-
+  
+(* L ({ coord=36; colored=true }, R (Some Blue), L ({ coord=596; colored=true }, R (Some Red), R (Some Red))) *)
 (* Renvoie la formule correspondant à la conjonction des contraintes de bsp_sat
  et de tout ses fils*)
 let rec get_formule_complete ?(nvar=(-1)) (bsp_sat : bsp_sat) : int * formule option =
@@ -172,10 +167,10 @@ let rec get_formule_complete ?(nvar=(-1)) (bsp_sat : bsp_sat) : int * formule op
   (* on met sous FNC form *)
   let fnc_form = maybe None (fun x -> Some (tseitin ~nvar:nvar2 x)) form in
   match fnc_form, formfils with
-  | None, None -> (nvar2,None)
-  | Some (n,a), None -> (n,Some a)
-  | None, Some b -> (nvar2,Some b)
-  | Some (n,a), Some b -> (n,Some (Et (a,b)))
+  | None, None -> (nvar2, None)
+  | Some (n,a), None -> (n, Some a)
+  | None, Some b -> (nvar2, Some b)
+  | Some (n,a), Some b -> (n, Some (Et (a,b)))
 
 (* Renvoie la formule correspondant à la solution encodé dans bsp_sat*)
 (* DÉJA SOUS FNC ET NIÉ*)
