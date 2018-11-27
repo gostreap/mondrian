@@ -161,20 +161,20 @@ let get_formule_of_list_list (ll : formule list list) : formule option =
   
 (* L ({ coord=36; colored=true }, R (Some Blue), L ({ coord=596; colored=true }, R (Some Red), R (Some Red))) *)
 (* Renvoie la formule correspondant à la conjonction des contraintes de bsp_sat
- et de tout ses fils *)
-let rec get_formule_complete ?(nvar=(-1)) (bsp_sat : bsp_sat) : int * formule option =
+ et de tout ses fils*)
+let rec get_formule_complete nvar (bsp_sat : bsp_sat) : tseitinD * formule option =
   let (nvar2,formfils) =
     match bsp_sat with
     | R_sat (_,_,_) -> (nvar, None)
     | L_sat (_,_,l,r) ->
-       let (nvar1,fl) = get_formule_complete ~nvar:nvar l in
-       let (nvar2,fr) = get_formule_complete ~nvar:nvar1 r in
+       let (nvar1,fl) = get_formule_complete nvar l in
+       let (nvar2,fr) = get_formule_complete nvar1 r in
        let f = maybe2 (fun x y -> Et (x,y)) fl fr in
        (nvar2,f)
   in
   let form = get_formule_of_list_list (get_list_list_of_bsp_sat bsp_sat) in
   (* on met sous FNC form *)
-  let fnc_form = maybe None (fun x -> Some (tseitin ~nvar:nvar2 x)) form in
+  let fnc_form = maybe None (fun x -> Some (tseitin nvar2 x)) form in
   match fnc_form, formfils with
   | None, None -> (nvar2, None)
   | Some (n,a), None -> (n, Some a)
@@ -207,7 +207,7 @@ let get_fnc_of_bsp (prof : int) (bsp : bsp) =
   match sol with
     None -> None
   | Some sol ->
-     let (_,f) = get_formule_complete sat in
+     let (_,f) = get_formule_complete (-1,Hashtbl.create 100) sat in
      maybe None (fun fnc -> Some (Et (fnc, sol))) f
 
 let get_fnc_of_bsp_soluce (* (prof : int) *) (working_bsp : bsp) (linetree : linetree)=
