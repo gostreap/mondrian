@@ -220,7 +220,7 @@ let get_fnc_of_bsp_soluce (* (prof : int) *) (working_bsp : bsp) (linetree : lin
   else
       begin
           (* print_endline "CHECK !"; *)
-          let (_,f) = get_formule_complete sat in
+          let (_,f) = get_formule_complete (-1,Hashtbl.create 100) sat in
           match f with
           | None -> None
           | _ -> f
