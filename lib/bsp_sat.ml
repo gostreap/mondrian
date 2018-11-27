@@ -112,7 +112,8 @@ let get_adja_stat (bsp_sat : bsp_sat) =
        if s then
            (* Ici le cas None n'est pas censé arrivé*)
            let (r,g,b) = maybe (0,0,0) (switch_coul (1,0,0) (0,1,0) (0,0,1)) c in
-           (* print_endline (maybe "ERREUR" ((switch_coul "rouge" "vert" "bleu")) c); *)
+           (* print_endline (maybe "ERREUR" ((switch_coul "rouge" "vert" "bleu")) c);
+            * Printf.printf "Return %d %d %d []\n" r g b; *)
            (r,g, b, [])
        else
            begin
@@ -130,8 +131,14 @@ let get_adja_stat (bsp_sat : bsp_sat) =
      (lr+rr,lg+rg,lb+rb,llist@rlist)
 
 let check_line (line : bsp_sat) =
+  (* print_endline (string_of_bsp_sat line); *)
   let r,g,b,list = get_adja_stat line in
   let size = r + g + b + List.length list in
+  (* print_int r;
+   * print_int g;
+   * print_int b;
+   * print_int size;
+   * print_endline ""; *)
   match line with
   | R_sat _ -> true
   | L_sat (c,_,_,_) ->
@@ -141,11 +148,15 @@ let check_line (line : bsp_sat) =
      | Some Yellow -> r <= size/2 && g <= size/2 && (b < size/3 || b = 0)
      | Some Cyan -> (r < size/3 || r = 0) && g <= size/2 && b <= size/2
      | Some White -> r <= size/3 && g <= size/3 && b <= size/3   
-     | Some (C co) -> 
+     | Some (C co) ->
+        let borne =
+          if size mod 2 = 1 then size/2+1
+          else size/2
+        in
         match co with
-        | Red -> g < size/2 && b < size/2
-        | Green -> r < size/2 && b < size/2
-        | Blue -> r < size/2 && g < size/2
+        | Red -> g < borne && b < borne
+        | Green -> r < borne && b < borne
+        | Blue -> r < borne && g < borne
 
 let rec check_all_lines (bsp_sat : bsp_sat) : bool =
   if not (check_line bsp_sat) then false
