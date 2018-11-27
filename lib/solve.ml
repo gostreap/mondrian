@@ -49,8 +49,21 @@ let sat_solve (prof : int) (bsp : bsp) =
   | None -> None
   | Some f -> Sat.solve (list_of_fnc f)
 
+(* Renvoie None si le working_bsp possède une solution *)
+let sat_solve_soluce (* (prof : int) *) (working_bsp : bsp) (linetree : linetree) =
+    match get_fnc_of_bsp_soluce (* prof *) working_bsp linetree with
+  | None -> None
+  | Some f -> Sat.solve (list_of_fnc f)
+
 (* Renvoie vrai si le bsp possède une unique solution et faux sinon *)
 let is_uniq prof bsp = maybe true (fun _ -> false) (sat_solve prof bsp)
 
 (* Test si le bsp possède une unique solution et affiche le résultat *)
 let print_maybe_other_sol prof bsp = print_possible_sol (sat_solve prof bsp)
+
+(* Test si le bsp possède une solution et affiche le résultat *)
+let print_maybe_other_sol_soluce (* prof *) working_bsp linetree =
+  let sol = sat_solve_soluce (* prof *) working_bsp linetree in
+  match sol with
+  | None -> print_endline "Pas de solution"
+  | _ -> print_endline "Solution possible"

@@ -4,15 +4,16 @@ open Utils
 
 (* bsp for SAT *)
 type bsp_sat =
-  | R_sat of int * bool * couleur (* id * secure * coul *)
+  | R_sat of int * bool * couleur option (* id * secure * coul *)
   | L_sat of couleur_l option * bool * bsp_sat * bsp_sat (* coul * secure * left * right *)
 
 let rec string_of_bsp_sat (bsp : bsp_sat) =
   match bsp with
-  | L_sat (lab,b,l,r) ->
-     "(" ^ (string_of_bsp_sat l) ^ " " ^string_of_bool b  ^ "*" ^ (maybe "black" string_of_couleur_l lab) ^
-         " " ^ (string_of_bsp_sat r) ^ ")"
-  | R_sat (n,x,c) -> string_of_int n ^ "*" ^ string_of_bool x ^ "*" ^ (switch_coul "r" "g" "b" c)
+  | L_sat (coul,b,l,r) ->
+     "(" ^ (string_of_bsp_sat l) ^ " " ^ string_of_bool b  ^ "*" ^
+         (maybe "black" string_of_couleur_l coul) ^ " " ^ (string_of_bsp_sat r) ^ ")"
+  | R_sat (n,x,c) -> string_of_int n ^ "*" ^ string_of_bool x ^ "*" ^
+                        (maybe "None" (switch_coul "r" "g" "b") c)
 
 let bsp_sat_of_bsp (bsp : bsp) =
   let rec aux v bsp =
@@ -21,7 +22,8 @@ let bsp_sat_of_bsp (bsp : bsp) =
        let c =
          match x with
          | None -> failwith "translate_bsp"
-         | Some x -> x in (v+1,R_sat (v,false,c))
+         | Some x -> Some x in
+       (v+1,R_sat (v,false, c))
     | L (lab,l,r) ->
        let (n,ll) = aux v l in
        let (m,rr) = aux n r in
@@ -31,6 +33,33 @@ let bsp_sat_of_bsp (bsp : bsp) =
          else None in
        (m,L_sat (c,false,ll,rr))
   in snd (aux 0 bsp)
+
+let rec color_bsp_sat_line (bsp_sat : bsp_sat) (linetree : linetree) =
+  match bsp_sat, linetree with
+  | R_sat (_,_,_) , _ -> bsp_sat
+  | L_sat (_,s,lbs,rbs), Line (_,_,c, ll,rl) ->
+     let lbs_sat = color_bsp_sat_line lbs ll in
+     let rbs_sat = color_bsp_sat_line rbs rl in
+     L_sat(c,s,lbs_sat,rbs_sat)
+  | _ -> failwith "Error color_bsp_sat_line"
+  
+   
+let bsp_sat_of_working_bsp (working_bsp : bsp) (linetree : linetree) =
+  let rec aux v bsp =
+    match bsp with
+    | R x ->
+       begin
+       match x with
+         | None -> (v+1, R_sat(v, false, None))
+         | Some x -> (v+1, R_sat(v, true, Some x))
+       end
+    | L (_,l,r) ->
+       let (n,ll) = aux v l in
+       let (m,rr) = aux n r in
+       (m,L_sat (None, false, ll, rr))
+  in
+  (* print_endline (string_of_bsp_sat (color_bsp_sat_line (snd (aux 0 working_bsp)) linetree)); *)
+  color_bsp_sat_line (snd (aux 0 working_bsp)) linetree
 
 (* Renvoie un bsp ou les feuilles ont un indice différent de 1 si leur couleur est fixé *)
 let rec secure_bsp_sat (bsp : bsp_sat) =
@@ -67,8 +96,11 @@ let rec loop_sat (n : int) (b : bsp_sat) =
  * b est le nombre de rectangle bleu adjacents sécurisés
  * list est la liste des rectangles non sécurisés*)
 let get_adja_stat (bsp_sat : bsp_sat) =
+  (* print_endline "début adja stat"; *)
   let rec get_stat ?(v=true) (is_l : bool) (bsp_sat : bsp_sat)
           : (int * int * int * int list) =
+    (* print_endline "début get stat"; *)
+    (* print_endline (string_of_bsp_sat bsp_sat); *)
     match bsp_sat with
     | L_sat (_,_,x,y) ->
        let rx,gx,bx,ll as x' = get_stat ~v:(not v) is_l x in
@@ -76,15 +108,50 @@ let get_adja_stat (bsp_sat : bsp_sat) =
        if not v
        then if is_l then y' else x'
        else (rx+ry,gx+gy,bx+by,ll@lr)
-    | R_sat (n,s,x) ->
+    | R_sat (n,s,c) ->
        if s then
-           let (r,g,b) = switch_coul (1,0,0) (0,1,0) (0,0,1) x in
+           (* Ici le cas None n'est pas censé arrivé*)
+           let (r,g,b) = maybe (0,0,0) (switch_coul (1,0,0) (0,1,0) (0,0,1)) c in
+           (* print_endline (maybe "ERREUR" ((switch_coul "rouge" "vert" "bleu")) c); *)
            (r,g, b, [])
-       else (0,0,0,[n])
+       else
+           begin
+               (* print_endline "non sécurisé"; *)
+               (0,0,0,[n])
+           end
   in
+  (* print_endline (string_of_bsp_sat bsp_sat); *)
   match bsp_sat with
   | R_sat _ -> (0,0,0,[])
   | L_sat (_,_,l,r) ->
      let (lr,lg,lb,llist) = get_stat true l in
      let (rr,rg,rb,rlist) = get_stat false r in
+     (* print_endline "Fin adja stat"; *)
      (lr+rr,lg+rg,lb+rb,llist@rlist)
+
+let check_line (line : bsp_sat) =
+  let r,g,b,list = get_adja_stat line in
+  let size = r + g + b + List.length list in
+  match line with
+  | R_sat _ -> true
+  | L_sat (c,_,_,_) ->
+     match c with
+     | None -> true
+     | Some Purple -> r <= size/2 && (g < size/3 || g = 0) && b <= size/2
+     | Some Yellow -> r <= size/2 && g <= size/2 && (b < size/3 || b = 0)
+     | Some Cyan -> (r < size/3 || r = 0) && g <= size/2 && b <= size/2
+     | Some White -> r <= size/3 && g <= size/3 && b <= size/3   
+     | Some (C co) -> 
+        match co with
+        | Red -> g < size/2 && b < size/2
+        | Green -> r < size/2 && b < size/2
+        | Blue -> r < size/2 && g < size/2
+
+let rec check_all_lines (bsp_sat : bsp_sat) : bool =
+  if not (check_line bsp_sat) then false
+  else
+      begin
+          match bsp_sat with
+          | R_sat _ -> true
+          | L_sat (_,_,l,r) -> check_all_lines l && check_all_lines r
+      end

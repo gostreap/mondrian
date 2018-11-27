@@ -18,9 +18,10 @@ let rec get_n_tuples_in_list (n : int) (list : 'a list) : 'a list list=
 
 let choose coul n =
   match coul with
-  | Red -> (Var (2*n),Var(2*n+1))
-  | Green -> (Var (2*n),Neg (2*n+1))
-  | Blue -> (Neg (2*n),Neg (2*n+1))
+  | None -> None 
+  | Some Red -> Some (Var (2*n), Var(2*n+1))
+  | Some Green -> Some (Var (2*n), Neg (2*n+1))
+  | Some Blue -> Some (Neg (2*n), Neg (2*n+1))
 
 (* Convertie une liste d'identifiant de rectangle en une liste de tuple de littéraux, qui une fois conjoncté sont vrais si et seulement si les rectangles sont de couleurs coul.
  *)
@@ -41,11 +42,11 @@ let concat_map_term f l = List.fold_left (fun acc x -> List.rev_append (f x) acc
 
 let generate_config (r,g,b) (rs,gs,bs) list =
   let red = get_n_tuples_in_list (r-rs) list in
-  let mkredform = rev_map_ap (fun n -> choose Red n) in
+  let mkredform = rev_map_ap (fun n -> choose (Some Red) n) in
   let mkgreen r = get_n_tuples_in_list (g-gs) (get_compl r list) in
-  let mkgreenform =  List.map (fun n -> choose Green n) in
+  let mkgreenform =  List.map (fun n -> choose (Some Green) n) in
   let mkblue r g = get_n_tuples_in_list (b-bs) (get_compl (List.rev_append r g) list) in
-  let mkblueform = rev_map_ap (fun n -> choose Blue n) in
+  let mkblueform = rev_map_ap (fun n -> choose (Some Blue) n) in
   let mkgreenblueform r g =
     let g' = mkgreenform g in
     List.map (fun b ->  mkredform r (mkblueform b g')) (mkblue r g)
@@ -98,8 +99,25 @@ let generate_all_config coul nadja rs gs bs list=
 let get_list_list_of_bsp_sat (ligne : bsp_sat) : formule list list =
   let rs,gs,bs,list = get_adja_stat ligne in
   let size = rs + gs + bs + List.length list in
-  let aux (list : (lit*lit) list list) : formule list list =
-    List.map (fun listll -> List.map (fun (x,y) -> Et(Lit x, Lit y)) listll) list
+  let fusion (tuple : (lit * lit) option) : formule option =
+    match tuple with
+    | None -> None
+    | Some (x,y) -> Some (Et(Lit x, Lit y))
+  in
+  let filter_None (f : formule option) : bool =
+    match f with
+    | None -> false
+    | _ -> true
+  in
+  let form_of_form_option (sf : formule option) : formule =
+    match sf with
+    | None -> failwith "form_of_form_option : unexpected None"
+    | Some f -> f
+  in
+  let aux (list : (lit*lit) option list list) : formule list list =
+    let ll = List.map (fun listll -> List.map (fun t -> fusion t) listll) list in
+    let llclean = List.map (fun l -> List.filter filter_None l) ll in
+    List.map (fun l -> List.map (fun sf -> form_of_form_option sf) l) llclean
   in
   match ligne with
   | R_sat (_,_,_) -> []
@@ -143,7 +161,7 @@ let get_formule_of_list_list (ll : formule list list) : formule option =
   
 (* L ({ coord=36; colored=true }, R (Some Blue), L ({ coord=596; colored=true }, R (Some Red), R (Some Red))) *)
 (* Renvoie la formule correspondant à la conjonction des contraintes de bsp_sat
- et de tout ses fils*)
+ et de tout ses fils *)
 let rec get_formule_complete ?(nvar=(-1)) (bsp_sat : bsp_sat) : int * formule option =
   let (nvar2,formfils) =
     match bsp_sat with
@@ -163,22 +181,26 @@ let rec get_formule_complete ?(nvar=(-1)) (bsp_sat : bsp_sat) : int * formule op
   | None, Some b -> (nvar2, Some b)
   | Some (n,a), Some b -> (n, Some (Et (a,b)))
 
-(* Renvoie la formule correspondant à la solution encodé dans bsp_sat*)
+(* Renvoie la formule correspondant à la solution encodé dans bsp_sat *)
 (* DÉJA SOUS FNC ET NIÉ*)
 let rec get_actual_sol (orig : bsp_sat) =
   match orig with
-  | R_sat (i,s,x) ->
-     if s
-     then None
+  | R_sat (i,s,c) ->
+     if s then None
      else
-     let x,y = choose x i
-     in Some (Ou (Lit (neg x), Lit (neg y)))
+         begin
+         let tuple = choose c i
+         in
+         match tuple with
+         | None -> None
+         | Some (x,y) -> Some (Ou (Lit (neg x), Lit (neg y)))
+         end
   | L_sat (_,s,l,r) ->
      if s
      then None
      else maybe2 (fun x y -> Ou (x,y)) (get_actual_sol l) (get_actual_sol r)
 
-(* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution*)
+(* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution *)
 let get_fnc_of_bsp (prof : int) (bsp : bsp) =
   let sat = bsp_sat_of_bsp bsp |> loop_sat prof in
   let sol = get_actual_sol sat in
@@ -187,3 +209,19 @@ let get_fnc_of_bsp (prof : int) (bsp : bsp) =
   | Some sol ->
      let (_,f) = get_formule_complete sat in
      maybe None (fun fnc -> Some (Et (fnc, sol))) f
+
+let get_fnc_of_bsp_soluce (* (prof : int) *) (working_bsp : bsp) (linetree : linetree)=
+  let sat = bsp_sat_of_working_bsp working_bsp linetree (*|> loop_sat prof*) in
+  if not (check_all_lines sat) then
+      begin
+          (* print_endline "NON CHECK !"; *)
+          None
+      end
+  else
+      begin
+          (* print_endline "CHECK !"; *)
+          let (_,f) = get_formule_complete sat in
+          match f with
+          | None -> None
+          | _ -> f
+      end

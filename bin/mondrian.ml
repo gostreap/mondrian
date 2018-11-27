@@ -67,27 +67,28 @@ let print_victory (offset : int)  (larg : int) (haut : int) loop =
   let (o,l,w) = init 5 larg haut in
   loop offset o w l larg haut
 
-let rec loop (offset : int) (origin_bsp : bsp) (bsp : bsp)
-             (linetree : linetree) (larg : int) (haut : int) =
-  if check_current origin_bsp bsp
+let rec loop (offset : int) (origin_bsp : bsp) (working_bsp : bsp)
+             (linetree : linetree) (larg : int) (haut : int) (prof : int)=
+  if check_current origin_bsp working_bsp
   then
     print_endline "victory"; (*print_victory offset larg haut loop *)
   clear_graph ();
   affiche_linetree offset linetree;
   affiche_cadre offset larg haut;
-  affiche_coloration offset larg haut bsp;
+  affiche_coloration offset larg haut working_bsp;
   let e = wait_next_event [ Button_down ; Key_pressed ] in
   if e.keypressed
   then
     match e.key with
     | 'q' -> ()
-    | _ -> loop offset origin_bsp bsp linetree larg haut
+    | _ -> loop offset origin_bsp working_bsp linetree larg haut prof
   else
     if e.button
     then
-      let bsp = change_color bsp (e.mouse_x - offset, e.mouse_y - offset) in
-      loop offset origin_bsp bsp linetree larg haut
-    else loop offset origin_bsp bsp linetree larg haut
+        let bsp = change_color working_bsp (e.mouse_x - offset, e.mouse_y - offset) in
+        print_maybe_other_sol_soluce (* prof *) bsp linetree;
+        loop offset origin_bsp bsp linetree larg haut prof
+    else loop offset origin_bsp working_bsp linetree larg haut prof
 
 let main () =
   let larg = 800
@@ -99,7 +100,7 @@ let main () =
   let (origin_bsp,linetree,working_bsp) = init prof larg haut in
   print_endline (string_of_bsp origin_bsp);
   print_endline "#########################";
-  let bsp_sat = loop_sat 10 (bsp_sat_of_bsp origin_bsp) in
+  let bsp_sat = loop_sat prof (bsp_sat_of_bsp origin_bsp) in
   print_endline (string_of_bsp_sat bsp_sat);
   print_endline "#########################";
   print_formule (get_fnc_of_bsp prof origin_bsp);
@@ -108,6 +109,6 @@ let main () =
   print_endline "#########################";
   print_maybe_other_sol prof origin_bsp;
   print_endline "#########################";
-  loop offset origin_bsp working_bsp linetree larg haut
+  loop offset origin_bsp working_bsp linetree larg haut prof
 
 let _ = main()

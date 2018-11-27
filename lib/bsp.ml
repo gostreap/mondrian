@@ -128,8 +128,8 @@ let rec check_current (bsp1 : bsp) (bsp2 : bsp) =
        match bsp2 with
          L (_,x',y') ->
           let cond =
-            let r ,g,b =  get_coul_sum bsp1 in
-            let r',g',b' = get_coul_sum bsp2 in
+            let r ,g , b  = get_coul_sum bsp1 in
+            let r',g', b' = get_coul_sum bsp2 in
             if r = b && b = g then r' = b' && b' = g'
             else if r > b && r > g then r' > b' && r' > g'
             else if g > r && g > b then g' > r' && g' > b'
