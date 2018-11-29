@@ -120,14 +120,10 @@ let get_list_list_of_bsp_sat (ligne : bsp_sat) : formule list list =
 (* Prend une liste de liste de formule et retourne une formule de la forme
  * (_ et _ et ... et _) ou (_ et _ et ... et _) ou ... ou (_ et _ et ... et _)*)
 let get_formule_of_list_list (ll : formule list list) : formule option =
-  let rec conj_all (list : formule list) : formule option =
+  let conj_all (list : formule list) : formule option =
     match list with
     | [] -> None
-    | x::q ->
-       let f = conj_all q in
-       match f with
-       | None -> Some x
-       | Some a -> Some (Et (x,a))
+    | x::q -> Some (List.fold_left (fun acc x -> Et (acc,x)) x q)
   in
   let rec disj_all (list : formule list list) : formule option =
     match list with
@@ -168,13 +164,11 @@ let rec get_actual_sol (orig : bsp_sat) =
   | R_sat (i,s,c) ->
      if s then None
      else
-         begin
-         let tuple = choose c i
-         in
-         match tuple with
+       begin
+         match choose c i with
          | None -> None
          | Some (x,y) -> Some (Ou (Lit (neg x), Lit (neg y)))
-         end
+       end
   | L_sat (_,s,l,r) ->
      if s
      then None
