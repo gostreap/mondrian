@@ -99,25 +99,16 @@ let generate_all_config coul nadja rs gs bs list=
 let get_list_list_of_bsp_sat (ligne : bsp_sat) : formule list list =
   let rs,gs,bs,list = get_adja_stat ligne in
   let size = rs + gs + bs + List.length list in
-  let fusion (tuple : (lit * lit) option) : formule option =
-    match tuple with
-    | None -> None
-    | Some (x,y) -> Some (Et(Lit x, Lit y))
-  in
-  let filter_None (f : formule option) : bool =
+  let rec filter_None (f : ((lit * lit) option) list) =
     match f with
-    | None -> false
-    | _ -> true
-  in
-  let form_of_form_option (sf : formule option) : formule =
-    match sf with
-    | None -> failwith "form_of_form_option : unexpected None"
-    | Some f -> f
+    | [] -> []
+    | x::xs ->
+       match x with
+       | None -> filter_None xs
+       | Some (x,y) -> (Et(Lit x, Lit y)) :: filter_None xs
   in
   let aux (list : (lit*lit) option list list) : formule list list =
-    let ll = List.map (List.map fusion) list in
-    let llclean = List.map (fun l -> List.filter filter_None l) ll in
-    List.map (fun l -> List.map (fun sf -> form_of_form_option sf) l) llclean
+    List.map filter_None list
   in
   match ligne with
   | R_sat (_,_,_) -> []
