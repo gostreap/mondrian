@@ -18,7 +18,7 @@ let rec get_n_tuples_in_list (n : int) (list : 'a list) : 'a list list=
 
 let choose coul n =
   match coul with
-  | None -> None 
+  | None -> None
   | Some Red -> Some (Var (2*n), Var(2*n+1))
   | Some Green -> Some (Var (2*n), Neg (2*n+1))
   | Some Blue -> Some (Neg (2*n), Neg (2*n+1))
@@ -70,11 +70,12 @@ let generate_triplet is_valid coul nadja rs gs bs =
   let bl = genl bs (switch_coul_l (nadja/2) (nadja/3) (nadja/2) (nadja/3)
                                   (switch_coul (nadja/2) (nadja/2) nadja) coul) in
   let all_l = List.rev_map (fun x -> List.rev_map (fun y -> List.rev_map (fun z -> (x,y,z)) bl) gl ) rl in
+  let filtered = List.filter is_valid (List.concat (List.concat all_l)) in
   match coul with
-  | C Red -> (nadja/2+1,gs,bs)::List.filter is_valid (List.concat (List.concat all_l))
-  | C Green -> (rs,nadja/2+1,bs)::List.filter is_valid (List.concat (List.concat all_l))
-  | C Blue -> (rs,gs,nadja/2+1)::List.filter is_valid (List.concat (List.concat all_l))
-  | _ ->List.filter is_valid (List.concat (List.concat all_l))
+  | C Red -> (nadja/2+1,gs,bs):: filtered
+  | C Green -> (rs,nadja/2+1,bs)::filtered
+  | C Blue -> (rs,gs,nadja/2+1)::filtered
+  | _ -> filtered
 
 let generate_all_config coul nadja rs gs bs list=
   let is_valid (r,g,b) =
@@ -134,7 +135,7 @@ let get_formule_of_list_list (ll : formule list list) : formule option =
        maybe2 (fun x y -> Ou (x,y)) f g
   in
   disj_all ll
-  
+
 (* L ({ coord=36; colored=true }, R (Some Blue), L ({ coord=596; colored=true }, R (Some Red), R (Some Red))) *)
 (* Renvoie la formule correspondant à la conjonction des contraintes de bsp_sat
  et de tout ses fils*)
