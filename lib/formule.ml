@@ -41,3 +41,8 @@ let neg lit =
   match lit with
   | Var x -> Neg x
   | Neg x -> Var x
+
+let get_v x =
+  match x with
+  | Var x -> x
+  | Neg x -> x
