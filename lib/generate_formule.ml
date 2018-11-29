@@ -115,7 +115,7 @@ let get_list_list_of_bsp_sat (ligne : bsp_sat) : formule list list =
     | Some f -> f
   in
   let aux (list : (lit*lit) option list list) : formule list list =
-    let ll = List.map (fun listll -> List.map (fun t -> fusion t) listll) list in
+    let ll = List.map (List.map fusion) list in
     let llclean = List.map (fun l -> List.filter filter_None l) ll in
     List.map (fun l -> List.map (fun sf -> form_of_form_option sf) l) llclean
   in
