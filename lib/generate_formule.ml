@@ -124,18 +124,7 @@ let get_list_list_of_bsp_sat (ligne : bsp_sat) : formule list list =
   | L_sat (c,_,_,_) ->
      match c with
      | None -> []
-     | Some c ->
-        match c with
-        | Purple -> aux (generate_all_config Purple size rs gs bs list)
-        | Yellow -> aux (generate_all_config Yellow size rs gs bs list)
-        | Cyan -> aux (generate_all_config Cyan size rs gs bs list)
-        | White -> aux (generate_all_config White size rs gs bs list)
-     (* noter que, dans le cas Purple, size est pair *)
-        | C co ->
-           match co with
-           | Red -> aux (generate_all_config (C Red) size rs gs bs list)
-           | Green -> aux (generate_all_config (C Green) size rs gs bs list)
-           | Blue -> aux (generate_all_config (C Blue) size rs gs bs list)
+     | Some c -> aux (generate_all_config c size rs gs bs list)
 
 (* Prend une liste de liste de formule et retourne une formule de la forme
  * (_ et _ et ... et _) ou (_ et _ et ... et _) ou ... ou (_ et _ et ... et _)*)
