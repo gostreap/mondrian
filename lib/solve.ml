@@ -1,6 +1,7 @@
 open Utils
 open Bsp
 open Formule
+open Couleur
 open Generate_formule
 
 module Variables = struct
@@ -44,13 +45,13 @@ let print_possible_sol solution =
      print_endline ""
 
 (* Renvoie None si le bsp possède une unique solution et une deuxième solution sinon *)
-let sat_solve (prof : int) (bsp : bsp) =
+let sat_solve (prof : int) (bsp : couleur bsp) =
   match get_fnc_of_bsp prof bsp with
   | None -> None
   | Some f -> Sat.solve (list_of_fnc f)
 
 (* Renvoie None si le working_bsp possède une solution *)
-let sat_solve_soluce (* (prof : int) *) (working_bsp : bsp) (linetree : linetree) =
+let sat_solve_soluce (* (prof : int) *) (working_bsp : couleur bsp) (linetree : couleur linetree) =
     match get_fnc_of_bsp_soluce (* prof *) working_bsp linetree with
   | None -> None
   | Some f -> Sat.solve (list_of_fnc f)

@@ -1,20 +1,21 @@
 open Couleur
 
 type label = { coord : int; colored : bool; }
-type bsp = R of Couleur.couleur option | L of label * bsp * bsp
+type 'a bsp = R of 'a option | L of label * 'a bsp * 'a bsp
 type point = int * int
 
-val string_of_bsp : bsp -> string
-val machinestring_of_bsp  : bsp -> string
+val string_of_bsp : couleur bsp -> string
+val machinestring_of_bsp : couleur bsp -> string
 val random_bsp_naive :
-  ?v:bool -> ?minsize:int -> ?start_larg:int -> ?start_haut:int -> int -> int -> int -> bsp
-val change_color : ?v:bool -> bsp -> point -> bsp
-val check_current : bsp -> bsp -> bool
-val empty_copy_of_bsp : bsp -> bsp
-val get_color_line : bsp -> couleur_l option
+  ?v:bool -> ?minsize:int -> ?start_larg:int -> ?start_haut:int -> int -> int -> int -> couleur bsp
+val change_color : ?v:bool -> couleur bsp -> point -> couleur bsp
+val check_current : couleur bsp -> couleur bsp -> bool
+val empty_copy_of_bsp : couleur bsp -> couleur bsp
+val get_color_line : couleur bsp -> couleur couleur_l option
+val get_color_line2 : [`Red | `Blue] bsp -> [`Red | `Blue] couleur_l option
 
 (* ################################################################################### *)
 
-type linetree = Leef | Line of point * point * Couleur.couleur_l option * linetree * linetree
+type 'a linetree = Leef | Line of point * point * 'a Couleur.couleur_l option * 'a linetree * 'a linetree
 
-val linetree_of_bsp : ?v:bool -> ?infx:int -> ?infy:int -> bsp -> int -> int -> linetree
+val linetree_of_bsp : ?v:bool -> ?infx:int -> ?infy:int -> couleur bsp -> int -> int -> couleur linetree

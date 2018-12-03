@@ -1,11 +1,11 @@
-type couleur = Red | Green | Blue
+type couleur = [`Red | `Green | `Blue]
 
-type couleur_l =
+type 'a couleur_l =
   Purple
 | Yellow
 | Cyan
 | White
-| C of couleur
+| C of 'a
 
 let switch_coul_l p y c w f coul =
   match coul with
@@ -14,12 +14,17 @@ let switch_coul_l p y c w f coul =
   | Cyan   -> c
   | White  -> w
   | C c    -> f c
-
+  
 let switch_coul r g b c =
   match c with
-  | Red -> r
-  | Green -> g
-  | Blue -> b
+  | `Red -> r
+  | `Green -> g
+  | `Blue -> b
+
+let switch_coul2 r b c =
+  match c with
+  | `Red -> r
+  | `Blue -> b
 
 let get_rgb = switch_coul Graphics.red Graphics.green Graphics.blue
 
@@ -41,4 +46,4 @@ let string_of_couleur_l =
     "white"
     string_of_couleur
 
-let next_coul = switch_coul Green Blue Red
+let next_coul = switch_coul `Green `Blue `Red

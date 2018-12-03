@@ -7,7 +7,7 @@ open Lib.Generate_formule
 open Graphics
 
 let rec affiche_coloration ?(v=true) ?(infx=0) ?(infy=0) (offset : int) (supx : int)
-                (supy : int) (bsp : bsp) =
+                (supy : int) bsp =
   match bsp with
   | L (lab, l, r) ->
      if v then
@@ -27,7 +27,7 @@ let rec affiche_coloration ?(v=true) ?(infx=0) ?(infy=0) (offset : int) (supx : 
         set_color (get_rgb c);
         fill_rect (infx+offset+3) (infy+offset+3) (supx-infx-6) (supy-infy-6)
 
-let affiche_linetree (offset : int) (lt : linetree) =
+let affiche_linetree (offset : int) (lt : 'a linetree) =
   let rec affiche_linetree linetree =
     match linetree with
     | Leef -> ()
@@ -67,8 +67,8 @@ let print_victory (offset : int)  (larg : int) (haut : int) loop =
   let (o,l,w) = init 5 larg haut in
   loop offset o w l larg haut
 
-let rec loop (offset : int) (origin_bsp : bsp) (working_bsp : bsp)
-             (linetree : linetree) (larg : int) (haut : int) (prof : int)=
+let rec loop (offset : int) (origin_bsp : 'a bsp) (working_bsp : 'a bsp)
+             (linetree : 'a linetree) (larg : int) (haut : int) (prof : int)=
   if check_current origin_bsp working_bsp
   then
     print_endline "victory"; (*print_victory offset larg haut loop *)
