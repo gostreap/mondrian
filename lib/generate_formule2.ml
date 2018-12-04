@@ -172,7 +172,7 @@ let rec get_actual_sol (orig : [`Red | `Blue] bsp_sat) =
 
 (* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution *)
 let get_fnc_of_bsp (prof : int) (bsp : [`Red | `Blue] bsp) =
-  let sat = bsp_sat_of_bsp2 bsp |> loop_sat prof in
+  let sat = bsp_sat_of_bsp get_color_line2 bsp |> loop_sat prof in
   let sol = get_actual_sol sat in
   match sol with
     None -> None

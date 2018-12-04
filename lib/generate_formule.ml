@@ -177,7 +177,7 @@ let rec get_actual_sol (orig : couleur bsp_sat) =
 
 (* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution *)
 let get_fnc_of_bsp (prof : int) (bsp : couleur bsp) =
-  let sat = bsp_sat_of_bsp bsp |> loop_sat prof in
+  let sat = bsp_sat_of_bsp get_color_line bsp |> loop_sat prof in
   let sol = get_actual_sol sat in
   match sol with
     None -> None

@@ -15,7 +15,7 @@ let rec string_of_bsp_sat (bsp : couleur bsp_sat) =
   | R_sat (n,x,c) -> string_of_int n ^ "*" ^ string_of_bool x ^ "*" ^
                         (maybe "None" (switch_coul "r" "g" "b") c)
 
-let bsp_sat_of_bsp (bsp : couleur bsp) : (couleur bsp_sat) =
+let bsp_sat_of_bsp (get_col_line : 'a bsp -> 'a couleur_l option) (bsp : 'a bsp) : ('a bsp_sat) =
   let rec aux v bsp  =
     match bsp with
     | R x ->
@@ -25,22 +25,7 @@ let bsp_sat_of_bsp (bsp : couleur bsp) : (couleur bsp_sat) =
        let (m,rr) = aux n r in
        let c =
          if lab.colored
-         then get_color_line bsp
-         else None in
-       (m,L_sat (c,false,ll,rr))
-  in snd (aux 0 bsp)
-
-let bsp_sat_of_bsp2 (bsp : [`Red | `Blue] bsp) : ([`Red | `Blue] bsp_sat) =
-  let rec aux v bsp  =
-    match bsp with
-    | R x ->
-       (v+1,R_sat (v,false, x))
-    | L (lab,l,r) ->
-       let (n,ll) = aux v l in
-       let (m,rr) = aux n r in
-       let c =
-         if lab.colored
-         then get_color_line2 bsp
+         then get_col_line bsp
          else None in
        (m,L_sat (c,false,ll,rr))
   in snd (aux 0 bsp)

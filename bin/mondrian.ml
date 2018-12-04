@@ -100,7 +100,7 @@ let main () =
   let (origin_bsp,linetree,working_bsp) = init prof larg haut in
   print_endline (string_of_bsp origin_bsp);
   print_endline "#########################";
-  let bsp_sat = loop_sat prof (bsp_sat_of_bsp origin_bsp) in
+  let bsp_sat = loop_sat prof (bsp_sat_of_bsp get_color_line origin_bsp) in
   print_endline (string_of_bsp_sat bsp_sat);
   print_endline "#########################";
   print_formule (get_fnc_of_bsp prof origin_bsp);
