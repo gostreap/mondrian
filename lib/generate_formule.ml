@@ -26,11 +26,7 @@ let generate_config (r,g,b) (rs,gs,bs) list =
   in
   concat_map_term (fun r -> concat_map_term (mkgreenblueform r) (mkgreen r)) red
 
-(* Genère les triplets (x,y,z) tels que (si coul = Red)
- - x+y+z = nadja
- - x > y && x > z
- - i >= is && i <= nadja \forall i \in {x,y,z}
-*)
+(* Genère les triplets (x,y,z) vérifiants is_valid *)
 let generate_triplet is_valid coul nadja rs gs bs =
   let rec genl f l =
     if f > l

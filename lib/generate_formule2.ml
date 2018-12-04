@@ -25,48 +25,38 @@ let generate_config (r,b) (rs,bs) list =
   in
   concat_map_term (fun r -> concat_map_term (mkgreenblueform r) (mkgreen r)) red
 
-(* Genère les triplets (x,y,z) tels que (si coul = Red)
- - x+y+z = nadja
- - x > y && x > z
- - i >= is && i <= nadja \forall i \in {x,y,z}
-*)
-let generate_tuple is_valid (coul: [< `Blue | `Red] couleur_l) nadja rs bs =
+(* Genère les tuple (x,y) vérifiant is_valid *)
+let generate_tuple is_valid nadja rs bs =
   let rec genl f l =
     if f > l
     then []
     else f :: (genl (f+1) l) in
-  let rl = genl rs (switch_coul_l (nadja/2) (nadja/2) (nadja/3) (nadja/3)
-                                  (switch_coul2 nadja (nadja/2)) coul) in
-  let bl = genl bs (switch_coul_l (nadja/2) (nadja/3) (nadja/2) (nadja/3)
-                                  (switch_coul2 (nadja/2) nadja) coul) in
+  let rl = genl rs nadja in (* TODO on en génère trop, on peut affiner les bornes *)
+  let bl = genl bs nadja in (* TODO Idem *)
   let all_l = List.rev_map (fun x -> List.rev_map (fun y -> (x,y) ) bl) rl in
-  let filtered = List.filter is_valid (List.concat all_l) in
-  match coul with
-  | C `Red -> (nadja/2+1,bs):: filtered (* TODO VÉRIFIER BORNES *)
-  | C `Blue -> (rs,nadja/2+1)::filtered
-  | _ -> filtered
+  List.filter is_valid (List.concat all_l)
 
 let generate_all_config (coul : [< `Blue | `Red ] couleur_l ) nadja rs bs list=
-  let is_valid (r,b) =
+  let is_valid (r,b) =  r+b = nadja &&
     match coul with
-    | Purple -> r+b = nadja && r = b
+    | Purple -> r = b
     | C co ->
        begin
          match co with
-         | `Red -> r+b = nadja && r > b
-         | `Blue -> r+b = nadja && b > r
+         | `Red -> r > b
+         | `Blue -> b > r
        end
     | _ -> false
   in
-  let triplets = generate_tuple is_valid coul nadja rs bs in
-  concat_map_term (fun x -> generate_config x (rs,bs) list) triplets
+  let tuples = generate_tuple is_valid nadja rs bs in
+  concat_map_term (fun x -> generate_config x (rs,bs) list) tuples
 
 (* Renvoie une liste de liste de string correspondant
    à une fnd satisfaisable ssi il existe un choix de
    coloration possible pour la ligne bsp_sat
    ATTENTION : seulement pour cette ligne, pas pour ces fils *)
 let get_list_list_of_bsp_sat (ligne: [`Blue | `Red ] bsp_sat) : formule list list =
-  let rs,bs,list = get_adja_stat2 ligne in
+  let rs,_,bs,list = get_adja_stat ligne in
   let size = rs + bs + List.length list in
   let rec filter_None (f : (lit option) list) =
     match f with
@@ -144,7 +134,7 @@ let rec get_actual_sol (orig : [`Red | `Blue] bsp_sat) =
      else maybe2 (fun x y -> Ou (x,y)) (get_actual_sol l) (get_actual_sol r)
 
 (* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution *)
-let get_fnc_of_bsp (prof : int) (bsp : [`Red | `Blue] bsp) =
+let get_fnc_of_bsp2 (prof : int) (bsp : [`Red | `Blue] bsp) =
   let sat = bsp_sat_of_bsp get_color_line2 bsp |> loop_sat prof in
   let sol = get_actual_sol sat in
   match sol with
@@ -153,9 +143,8 @@ let get_fnc_of_bsp (prof : int) (bsp : [`Red | `Blue] bsp) =
      let (_,f) = get_formule_complete (-1,Hashtbl.create 100) sat in
      maybe None (fun fnc -> Some (Et (fnc, sol))) f
 
-let get_fnc_of_bsp_soluce (* (prof : int) *) (working_bsp : [`Red | `Blue] bsp) (linetree :  [`Red | `Blue] linetree)=
-  let _ = bsp_sat_of_working_bsp working_bsp linetree (*|> loop_sat prof*) in
-  failwith "Not Implemented"
-   (* if not (check_all_lines sat)
-   * then None
-   * else snd (get_formule_complete (-1,Hashtbl.create 100) sat) *)
+let get_fnc_of_bsp_soluce2 (* (prof : int) *) (working_bsp : [`Red | `Blue] bsp) (linetree :  [`Red | `Blue] linetree)=
+  let sat = bsp_sat_of_working_bsp working_bsp linetree (* |> loop_sat prof *) in
+  if not (check_all_lines sat)
+  then None
+  else snd (get_formule_complete (-1,Hashtbl.create 100) sat)
