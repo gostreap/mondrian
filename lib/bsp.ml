@@ -31,19 +31,26 @@ let rec machinestring_of_bsp (bsp : couleur bsp) =
      "L ("^ (machinestring_of_label lab) ^", " ^ machinestring_of_bsp l ^ ", " ^ machinestring_of_bsp r ^")"
   | R x -> "R (" ^ (maybe "None" (fun x -> "Some " ^ string_of_couleur x ^ ")") x)
 
+let rand_two_coul () =
+  if Random.bool ()
+  then `Red
+  else `Blue
+
+let rand_three_coul () =
+  let x = Random.int 3 in
+  if x = 0 then `Red
+  else if x = 1 then `Green
+  else `Blue
+
 (*
  Génère un BSP aléatoire de profondeur 'profondeur'
  NOTE: Pour l'instant, toutes les arrêtes sont visibles
  *)
-let rec random_bsp_naive ?(v=true) ?(minsize=20) ?(start_larg=0)
-                         ?(start_haut=0) (prof : int) (larg : int) (haut : int) =
+let rec random_bsp_naive
+          ?(v=true) ?(minsize=20) ?(start_larg=0)
+          ?(start_haut=0) (prof : int) (larg : int) (haut : int) (rand : unit -> ([< `Red | `Green | `Blue] as 'a)) : ('a bsp) =
   if prof = 0 || larg-start_larg <= minsize*2 || haut-start_haut <= minsize*2
-  then R (Some (
-              match Random.int 3 with
-              | 0 -> `Red
-              | 1 -> `Green
-              | 2 -> `Blue
-              | _ -> failwith "random"))
+  then R (Some (rand ()))
   else
     let lab =
       { coord =
@@ -59,7 +66,7 @@ let rec random_bsp_naive ?(v=true) ?(minsize=20) ?(start_larg=0)
         ~start_haut:start_haut
         (prof-1)
         (if v then lab.coord else larg)
-        (if v then haut else lab.coord) in
+        (if v then haut else lab.coord) rand in
     let r =
       random_bsp_naive
         ~v:(not v)
@@ -67,7 +74,7 @@ let rec random_bsp_naive ?(v=true) ?(minsize=20) ?(start_larg=0)
         ~start_haut:(if v then start_haut else lab.coord)
         (prof-1)
         larg
-        haut in
+        haut rand in
     L (lab,l,r)
 
 (* Change la couleur d'un rectangle d'un bsp, dans lequel se situe p *)
@@ -154,33 +161,35 @@ let rec check_current (bsp1 : couleur bsp) (bsp2 : couleur bsp) =
        R x -> maybe false (fun _ -> true) x
      | _ -> false
 
-let rec linetree_of_bsp ?(v=true) ?(infx = 0) ?(infy = 0)
-                        (bsp : couleur bsp) (supx:int) (supy:int) =
+let rec linetree_of_bsp
+          ?(v=true) ?(infx = 0) ?(infy = 0)
+          (get_col : (([< `Blue | `Green | `Red ] as 'a) bsp -> 'a couleur_l option))
+          (bsp : 'a bsp) (supx:int) (supy:int) : ('a linetree) =
   match bsp with
   | R _ -> Leef
   | L (lab, left, right) ->
-     let color = get_color_line bsp in
+     let color = get_col bsp in
      if v then
        let
-         left_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:infy
+         left_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:infy get_col
                            left lab.coord supy
        and
-         right_linetree = linetree_of_bsp ~v:(not v) ~infx:lab.coord ~infy:infy
+         right_linetree = linetree_of_bsp ~v:(not v) ~infx:lab.coord ~infy:infy get_col
                             right supx supy
        in
        Line ((lab.coord, infy), (lab.coord, supy), color, left_linetree, right_linetree)
      else
        let
-         left_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:infy
+         left_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:infy get_col
                            left supx lab.coord
        and
-         right_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:lab.coord
+         right_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:lab.coord get_col
                             right supx supy
        in
        Line ((infx, lab.coord), (supx, lab.coord), color, left_linetree, right_linetree)
 
 (* Renvoie une copie de bsp avec toute les régions non coloriées *)
-let rec empty_copy_of_bsp (bsp : couleur bsp) =
+let rec empty_copy_of_bsp (bsp : 'a bsp) : 'b bsp =
   match bsp with
   | R _ -> R None
   | L (lab,left,right) -> L (lab, empty_copy_of_bsp left, empty_copy_of_bsp right)

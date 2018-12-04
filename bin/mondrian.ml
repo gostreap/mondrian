@@ -53,19 +53,18 @@ let affiche_cadre (offset : int) (larg : int) (haut : int) =
                  (larg + offset, offset, offset, offset)|]
 
 (* Génère un bsp et sa copie vide  *)
-let init (prof : int) (larg : int) (haut : int) =
-  let origin_bsp = random_bsp_naive prof larg haut in
-  let linetree = linetree_of_bsp origin_bsp larg haut in
+let init3coul (prof : int) (larg : int) (haut : int) : (couleur bsp * couleur linetree * couleur bsp) =
+  let origin_bsp = random_bsp_naive prof larg haut rand_three_coul in
+  let linetree = linetree_of_bsp get_color_line origin_bsp larg haut in
   let working_bsp = empty_copy_of_bsp origin_bsp in
   (origin_bsp,linetree,working_bsp)
 
-let print_victory (offset : int)  (larg : int) (haut : int) loop =
-  clear_graph ();
-  moveto 0 0;
-  draw_string "BRAVO ! VOUS AVEZ COMPLÉTÉ LE PUZZLE !";
-  let _ = wait_next_event [Button_down ; Key_pressed] in
-  let (o,l,w) = init 5 larg haut in
-  loop offset o w l larg haut
+let init2coul (prof : int) (larg : int) (haut : int) :
+      (([`Red | `Blue] as 'a) bsp * 'a linetree * 'a bsp) =
+  let origin_bsp = random_bsp_naive prof larg haut rand_two_coul in
+  let linetree = linetree_of_bsp get_color_line2 origin_bsp larg haut in
+  let working_bsp = empty_copy_of_bsp origin_bsp in
+  (origin_bsp,linetree,working_bsp)
 
 let rec loop (offset : int) (origin_bsp : 'a bsp) (working_bsp : 'a bsp)
              (linetree : 'a linetree) (larg : int) (haut : int) (prof : int)=
@@ -97,7 +96,7 @@ let main () =
   Random.self_init ();
   open_graph (" " ^ string_of_int (larg + 2 * offset) ^ "x" ^ string_of_int (haut + 2 * offset)) ;
   let prof = 4 in
-  let (origin_bsp,linetree,working_bsp) = init prof larg haut in
+  let (origin_bsp,linetree,working_bsp) = init3coul prof larg haut in
   print_endline (string_of_bsp origin_bsp);
   print_endline "#########################";
   let bsp_sat = loop_sat prof (bsp_sat_of_bsp get_color_line origin_bsp) in
