@@ -3,41 +3,14 @@ open Utils
 open Bsp
 open Formule
 open Bsp_sat
+open Gen_utils
 open Tseitin
-
-(* Renvoie la liste de tout les tuples à n éléments que l'on
-   peut former avec les éléments de list *)
-let rec get_n_tuples_in_list (n : int) (list : 'a list) : 'a list list=
-  let aux x = List.fold_left (fun acc ll -> (x::ll)::acc) []
-  in
-  if n != 0 then
-    match list with
-    | [] -> []
-    | x::q -> List.rev_append (aux x (get_n_tuples_in_list (n-1) q)) (get_n_tuples_in_list n q)
-  else [[]]
 
 let choose coul n =
   match coul with
   | None -> None
   | Some `Red -> Some (Var n)
   | Some `Blue -> Some (Neg n)
-
-(* Convertie une liste d'identifiant de rectangle en une liste de tuple de littéraux, qui une fois conjoncté sont vrais si et seulement si les rectangles sont de couleurs coul.
- *)
-(* let formule_list_of_bsp_sat_list (coul : couleur) (list : int list) =
- *   List.map (choose coul) list *)
-
-let get_compl c list =
-  List.filter (fun a -> not (List.mem a c)) list
-
-(* Similaire à rev_map mais ajoute une liste en fin*)
-let rev_map_ap f l xs =
-  let rec rmap_f accu = function
-    | [] -> accu
-    | a::l -> rmap_f (f a :: accu) l
-  in rmap_f xs l
-
-let concat_map_term f l = List.fold_left (fun acc x -> List.rev_append (f x) acc) [] l
 
 let generate_config (r,b) (rs,bs) list =
   let red = get_n_tuples_in_list (r-rs) list in
