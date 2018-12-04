@@ -1,8 +1,7 @@
 open Utils
-open Bsp
 open Formule
-open Couleur
 open Generate_formule
+open Generate_formule2
 
 module Variables = struct
   type t = int
@@ -45,26 +44,33 @@ let print_possible_sol solution =
      print_endline ""
 
 (* Renvoie None si le bsp possède une unique solution et une deuxième solution sinon *)
-let sat_solve (prof : int) (bsp : couleur bsp) =
-  match get_fnc_of_bsp prof bsp with
-  | None -> None
-  | Some f -> Sat.solve (list_of_fnc f)
-
-(* Renvoie None si le working_bsp possède une solution *)
-let sat_solve_soluce (* (prof : int) *) (working_bsp : couleur bsp) (linetree : couleur linetree) =
-    match get_fnc_of_bsp_soluce (* prof *) working_bsp linetree with
+let sat_solve (f : formule option) =
+  match f with
   | None -> None
   | Some f -> Sat.solve (list_of_fnc f)
 
 (* Renvoie vrai si le bsp possède une unique solution et faux sinon *)
-let is_uniq prof bsp = maybe true (fun _ -> false) (sat_solve prof bsp)
+let is_uniq prof bsp = maybe true (fun _ -> false) (sat_solve (get_fnc_of_bsp prof bsp))
 
 (* Test si le bsp possède une unique solution et affiche le résultat *)
-let print_maybe_other_sol prof bsp = print_possible_sol (sat_solve prof bsp)
+let print_maybe_other_sol prof bsp = print_possible_sol (sat_solve (get_fnc_of_bsp prof bsp))
 
 (* Test si le bsp possède une solution et affiche le résultat *)
-let print_maybe_other_sol_soluce (* prof *) working_bsp linetree =
-  let sol = sat_solve_soluce (* prof *) working_bsp linetree in
+let print_maybe_other_sol_soluce working_bsp linetree =
+  let sol = sat_solve (get_fnc_of_bsp_soluce working_bsp linetree) in
+  match sol with
+  | None -> print_endline "Pas de solution"
+  | _ -> print_endline "Solution possible"
+
+(* For 2 colors *)
+let is_uniq2 prof bsp = maybe true (fun _ -> false) (sat_solve (get_fnc_of_bsp2 prof bsp))
+
+(* Test si le bsp possède une unique solution et affiche le résultat *)
+let print_maybe_other_sol2 prof bsp = print_possible_sol (sat_solve (get_fnc_of_bsp2 prof bsp))
+
+(* Test si le bsp possède une solution et affiche le résultat *)
+let print_maybe_other_sol_soluce2 (* prof *) working_bsp linetree =
+   let sol = sat_solve (get_fnc_of_bsp_soluce2 working_bsp linetree) in
   match sol with
   | None -> print_endline "Pas de solution"
   | _ -> print_endline "Solution possible"

@@ -4,8 +4,8 @@ type label = { coord : int; colored : bool; }
 type 'a bsp = R of 'a option | L of label * 'a bsp * 'a bsp
 type point = int * int
 
-val string_of_bsp : couleur bsp -> string
-val machinestring_of_bsp : couleur bsp -> string
+val string_of_bsp : [< `Red | `Green | `Blue] bsp -> string
+val machinestring_of_bsp : [< `Red | `Green | `Blue] bsp -> string
 val rand_two_coul : unit -> [`Blue | `Red ]
 val rand_three_coul : unit -> [`Blue | `Green | `Red ]
 val random_bsp_naive :
@@ -16,8 +16,8 @@ val random_bsp_naive :
   int ->
   int ->
   int -> (unit -> ([< `Blue | `Green | `Red ] as 'a)) -> 'a bsp
-val change_color : ?v:bool -> couleur bsp -> point -> couleur bsp
-val check_current : couleur bsp -> couleur bsp -> bool
+val change_color : ?v:bool -> (([< `Blue | `Green | `Red ] as 'a) option -> 'a) -> 'a bsp -> point -> 'a bsp
+val check_current : ([< `Blue | `Green | `Red ] as 'a) bsp -> 'a bsp -> bool
 val empty_copy_of_bsp : 'a bsp -> 'b bsp
 val get_color_line : couleur bsp -> couleur couleur_l option
 val get_color_line2 : [`Red | `Blue] bsp -> [`Red | `Blue] couleur_l option

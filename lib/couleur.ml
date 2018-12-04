@@ -1,3 +1,5 @@
+open Utils
+
 type couleur = [`Red | `Green | `Blue]
 
 type 'a couleur_l =
@@ -14,7 +16,7 @@ let switch_coul_l p y c w f coul =
   | Cyan   -> c
   | White  -> w
   | C c    -> f c
-  
+
 let switch_coul r g b c =
   match c with
   | `Red -> r
@@ -46,4 +48,5 @@ let string_of_couleur_l =
     "white"
     string_of_couleur
 
-let next_coul = switch_coul `Green `Blue `Red
+let next_coul = maybe `Blue (switch_coul `Green `Blue `Red)
+let next_coul2 = maybe `Blue (switch_coul2 `Blue `Red)

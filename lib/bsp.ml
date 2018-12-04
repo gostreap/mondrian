@@ -17,14 +17,14 @@ type 'a linetree =
   | Line of point * point * 'a couleur_l option * 'a linetree * 'a linetree
 
 (* Affichage rudimentaire de BSP *)
-let rec string_of_bsp (bsp : couleur bsp) =
+let rec string_of_bsp (bsp : [< `Red | `Green | `Blue] bsp) =
   match bsp with
   | L (lab,l,r) ->
      "(" ^ (string_of_bsp l) ^ ") " ^ (string_of_int (lab.coord)) ^
        " (" ^ (string_of_bsp r) ^ ")"
   | R x -> maybe "None" string_of_couleur x
 
-let rec machinestring_of_bsp (bsp : couleur bsp) =
+let rec machinestring_of_bsp (bsp : [< `Red | `Green | `Blue] bsp) =
   let machinestring_of_label lab = "{ coord=" ^ string_of_int (lab.coord) ^ "; colored="^ (string_of_bool lab.colored) ^ " }" in
   match bsp with
   | L (lab,l,r) ->
@@ -78,17 +78,17 @@ let rec random_bsp_naive
     L (lab,l,r)
 
 (* Change la couleur d'un rectangle d'un bsp, dans lequel se situe p *)
-let rec change_color ?(v=true) (bsp : couleur bsp) ((x,y) as p : point) =
+let rec change_color ?(v=true) (getnext : ([< `Blue | `Green | `Red ] as 'a) option -> 'a) (bsp : 'a bsp) ((x,y) as p : point) =
   match bsp with
   | L (lab, left, right) ->
      if v
      then if x < lab.coord
-          then L (lab, change_color ~v:(not v) left p, right)
-          else L (lab, left, change_color ~v:(not v) right p)
+          then L (lab, change_color ~v:(not v) getnext left p, right)
+          else L (lab, left, change_color ~v:(not v) getnext right p)
      else if y < lab.coord
-     then L (lab, change_color ~v:(not v) left p, right)
-     else L (lab, left, change_color ~v:(not v) right p)
-  | R c -> R (Some (maybe `Blue next_coul c))
+     then L (lab, change_color ~v:(not v) getnext left p, right)
+     else L (lab, left, change_color ~v:(not v) getnext right p)
+  | R c -> R (Some (getnext c))
 
 (*
 Retourne un couple (r,b) où:
@@ -137,7 +137,7 @@ let get_color_line2 (bsp : [`Red | `Blue] bsp) : ([`Red | `Blue] couleur_l optio
     else Some (C `Blue)
 
 (* Vérifie si bsp2 est une solution par rapport à bsp1 *)
-let rec check_current (bsp1 : couleur bsp) (bsp2 : couleur bsp) =
+let rec check_current (bsp1 : ([< `Red | `Green | `Blue] as 'a) bsp) (bsp2 : 'a bsp) =
   match bsp1 with
   | L (_,x,y) ->
      begin

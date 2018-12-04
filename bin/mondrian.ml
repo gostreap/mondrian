@@ -4,6 +4,7 @@ open Lib.Couleur
 open Lib.Solve
 open Lib.Formule
 open Lib.Generate_formule
+open Lib.Generate_formule2
 open Graphics
 
 let rec affiche_coloration ?(v=true) ?(infx=0) ?(infy=0) (offset : int) (supx : int)
@@ -66,11 +67,10 @@ let init2coul (prof : int) (larg : int) (haut : int) :
   let working_bsp = empty_copy_of_bsp origin_bsp in
   (origin_bsp,linetree,working_bsp)
 
-let rec loop (offset : int) (origin_bsp : 'a bsp) (working_bsp : 'a bsp)
-             (linetree : 'a linetree) (larg : int) (haut : int) (prof : int)=
+let rec loop (offset : int) (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (working_bsp : 'a bsp) (linetree : 'a linetree) (pmothersol : 'a bsp -> 'a linetree -> unit) (chcol : (([< `Blue | `Green | `Red ] as 'a) option -> 'a)) (larg : int) (haut : int) (prof : int)=
   if check_current origin_bsp working_bsp
   then
-    print_endline "victory"; (*print_victory offset larg haut loop *)
+    print_endline "victory";
   clear_graph ();
   affiche_linetree offset linetree;
   affiche_cadre offset larg haut;
@@ -80,14 +80,27 @@ let rec loop (offset : int) (origin_bsp : 'a bsp) (working_bsp : 'a bsp)
   then
     match e.key with
     | 'q' -> ()
-    | _ -> loop offset origin_bsp working_bsp linetree larg haut prof
+    | _ -> loop offset origin_bsp working_bsp linetree pmothersol chcol larg haut prof
   else
     if e.button
     then
-        let bsp = change_color working_bsp (e.mouse_x - offset, e.mouse_y - offset) in
-        print_maybe_other_sol_soluce (* prof *) bsp linetree;
-        loop offset origin_bsp bsp linetree larg haut prof
-    else loop offset origin_bsp working_bsp linetree larg haut prof
+        let bsp = change_color chcol  working_bsp (e.mouse_x - offset, e.mouse_y - offset) in
+        pmothersol bsp linetree;
+        loop offset origin_bsp bsp linetree pmothersol chcol larg haut prof
+    else loop offset origin_bsp working_bsp linetree pmothersol chcol larg haut prof
+
+let debug_main (origin_bsp : [< `Red | `Green | `Blue] bsp) fnc_of_bsp pmothersol get_col prof =
+  print_endline (string_of_bsp origin_bsp);
+  print_endline "#########################";
+  let bsp_sat = loop_sat prof (bsp_sat_of_bsp get_col origin_bsp) in
+  print_endline (string_of_bsp_sat bsp_sat);
+  print_endline "#########################";
+  print_formule (fnc_of_bsp prof origin_bsp);
+  print_endline "#########################";
+  print_endline (machinestring_of_bsp origin_bsp);
+  print_endline "#########################";
+  pmothersol prof origin_bsp;
+  print_endline "#########################"
 
 let main () =
   let larg = 800
@@ -95,19 +108,16 @@ let main () =
   and offset = 25 in
   Random.self_init ();
   open_graph (" " ^ string_of_int (larg + 2 * offset) ^ "x" ^ string_of_int (haut + 2 * offset)) ;
-  let prof = 4 in
-  let (origin_bsp,linetree,working_bsp) = init3coul prof larg haut in
-  print_endline (string_of_bsp origin_bsp);
-  print_endline "#########################";
-  let bsp_sat = loop_sat prof (bsp_sat_of_bsp get_color_line origin_bsp) in
-  print_endline (string_of_bsp_sat bsp_sat);
-  print_endline "#########################";
-  print_formule (get_fnc_of_bsp prof origin_bsp);
-  print_endline "#########################";
-  print_endline (machinestring_of_bsp origin_bsp);
-  print_endline "#########################";
-  print_maybe_other_sol prof origin_bsp;
-  print_endline "#########################";
-  loop offset origin_bsp working_bsp linetree larg haut prof
+  let prof = 6 in
+  let col3 = false in
+  if col3
+   then
+     let (origin_bsp,linetree,working_bsp) = init3coul prof larg haut in
+     debug_main origin_bsp get_fnc_of_bsp print_maybe_other_sol get_color_line prof ;
+     loop offset origin_bsp working_bsp linetree print_maybe_other_sol_soluce next_coul larg haut prof
+  else
+    let (origin_bsp,linetree,working_bsp) = init2coul prof larg haut in
+     debug_main origin_bsp get_fnc_of_bsp2 print_maybe_other_sol2 get_color_line2 prof;
+     loop offset origin_bsp working_bsp linetree print_maybe_other_sol_soluce2 next_coul2 larg haut prof
 
 let _ = main()

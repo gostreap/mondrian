@@ -7,4 +7,5 @@ val get_rgb : [< `Blue | `Green | `Red ] -> Graphics.color
 val get_rgb_l : [< `Blue | `Green | `Red ] couleur_l -> Graphics.color
 val string_of_couleur : [< `Blue | `Green | `Red ] -> string
 val string_of_couleur_l : [< `Blue | `Green | `Red ] couleur_l -> string
-val next_coul : couleur -> couleur
+val next_coul : couleur option -> couleur
+val next_coul2 : [`Blue | `Red ] option -> [`Blue | `Red ]

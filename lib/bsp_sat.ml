@@ -7,7 +7,7 @@ type 'a bsp_sat =
   | R_sat of int * bool * 'a option (* id * secure * coul *)
   | L_sat of 'a couleur_l option * bool * 'a bsp_sat * 'a bsp_sat (* coul * secure * left * right *)
 
-let rec string_of_bsp_sat (bsp : couleur bsp_sat) =
+let rec string_of_bsp_sat (bsp : [< `Red | `Green | `Blue] bsp_sat) =
   match bsp with
   | L_sat (coul,b,l,r) ->
      "(" ^ (string_of_bsp_sat l) ^ " " ^ string_of_bool b  ^ "*" ^
