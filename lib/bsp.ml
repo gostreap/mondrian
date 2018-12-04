@@ -88,8 +88,8 @@ Retourne un couple (r,b) où:
  * r est le nombre de rectangle rouge adjacents
  * y est le nombre de rectangle bleu adjacents
  *)
-let get_coul_sum (bsp :couleur bsp) =
-  let rec get_coul ?(v=true) (is_l : bool) bsp =
+let get_coul_sum (bsp : [< `Red | `Green | `Blue] bsp) =
+  let rec get_coul ?(v=true) (is_l : bool) (bsp : [< `Red | `Green | `Blue] bsp) =
     match bsp with
     | L (_,x,y) ->
        let rx,gx,bx as x' = get_coul ~v:(not v) is_l x in
@@ -106,24 +106,6 @@ let get_coul_sum (bsp :couleur bsp) =
      let (rr,rg,rb) = get_coul false r in
      (lr+rr,lg+rg,lb+rb)
 
-let get_coul_sum2 (bsp : [`Red | `Blue] bsp) =
-  let rec get_coul ?(v=true) (is_l : bool) bsp =
-    match bsp with
-    | L (_,x,y) ->
-       let rx,bx as x' = get_coul ~v:(not v) is_l x in
-       let ry,by as y' = get_coul ~v:(not v) is_l y in
-       if not v
-       then if is_l then y' else x'
-       else (rx+ry,bx+by)
-    | R x -> maybe (0,0) (switch_coul2 (1,0) (0,1)) x
-  in
-  match bsp with
-  | R _ -> (0,0)
-  | L (_,l,r) ->
-     let (lr,lb) = get_coul true l in
-     let (rr,rb) = get_coul false r in
-     (lr+rr,lb+rb)
-
 (* Renvoie la couleur naturel de la ligne correspondant à la racine de bsp *)
 let get_color_line (bsp : couleur bsp) : (couleur couleur_l option) =
   let (r,g,b) = get_coul_sum bsp in
@@ -139,7 +121,7 @@ let get_color_line (bsp : couleur bsp) : (couleur couleur_l option) =
     else Some Cyan
 
 let get_color_line2 (bsp : [`Red | `Blue] bsp) : ([`Red | `Blue] couleur_l option) =
-  let (r,b) = get_coul_sum2 bsp in
+  let (r,_,b) = get_coul_sum bsp in
   if r = 0 && b = 0
   then None
   else
