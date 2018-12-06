@@ -78,7 +78,7 @@ let rec random_bsp_naive
     L (lab,l,r)
 
 (* Change la couleur d'un rectangle d'un bsp, dans lequel se situe p *)
-let rec change_color ?(v=true) (getnext : ([< `Blue | `Green | `Red ] as 'a) option -> 'a) (bsp : 'a bsp) ((x,y) as p : point) =
+let rec change_color ?(v=true) (getnext : 'a option -> 'a) (bsp : 'a bsp) ((x,y) as p : point) =
   match bsp with
   | L (lab, left, right) ->
      if v
