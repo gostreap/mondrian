@@ -4,7 +4,6 @@ open Bsp
 open Formule
 open Bsp_sat
 open Gen_utils
-open Tseitin
 
 let choose coul n =
   match coul with
@@ -12,49 +11,41 @@ let choose coul n =
   | Some `Red -> Some (Var n)
   | Some `Blue -> Some (Neg n)
 
-let generate_config (r,b) (rs,bs) list =
-  let red = get_n_tuples_in_list (r-rs) list in
-  let mkredform = rev_map_ap (fun n -> choose (Some `Red) n) in
-  let mkgreen r = get_n_tuples_in_list 0 (get_compl r list) in (* TODO remove the absurd work *)
-  let mkgreenform =  List.map (fun _ -> None) in
-  let mkblue r g = get_n_tuples_in_list (b-bs) (get_compl (List.rev_append r g) list) in
-  let mkblueform = rev_map_ap (fun n -> choose (Some `Blue) n) in
-  let mkgreenblueform r g =
-    let g' = mkgreenform g in
-    List.map (fun b ->  mkredform r (mkblueform b g')) (mkblue r g)
-  in
-  concat_map_term (fun r -> concat_map_term (mkgreenblueform r) (mkgreen r)) red
-
-(* Genère les tuple (x,y) vérifiant is_valid *)
-let generate_tuple is_valid nadja rs bs =
-  let rec genl f l =
-    if f > l
-    then []
-    else f :: (genl (f+1) l) in
-  let rl = genl rs nadja in (* TODO on en génère trop, on peut affiner les bornes *)
-  let bl = genl bs nadja in (* TODO Idem *)
-  let all_l = List.rev_map (fun x -> List.rev_map (fun y -> (x,y) ) bl) rl in
-  List.filter is_valid (List.concat all_l)
-
-let generate_all_config (coul : [< `Blue | `Red ] couleur_l ) nadja rs bs list=
-  let is_valid (r,b) =  r+b = nadja &&
-    match coul with
-    | Purple -> r = b
-    | C co ->
-       begin
-         match co with
-         | `Red -> r > b
-         | `Blue -> b > r
-       end
-    | _ -> false
-  in
-  let tuples = generate_tuple is_valid nadja rs bs in
-  concat_map_term (fun x -> generate_config x (rs,bs) list) tuples
-
-(* Renvoie une liste de liste de string correspondant
-   à une fnd satisfaisable ssi il existe un choix de
-   coloration possible pour la ligne bsp_sat
+(* Renvoie une liste de liste de lit option correspondant 
+   à une fnc satisfaisable ssi il existe un choix de
+   coloration possible pour la ligne bsp_sat 
    ATTENTION : seulement pour cette ligne, pas pour ces fils *)
+let generate_all_config (coul : [< `Blue | `Red ] couleur_l ) nadja rs bs list =
+  match coul with
+  | Purple ->
+     begin
+         let red = get_n_tuples_in_list (nadja / 2 - rs) list in
+         let litred = rev_map_ap (fun l -> List.map (fun n -> choose (Some `Red) n) l) red [] in
+         let blue = get_n_tuples_in_list (nadja / 2 - bs) list in
+         rev_map_ap (fun l -> List.map (fun n -> choose (Some `Blue) n) l) blue litred
+     end
+  | C co ->
+     begin
+         match co with
+         | `Red ->
+            begin
+                let red = get_n_tuples_in_list (nadja / 2 + 1 - rs) list in
+                rev_map_ap (fun l -> List.map (fun n -> choose (Some `Red) n) l) red []
+            end
+         | `Blue ->
+            begin
+                let blue = get_n_tuples_in_list (nadja / 2 + 1 - bs) list in
+                rev_map_ap (fun l -> List.map (fun n -> choose (Some `Blue) n) l) blue []
+            end
+     end
+  | _ -> failwith "Unexpected Color"
+
+(* POTENTIELLEMENT FUSIONNABLE AVEC GENERATE_ALL_CONFIG*)
+(* Renvoie une liste de liste de formule correspondant 
+   à une fnc satisfaisable ssi il existe un choix de
+   coloration possible pour la ligne bsp_sat
+   ATTENTION : seulement pour cette ligne, pas pour ces fils 
+   -> appelle generate_all_config, retire les None et transforme les lits en formule*)
 let get_list_list_of_bsp_sat (ligne: [`Blue | `Red ] bsp_sat) : formule list list =
   let rs,_,bs,list = get_adja_stat ligne in
   let size = rs + bs + List.length list in
@@ -77,44 +68,40 @@ let get_list_list_of_bsp_sat (ligne: [`Blue | `Red ] bsp_sat) : formule list lis
      | Some c -> aux (generate_all_config c size rs bs list)
 
 (* Prend une liste de liste de formule et retourne une formule de la forme
- * (_ et _ et ... et _) ou (_ et _ et ... et _) ou ... ou (_ et _ et ... et _)*)
+ * (_ ou _ ou ... ou _) et (_ ou _ ou ... ou _) et ... et (_ ou _ ou ... ou _)*)
 let get_formule_of_list_list (ll : formule list list) : formule option =
-  let conj_all (list : formule list) : formule option =
+  let disj_all (list : formule list) : formule option =
     match list with
     | [] -> None
-    | x::q -> Some (List.fold_left (fun acc x -> Et (acc,x)) x q)
+    | x::q -> Some (List.fold_left (fun acc x -> Ou (acc,x)) x q)
   in
-  let rec disj_all (list : formule list list) : formule option =
+  let rec conj_all (list : formule list list) : formule option =
     match list with
     | [] -> None
     | x::q ->
-       let f = disj_all q in
-       let g = conj_all x in
-       maybe2 (fun x y -> Ou (x,y)) f g
+       let f = conj_all q in
+       let g = disj_all x in
+       maybe2 (fun x y -> Et (x,y)) f g
   in
-  disj_all ll
+  conj_all ll
 
-(* L ({ coord=36; colored=true }, R (Some Blue), L ({ coord=596; colored=true }, R (Some Red), R (Some Red))) *)
 (* Renvoie la formule correspondant à la conjonction des contraintes de bsp_sat
  et de tout ses fils*)
-let rec get_formule_complete nvar (bsp_sat : [`Red | `Blue] bsp_sat) : tseitinD * formule option =
-  let (nvar2,formfils) =
+let rec get_formule_complete (bsp_sat : [`Red | `Blue] bsp_sat) : formule option =
+  let formfils =
     match bsp_sat with
-    | R_sat (_,_,_) -> (nvar, None)
+    | R_sat (_,_,_) -> None
     | L_sat (_,_,l,r) ->
-       let (nvar1,fl) = get_formule_complete nvar l in
-       let (nvar2,fr) = get_formule_complete nvar1 r in
-       let f = maybe2 (fun x y -> Et (x,y)) fl fr in
-       (nvar2,f)
+       let fl = get_formule_complete l in
+       let fr = get_formule_complete r in
+       maybe2 (fun x y -> Et (x,y)) fl fr 
   in
   let form = get_formule_of_list_list (get_list_list_of_bsp_sat bsp_sat) in
-  (* on met sous FNC form *)
-  let fnc_form = maybe None (fun x -> Some (tseitin nvar2 x)) form in
-  match fnc_form, formfils with
-  | None, None -> (nvar2, None)
-  | Some (n,a), None -> (n, Some a)
-  | None, Some b -> (nvar2, Some b)
-  | Some (n,a), Some b -> (n, Some (Et (a,b)))
+  match form, formfils with
+  | None, None -> None
+  | Some a, None -> Some a
+  | None, Some b -> Some b
+  | Some a, Some b -> Some (Et (a,b))
 
 (* Renvoie la formule correspondant à la solution encodé dans bsp_sat *)
 (* DÉJA SOUS FNC ET NIÉ*)
@@ -140,11 +127,11 @@ let get_fnc_of_bsp2 (prof : int) (bsp : [`Red | `Blue] bsp) =
   match sol with
     None -> None
   | Some sol ->
-     let (_,f) = get_formule_complete (-1,Hashtbl.create 100) sat in
+     let f = get_formule_complete sat in
      maybe None (fun fnc -> Some (Et (fnc, sol))) f
 
-let get_fnc_of_bsp_soluce2 (* (prof : int) *) (working_bsp : [`Red | `Blue] bsp) (linetree :  [`Red | `Blue] linetree)=
-  let sat = bsp_sat_of_working_bsp working_bsp linetree (* |> loop_sat prof *) in
+let get_fnc_of_bsp_soluce2 (working_bsp : [`Red | `Blue] bsp) (linetree :  [`Red | `Blue] linetree)=
+  let sat = bsp_sat_of_working_bsp working_bsp linetree in
   if not (check_all_lines sat)
   then None
-  else snd (get_formule_complete (-1,Hashtbl.create 100) sat)
+  else get_formule_complete sat

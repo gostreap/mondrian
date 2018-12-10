@@ -108,7 +108,7 @@ let main () =
   and offset = 25 in
   Random.self_init ();
   open_graph (" " ^ string_of_int (larg + 2 * offset) ^ "x" ^ string_of_int (haut + 2 * offset)) ;
-  let prof = 6 in
+  let prof = 3 in
   let col3 = false in
   if col3
    then

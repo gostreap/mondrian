@@ -79,8 +79,7 @@ let rec secure_bsp_sat (bsp :  [< `Red | `Green | `Blue] bsp_sat) =
   | i -> i
 
 let rec loop_sat (n : int) (b : [< `Red | `Green | `Blue] bsp_sat) =
-  if n <= 0
-  then b
+  if n <= 0 then b
   else loop_sat (n-1) (secure_bsp_sat b)
 
 (* Renvoie un couple (r, g, b, list) où:
