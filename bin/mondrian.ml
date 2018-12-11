@@ -101,8 +101,6 @@ let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (working_bsp 
     else loop origin_bsp working_bsp linetree pmothersol chcol infos
 
 let debug_main (origin_bsp : [< `Red | `Green | `Blue] bsp) fnc_of_bsp pmothersol get_col prof =
-  print_endline (string_of_bsp origin_bsp);
-  print_endline "#########################";
   let bsp_sat = loop_sat prof (bsp_sat_of_bsp get_col origin_bsp) in
   print_endline (string_of_bsp_sat bsp_sat);
   print_endline "#########################";

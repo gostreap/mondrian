@@ -16,14 +16,6 @@ type 'a linetree =
   | Leef
   | Line of point * point * 'a couleur_l option * 'a linetree * 'a linetree
 
-(* Affichage rudimentaire de BSP *)
-let rec string_of_bsp (bsp : [< `Red | `Green | `Blue] bsp) =
-  match bsp with
-  | L (lab,l,r) ->
-     "(" ^ (string_of_bsp l) ^ ") " ^ (string_of_int (lab.coord)) ^
-       " (" ^ (string_of_bsp r) ^ ")"
-  | R x -> maybe "None" string_of_couleur x
-
 let rec machinestring_of_bsp (bsp : [< `Red | `Green | `Blue] bsp) =
   let machinestring_of_label lab = "{ coord=" ^ string_of_int (lab.coord) ^ "; colored="^ (string_of_bool lab.colored) ^ " }" in
   match bsp with
@@ -78,17 +70,19 @@ let rec random_bsp_naive
     L (lab,l,r)
 
 (* Change la couleur d'un rectangle d'un bsp, dans lequel se situe p *)
-let rec change_color ?(v=true) (getnext : 'a option -> 'a) (bsp : 'a bsp) ((x,y) as p : point) =
-  match bsp with
-  | L (lab, left, right) ->
-     if v
-     then if x < lab.coord
-          then L (lab, change_color ~v:(not v) getnext left p, right)
-          else L (lab, left, change_color ~v:(not v) getnext right p)
-     else if y < lab.coord
-     then L (lab, change_color ~v:(not v) getnext left p, right)
-     else L (lab, left, change_color ~v:(not v) getnext right p)
-  | R c -> R (Some (getnext c))
+let change_color (getnext : 'a option -> 'a) (bsp : 'a bsp) ((x,y) : point) =
+  let rec traverse v bsp =
+    match bsp with
+    | L (lab, left, right) ->
+       if v
+       then if x < lab.coord
+            then L (lab, traverse (not v) left, right)
+            else L (lab, left, traverse (not v) right)
+       else if y < lab.coord
+       then L (lab, traverse (not v) left, right)
+       else L (lab, left, traverse (not v) right)
+    | R c -> R (Some (getnext c))
+  in traverse true bsp
 
 (*
 Retourne un couple (r,b) où:
@@ -96,11 +90,11 @@ Retourne un couple (r,b) où:
  * y est le nombre de rectangle bleu adjacents
  *)
 let get_coul_sum (bsp : [< `Red | `Green | `Blue] bsp) =
-  let rec get_coul ?(v=true) (is_l : bool) (bsp : [< `Red | `Green | `Blue] bsp) =
+  let rec get_coul (v : bool) (is_l : bool) bsp =
     match bsp with
     | L (_,x,y) ->
-       let rx,gx,bx as x' = get_coul ~v:(not v) is_l x in
-       let ry,gy,by as y' = get_coul ~v:(not v) is_l y in
+       let rx,gx,bx as x' = get_coul (not v) is_l x in
+       let ry,gy,by as y' = get_coul (not v) is_l y in
        if not v
        then if is_l then y' else x'
        else (rx+ry,gx+gy,bx+by)
@@ -109,8 +103,8 @@ let get_coul_sum (bsp : [< `Red | `Green | `Blue] bsp) =
   match bsp with
   | R _ -> (0,0,0)
   | L (_,l,r) ->
-     let (lr,lg,lb) = get_coul true l in
-     let (rr,rg,rb) = get_coul false r in
+     let (lr,lg,lb) = get_coul true true l in
+     let (rr,rg,rb) = get_coul true false r in
      (lr+rr,lg+rg,lb+rb)
 
 (* Renvoie la couleur naturel de la ligne correspondant à la racine de bsp *)
@@ -127,7 +121,7 @@ let get_color_line (bsp : couleur bsp) : (couleur couleur_l option) =
     else if r = g then Some Yellow
     else Some Cyan
 
-let get_color_line2 (bsp : [`Red | `Blue] bsp) : ([`Red | `Blue] couleur_l option) =
+let get_color_line2 (bsp : ([`Red | `Blue] as 'a) bsp) : ('a couleur_l option) =
   let (r,_,b) = get_coul_sum bsp in
   if r = 0 && b = 0
   then None
@@ -153,7 +147,7 @@ let rec check_current (bsp1 : ([< `Red | `Green | `Blue] as 'a) bsp) (bsp2 : 'a 
             else if r = b then r'=b'
             else if r = g then r'=g'
             else b'=g'
-          in check_current x x' && check_current y y' && cond
+          in cond && check_current x x' && check_current y y'
        | _ -> false
      end
   | R _ ->
@@ -161,32 +155,25 @@ let rec check_current (bsp1 : ([< `Red | `Green | `Blue] as 'a) bsp) (bsp2 : 'a 
        R x -> maybe false (fun _ -> true) x
      | _ -> false
 
-let rec linetree_of_bsp
-          ?(v=true) ?(infx = 0) ?(infy = 0)
+let linetree_of_bsp
           (get_col : (([< `Blue | `Green | `Red ] as 'a) bsp -> 'a couleur_l option))
           (bsp : 'a bsp) (supx:int) (supy:int) : ('a linetree) =
-  match bsp with
-  | R _ -> Leef
-  | L (lab, left, right) ->
-     let color = get_col bsp in
-     if v then
-       let
-         left_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:infy get_col
-                           left lab.coord supy
-       and
-         right_linetree = linetree_of_bsp ~v:(not v) ~infx:lab.coord ~infy:infy get_col
-                            right supx supy
-       in
-       Line ((lab.coord, infy), (lab.coord, supy), color, left_linetree, right_linetree)
-     else
-       let
-         left_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:infy get_col
-                           left supx lab.coord
-       and
-         right_linetree = linetree_of_bsp ~v:(not v) ~infx:infx ~infy:lab.coord get_col
-                            right supx supy
-       in
-       Line ((infx, lab.coord), (supx, lab.coord), color, left_linetree, right_linetree)
+  let rec aux v infx infy supx supy bsp =
+    match bsp with
+    | R _ -> Leef
+    | L (lab, left, right) ->
+       let color = get_col bsp in
+       if v then
+         let left_linetree  = aux (not v) infx infy lab.coord supy left
+         and right_linetree = aux (not v) lab.coord infy supx supy right
+         in
+         Line ((lab.coord, infy), (lab.coord, supy), color, left_linetree, right_linetree)
+       else
+         let left_linetree  = aux (not v) infx infy supx lab.coord left
+         and right_linetree = aux (not v) infx lab.coord supx supy right
+         in
+         Line ((infx, lab.coord), (supx, lab.coord), color, left_linetree, right_linetree)
+  in aux true 0 0 supx supy bsp
 
 (* Renvoie une copie de bsp avec toute les régions non coloriées *)
 let rec empty_copy_of_bsp (bsp : 'a bsp) : 'b bsp =
