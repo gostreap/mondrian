@@ -7,28 +7,39 @@ open Lib.Generate_formule
 open Lib.Generate_formule2
 open Graphics
 
-let rec affiche_coloration ?(v=true) ?(infx=0) ?(infy=0) (offset : int) (supx : int)
-                (supy : int) bsp =
+let line_width = 3
+let offset = 25
+
+type info_game =
+  { larg : int;
+    haut : int;
+    prof : int;
+  }
+
+let rec affiche_coloration ?(v=true) infx infy supx supy bsp =
   match bsp with
   | L (lab, l, r) ->
      if v then
        begin
-         affiche_coloration ~v:(not v) ~infx:infx ~infy:infy offset lab.coord supy l;
-         affiche_coloration ~v:(not v) ~infx:lab.coord ~infy:infy offset supx supy r
+         affiche_coloration ~v:(not v) infx infy lab.coord supy l;
+         affiche_coloration ~v:(not v) lab.coord infy supx supy r
        end
      else
        begin
-         affiche_coloration ~v:(not v) ~infx:infx ~infy:infy offset supx lab.coord l;
-         affiche_coloration ~v:(not v) ~infx:infx ~infy:lab.coord offset supx supy r
+         affiche_coloration ~v:(not v) infx infy supx lab.coord l;
+         affiche_coloration ~v:(not v) infx lab.coord supx supy r
        end
   | R x ->
      match x with
      | None -> ()
      | Some c ->
         set_color (get_rgb c);
-        fill_rect (infx+offset+3) (infy+offset+3) (supx-infx-6) (supy-infy-6)
+        fill_rect
+          (infx+offset+line_width)
+          (infy+offset+line_width)
+          (supx-infx-2*line_width) (supy-infy-2*line_width)
 
-let affiche_linetree (offset : int) (lt : 'a linetree) =
+let affiche_linetree (lt : 'a linetree) =
   let rec affiche_linetree linetree =
     match linetree with
     | Leef -> ()
@@ -39,14 +50,14 @@ let affiche_linetree (offset : int) (lt : 'a linetree) =
           affiche_linetree left;
           affiche_linetree right;
           set_color (get_rgb_l c);
-          set_line_width 3;
+          set_line_width line_width;
           draw_segments [|(a + offset, b + offset, x + offset, y + offset)|]
   in
   affiche_linetree lt
 
-let affiche_cadre (offset : int) (larg : int) (haut : int) =
+let affiche_cadre (larg : int) (haut : int) =
   (* Affiche un cadre autour du puzzle *)
-  set_line_width 3;
+  set_line_width line_width;
   set_color black;
   draw_segments[|(offset, offset, offset, haut + offset);
                  (offset, haut + offset, larg + offset, haut + offset);
@@ -54,40 +65,40 @@ let affiche_cadre (offset : int) (larg : int) (haut : int) =
                  (larg + offset, offset, offset, offset)|]
 
 (* Génère un bsp et sa copie vide  *)
-let init3coul (prof : int) (larg : int) (haut : int) : (couleur bsp * couleur linetree * couleur bsp) =
-  let origin_bsp = random_bsp_naive prof larg haut rand_three_coul in
-  let linetree = linetree_of_bsp get_color_line origin_bsp larg haut in
+let init3coul infos : (couleur bsp * couleur linetree * couleur bsp) =
+  let origin_bsp = random_bsp_naive infos.prof infos.larg infos.haut rand_three_coul in
+  let linetree = linetree_of_bsp get_color_line origin_bsp infos.larg infos.haut in
   let working_bsp = empty_copy_of_bsp origin_bsp in
   (origin_bsp,linetree,working_bsp)
 
-let init2coul (prof : int) (larg : int) (haut : int) :
+let init2coul infos :
       (([`Red | `Blue] as 'a) bsp * 'a linetree * 'a bsp) =
-  let origin_bsp = random_bsp_naive prof larg haut rand_two_coul in
-  let linetree = linetree_of_bsp get_color_line2 origin_bsp larg haut in
+  let origin_bsp = random_bsp_naive infos.prof infos.larg infos.haut rand_two_coul in
+  let linetree = linetree_of_bsp get_color_line2 origin_bsp infos.larg infos.haut in
   let working_bsp = empty_copy_of_bsp origin_bsp in
   (origin_bsp,linetree,working_bsp)
 
-let rec loop (offset : int) (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (working_bsp : 'a bsp) (linetree : 'a linetree) (pmothersol : 'a bsp -> 'a linetree -> unit) (chcol : (([< `Blue | `Green | `Red ] as 'a) option -> 'a)) (larg : int) (haut : int) (prof : int)=
+let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (working_bsp : 'a bsp) (linetree : 'a linetree) (pmothersol : 'a bsp -> 'a linetree -> unit) (chcol : (([< `Blue | `Green | `Red ] as 'a) option -> 'a)) infos =
   if check_current origin_bsp working_bsp
   then
     print_endline "victory";
   clear_graph ();
-  affiche_linetree offset linetree;
-  affiche_cadre offset larg haut;
-  affiche_coloration offset larg haut working_bsp;
+  affiche_linetree linetree;
+  affiche_cadre infos.larg infos.haut;
+  affiche_coloration 0 0 infos.larg infos.haut working_bsp;
   let e = wait_next_event [ Button_down ; Key_pressed ] in
   if e.keypressed
   then
     match e.key with
     | 'q' -> ()
-    | _ -> loop offset origin_bsp working_bsp linetree pmothersol chcol larg haut prof
+    | _ -> loop origin_bsp working_bsp linetree pmothersol chcol infos
   else
     if e.button
     then
         let bsp = change_color chcol  working_bsp (e.mouse_x - offset, e.mouse_y - offset) in
         pmothersol bsp linetree;
-        loop offset origin_bsp bsp linetree pmothersol chcol larg haut prof
-    else loop offset origin_bsp working_bsp linetree pmothersol chcol larg haut prof
+        loop origin_bsp bsp linetree pmothersol chcol infos
+    else loop origin_bsp working_bsp linetree pmothersol chcol infos
 
 let debug_main (origin_bsp : [< `Red | `Green | `Blue] bsp) fnc_of_bsp pmothersol get_col prof =
   print_endline (string_of_bsp origin_bsp);
@@ -103,21 +114,22 @@ let debug_main (origin_bsp : [< `Red | `Green | `Blue] bsp) fnc_of_bsp pmotherso
   print_endline "#########################"
 
 let main () =
-  let larg = 800
-  and haut = 800
-  and offset = 25 in
-  let prof = if Array.length Sys.argv >= 2 then int_of_string Sys.argv.(1) else 3 in
+  let infos =
+    {larg=800;
+     haut=800;
+     prof=if Array.length Sys.argv >= 2 then int_of_string Sys.argv.(1) else 3;
+    } in
   let col3 = if Array.length Sys.argv >= 3 then true else false in
   Random.self_init ();
-  open_graph (" " ^ string_of_int (larg + 2 * offset) ^ "x" ^ string_of_int (haut + 2 * offset)) ;
+  open_graph (" " ^ string_of_int (infos.larg + 2 * offset) ^ "x" ^ string_of_int (infos.haut + 2 * offset)) ;
   if col3
    then
-     let (origin_bsp,linetree,working_bsp) = init3coul prof larg haut in
-     debug_main origin_bsp get_fnc_of_bsp print_maybe_other_sol get_color_line prof ;
-     loop offset origin_bsp working_bsp linetree print_maybe_other_sol_soluce next_coul larg haut prof
+     let (origin_bsp,linetree,working_bsp) = init3coul infos in
+     debug_main origin_bsp get_fnc_of_bsp print_maybe_other_sol get_color_line infos.prof ;
+     loop origin_bsp working_bsp linetree print_maybe_other_sol_soluce next_coul infos
   else
-    let (origin_bsp,linetree,working_bsp) = init2coul prof larg haut in
-     debug_main origin_bsp get_fnc_of_bsp2 print_maybe_other_sol2 get_color_line2 prof;
-     loop offset origin_bsp working_bsp linetree print_maybe_other_sol_soluce2 next_coul2 larg haut prof
+    let (origin_bsp,linetree,working_bsp) = init2coul infos in
+     debug_main origin_bsp get_fnc_of_bsp2 print_maybe_other_sol2 get_color_line2 infos.prof;
+     loop origin_bsp working_bsp linetree print_maybe_other_sol_soluce2 next_coul2 infos
 
 let _ = main()
