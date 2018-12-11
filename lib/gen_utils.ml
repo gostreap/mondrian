@@ -3,7 +3,7 @@
 let rec get_n_tuples_in_list (n : int) (list : 'a list) : 'a list list=
   let aux x = List.fold_left (fun acc ll -> (x::ll)::acc) []
   in
-  if n >= 0 then
+  if n != 0 then
     match list with
     | [] -> []
     | x::q -> List.rev_append (aux x (get_n_tuples_in_list (n-1) q)) (get_n_tuples_in_list n q)
