@@ -106,10 +106,10 @@ let main () =
   let larg = 800
   and haut = 800
   and offset = 25 in
+  let prof = if Array.length Sys.argv >= 2 then int_of_string Sys.argv.(1) else 3 in
+  let col3 = if Array.length Sys.argv >= 3 then true else false in
   Random.self_init ();
   open_graph (" " ^ string_of_int (larg + 2 * offset) ^ "x" ^ string_of_int (haut + 2 * offset)) ;
-  let prof = 3 in
-  let col3 = false in
   if col3
    then
      let (origin_bsp,linetree,working_bsp) = init3coul prof larg haut in
