@@ -16,6 +16,20 @@ let choose coul n =
    coloration possible pour la ligne bsp_sat 
    ATTENTION : seulement pour cette ligne, pas pour ces fils *)
 let generate_all_config (coul : [< `Blue | `Red ] couleur_l ) nadja rs bs list =
+  print_int nadja;
+  print_endline "";
+  print_string "rouge ";
+  print_int rs;
+  print_endline "";
+  print_string "bleu ";
+  print_int bs;
+  print_endline "";
+  print_string "tuple ";
+  print_int (nadja - nadja/2);
+  print_endline "";
+  print_string "majorité ";
+  print_int (nadja/2);
+  print_endline "";
   match coul with
   | Purple ->
      begin
@@ -30,15 +44,21 @@ let generate_all_config (coul : [< `Blue | `Red ] couleur_l ) nadja rs bs list =
          | `Red ->
             begin
                 if rs > nadja / 2 then [[]]
-                else 
-                    let red = get_n_tuples_in_list (nadja - nadja / 2) list in
+                else
+                    let size = if nadja - nadja / 2 - bs > nadja - rs - bs
+                               then nadja - rs - bs
+                               else nadja - nadja / 2 - bs in
+                    let red = get_n_tuples_in_list size list in
                     rev_map_ap (fun l -> List.map (fun n -> choose (Some `Red) n) l) red []
             end
          | `Blue ->
             begin
                 if bs > nadja / 2 then [[]]
-                else 
-                    let blue = get_n_tuples_in_list (nadja - nadja / 2) list in
+                else
+                    let size = if nadja - nadja / 2 - rs > nadja - rs - bs
+                               then nadja - rs - bs
+                               else nadja - nadja / 2 - rs in
+                    let blue = get_n_tuples_in_list size list in
                     rev_map_ap (fun l -> List.map (fun n -> choose (Some `Blue) n) l) blue []
             end
      end

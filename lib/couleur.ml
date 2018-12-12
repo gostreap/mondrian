@@ -38,7 +38,7 @@ let get_rgb_l =
     (Graphics.rgb 255 255 255)
     get_rgb
 
-let string_of_couleur = switch_coul "Red" "Green" "Blue"
+let string_of_couleur = switch_coul "`Red" "`Green" "`Blue"
 
 let string_of_couleur_l =
   switch_coul_l
