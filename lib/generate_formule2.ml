@@ -19,9 +19,9 @@ let generate_all_config (coul : [< `Blue | `Red ] couleur_l ) nadja rs bs list =
   match coul with
   | Purple ->
      begin
-         let red = get_n_tuples_in_list (nadja / 2 - rs) list in
+         let red = get_n_tuples_in_list (nadja / 2 + 1 - bs) list in
          let litred = rev_map_ap (fun l -> List.map (fun n -> choose (Some `Red) n) l) red [] in
-         let blue = get_n_tuples_in_list (nadja / 2 - bs) list in
+         let blue = get_n_tuples_in_list (nadja / 2 + 1 - rs) list in
          rev_map_ap (fun l -> List.map (fun n -> choose (Some `Blue) n) l) blue litred
      end
   | C co ->
@@ -29,13 +29,17 @@ let generate_all_config (coul : [< `Blue | `Red ] couleur_l ) nadja rs bs list =
          match co with
          | `Red ->
             begin
-                let red = get_n_tuples_in_list (nadja / 2 + 1 - rs) list in
-                rev_map_ap (fun l -> List.map (fun n -> choose (Some `Red) n) l) red []
+                if rs > nadja / 2 then [[]]
+                else 
+                    let red = get_n_tuples_in_list (nadja - nadja / 2) list in
+                    rev_map_ap (fun l -> List.map (fun n -> choose (Some `Red) n) l) red []
             end
          | `Blue ->
             begin
-                let blue = get_n_tuples_in_list (nadja / 2 + 1 - bs) list in
-                rev_map_ap (fun l -> List.map (fun n -> choose (Some `Blue) n) l) blue []
+                if bs > nadja / 2 then [[]]
+                else 
+                    let blue = get_n_tuples_in_list (nadja - nadja / 2) list in
+                    rev_map_ap (fun l -> List.map (fun n -> choose (Some `Blue) n) l) blue []
             end
      end
   | _ -> failwith "Unexpected Color"
@@ -97,6 +101,7 @@ let rec get_formule_complete (bsp_sat : [`Red | `Blue] bsp_sat) : formule option
        maybe2 (fun x y -> Et (x,y)) fl fr 
   in
   let form = get_formule_of_list_list (get_list_list_of_bsp_sat bsp_sat) in
+  print_formule form;
   match form, formfils with
   | None, None -> None
   | Some a, None -> Some a
