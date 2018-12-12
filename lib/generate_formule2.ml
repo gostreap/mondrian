@@ -16,23 +16,10 @@ let choose coul n =
    coloration possible pour la ligne bsp_sat
    ATTENTION : seulement pour cette ligne, pas pour ces fils *)
 let generate_all_config (coul : [< `Blue | `Red ] couleur_l ) nadja rs bs list =
-  print_int nadja;
-  print_endline "";
-  print_string "rouge ";
-  print_int rs;
-  print_endline "";
-  print_string "bleu ";
-  print_int bs;
-  print_endline "";
-  print_string "tuple ";
-  print_int (nadja - nadja/2);
-  print_endline "";
-  print_string "majorité ";
-  print_int (nadja/2);
-  print_endline "";
   match coul with
   | Purple ->
      begin
+         (* On suppose notamment ici que ni bs ni rs ne sont strictement supérieur à nadja/2 *)
          let red = get_n_tuples_in_list (nadja / 2 + 1 - bs) list in
          let litred = rev_map_ap (fun l -> List.map (fun n -> choose (Some `Red) n) l) red [] in
          let blue = get_n_tuples_in_list (nadja / 2 + 1 - rs) list in
@@ -121,7 +108,7 @@ let rec get_formule_complete (bsp_sat : [`Red | `Blue] bsp_sat) : formule option
        maybe2 (fun x y -> Et (x,y)) fl fr
   in
   let form = get_formule_of_list_list (get_list_list_of_bsp_sat bsp_sat) in
-  print_formule form;
+  (* print_formule form; *)
   match form, formfils with
   | None, None -> None
   | Some a, None -> Some a
