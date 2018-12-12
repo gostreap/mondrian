@@ -7,8 +7,9 @@ type label =
   }
 
 (* Commence avec une séparation verticale *)
-type 'a bsp = R of 'a option
-         | L of label * 'a bsp * 'a bsp
+type 'a bsp =
+  R of 'a option
+| L of label * 'a bsp * 'a bsp
 
 type point = (int * int)
 
@@ -180,3 +181,13 @@ let rec empty_copy_of_bsp (bsp : 'a bsp) : 'b bsp =
   match bsp with
   | R _ -> R None
   | L (lab,left,right) -> L (lab, empty_copy_of_bsp left, empty_copy_of_bsp right)
+
+let change_coul_with_id (bsp : 'a bsp) (num : int) (c : 'a) =
+  let rec aux start num bsp =
+    match bsp with
+    | R _ as p -> (start+1,if start = num then R (Some c) else p)
+    | L (a,l,r) ->
+       let (n,l')  = aux start num l in
+       let (n',r') = aux n num r in
+       (n',L (a,l',r'))
+  in snd (aux 0 num bsp)

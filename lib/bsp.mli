@@ -26,3 +26,5 @@ val get_color_line2 : [`Red | `Blue] bsp -> [`Red | `Blue] couleur_l option
 type 'a linetree = Leef | Line of point * point * 'a Couleur.couleur_l option * 'a linetree * 'a linetree
 
 val linetree_of_bsp : (([< `Blue | `Green | `Red ] as 'a) bsp -> 'a couleur_l option) -> 'a bsp -> int -> int -> 'a linetree
+
+val change_coul_with_id : 'a bsp -> int -> 'a -> 'a bsp

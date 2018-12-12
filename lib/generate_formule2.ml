@@ -11,9 +11,9 @@ let choose coul n =
   | Some `Red -> Some (Var n)
   | Some `Blue -> Some (Neg n)
 
-(* Renvoie une liste de liste de lit option correspondant 
+(* Renvoie une liste de liste de lit option correspondant
    à une fnc satisfaisable ssi il existe un choix de
-   coloration possible pour la ligne bsp_sat 
+   coloration possible pour la ligne bsp_sat
    ATTENTION : seulement pour cette ligne, pas pour ces fils *)
 let generate_all_config (coul : [< `Blue | `Red ] couleur_l ) nadja rs bs list =
   print_int nadja;
@@ -65,10 +65,10 @@ let generate_all_config (coul : [< `Blue | `Red ] couleur_l ) nadja rs bs list =
   | _ -> failwith "Unexpected Color"
 
 (* POTENTIELLEMENT FUSIONNABLE AVEC GENERATE_ALL_CONFIG*)
-(* Renvoie une liste de liste de formule correspondant 
+(* Renvoie une liste de liste de formule correspondant
    à une fnc satisfaisable ssi il existe un choix de
    coloration possible pour la ligne bsp_sat
-   ATTENTION : seulement pour cette ligne, pas pour ces fils 
+   ATTENTION : seulement pour cette ligne, pas pour ces fils
    -> appelle generate_all_config, retire les None et transforme les lits en formule*)
 let get_list_list_of_bsp_sat (ligne: [`Blue | `Red ] bsp_sat) : formule list list =
   let rs,_,bs,list = get_adja_stat ligne in
@@ -118,7 +118,7 @@ let rec get_formule_complete (bsp_sat : [`Red | `Blue] bsp_sat) : formule option
     | L_sat (_,_,l,r) ->
        let fl = get_formule_complete l in
        let fr = get_formule_complete r in
-       maybe2 (fun x y -> Et (x,y)) fl fr 
+       maybe2 (fun x y -> Et (x,y)) fl fr
   in
   let form = get_formule_of_list_list (get_list_list_of_bsp_sat bsp_sat) in
   print_formule form;
