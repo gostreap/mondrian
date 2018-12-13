@@ -77,13 +77,12 @@ let fill_one_rectangle working_bsp linetree =
         print_endline "ERREUR : fill_one_rectangle2 -> liste vide";
         working_bsp
      | x::y::_ ->
-        let c = 
+        let c =
           if fst x && fst y then `Blue
           else if fst x || fst y then `Green
           else `Red in
         change_coul_with_id working_bsp (snd x/2) c;
      | _ -> failwith "ERREUR : fill_one_rectanlgle -> paire de variable incomplète"
-      
 
 (* For 2 colors *)
 let is_uniq2 prof bsp = maybe true (fun _ -> false) (sat_solve (get_fnc_of_bsp2 prof bsp))
@@ -102,8 +101,14 @@ let fill_one_rectangle2 working_bsp linetree =
   let sol = sat_solve (get_fnc_of_bsp_soluce2 working_bsp linetree) in
   match sol with
   | None ->
-     print_endline "Pas de solution : impossible de remplir";
-     working_bsp
+     let (b,r) = tryred working_bsp in
+     if b
+     then r
+     else
+       begin
+         print_endline "Pas de solution : impossible de remplir";
+         working_bsp
+       end
   | Some l ->
      match l with
      | [] ->
