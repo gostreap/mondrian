@@ -7,17 +7,16 @@ open Gen_utils
 
 let choose coul n =
   match coul with
-  | None -> None
-  | Some `Red -> Some (Var n)
-  | Some `Blue -> Some (Neg n)
+  | `Red -> Var n
+  | `Blue -> Neg n
 
 (* Renvoie une liste de liste de lit option correspondant
    à une fnc satisfaisable ssi il existe un choix de
    coloration possible pour la ligne bsp_sat
    ATTENTION : seulement pour cette ligne, pas pour ces fils *)
 let generate_all_config (coul : [`Blue | `Red ] couleur_l ) nadja rs bs list =
-  let chooseRed  = choose (Some `Red) in
-  let chooseBlue = choose (Some `Blue) in
+  let chooseRed  n = Lit (choose `Red n)  in
+  let chooseBlue n = Lit (choose `Blue n) in
   match coul with
   | Purple ->
      (* On suppose notamment ici que ni bs ni rs ne sont strictement supérieur à nadja/2 *)
@@ -50,20 +49,12 @@ let generate_all_config (coul : [`Blue | `Red ] couleur_l ) nadja rs bs list =
 let get_list_list_of_bsp_sat (ligne: [`Blue | `Red ] bsp_sat) : formule list list =
   let rs,_,bs,list = get_adja_stat ligne in
   let size = rs + bs + List.length list in
-  let rec filter_None (f : (lit option) list) =
-    match f with
-    | [] -> []
-    | x::xs ->
-       match x with
-       | None -> filter_None xs
-       | Some x -> (Lit x) :: filter_None xs
-  in
   match ligne with
   | R_sat (_,_,_) -> []
   | L_sat (c,_,_,_) ->
      match c with
      | None -> []
-     | Some c -> List.map filter_None (generate_all_config c size rs bs list)
+     | Some c -> generate_all_config c size rs bs list
 
 (* Prend une liste de liste de formule et retourne une formule de la forme
  * (_ ou _ ou ... ou _) et (_ ou _ ou ... ou _) et ... et (_ ou _ ou ... ou _)*)
@@ -108,12 +99,7 @@ let rec get_actual_sol (orig : [`Red | `Blue] bsp_sat) =
   match orig with
   | R_sat (i,s,c) ->
      if s then None
-     else
-       begin
-         match choose c i with
-         | None -> None
-         | Some x -> Some (Lit (neg x))
-       end
+     else maybe None (fun c -> Some (Lit (neg (choose c i)))) c
   | L_sat (_,s,l,r) ->
      if s
      then None

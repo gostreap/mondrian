@@ -9,7 +9,6 @@ let rec get_n_tuples_in_list (n : int) (list : 'a list) : 'a list list=
     | x::q -> List.rev_append (aux x (get_n_tuples_in_list (n-1) q)) (get_n_tuples_in_list n q)
   else [[]]
 
-
 let get_compl c list =
   List.filter (fun a -> not (List.mem a c)) list
 
