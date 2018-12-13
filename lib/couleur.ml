@@ -28,14 +28,14 @@ let switch_coul2 r b c =
   | `Red -> r
   | `Blue -> b
 
-let get_rgb = switch_coul Graphics.red Graphics.green Graphics.blue
+let get_rgb = switch_coul Graphics.red (Graphics.rgb 6 139 0) Graphics.blue
 
 let get_rgb_l =
   switch_coul_l
     (Graphics.rgb 255 0 255)
-    (Graphics.rgb 255 255 0)
-    (Graphics.rgb 0 255 255)
-    (Graphics.rgb 255 255 255)
+    (Graphics.rgb 255 139 0)
+    (Graphics.rgb 0 200 255)
+    (Graphics.rgb 170 170 170)
     get_rgb
 
 let string_of_couleur = switch_coul "`Red" "`Green" "`Blue"
