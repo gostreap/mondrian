@@ -82,7 +82,6 @@ let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (working_bsp 
   if check_current origin_bsp working_bsp
   then
     print_endline "victory";
-  clear_graph ();
   affiche_linetree linetree;
   affiche_cadre infos.larg infos.haut;
   affiche_coloration 0 0 infos.larg infos.haut working_bsp;
