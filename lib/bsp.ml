@@ -191,3 +191,14 @@ let change_coul_with_id (bsp : 'a bsp) (num : int) (c : 'a) =
        let (n',r') = aux n num r in
        (n',L (a,l',r'))
   in snd (aux 0 num bsp)
+
+let rec tryred (bsp : [< `Green | `Red | `Blue] bsp) =
+  match bsp with
+  | R c -> maybe (true,R (Some `Red)) (fun _ -> (false,R c)) c
+  | L (l,a,b) ->
+     let (r,a') = tryred a in
+     if r
+     then (r,L (l,a',b))
+     else
+       let (r',b') = tryred b in
+       (r', L (l,a,if r' then b' else b))
