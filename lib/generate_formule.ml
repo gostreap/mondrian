@@ -87,6 +87,24 @@ let get_list_list_of_bsp_sat (ligne : couleur bsp_sat) : formule list list =
      | None -> []
      | Some c -> aux (generate_all_config c size rs gs bs list)
 
+(* Prend une liste de liste de formule et retourne une formule de la forme
+ * (_ et _ et ... et _) ou (_ et _ et ... et _) ou ... ou (_ et _ et ... et _)*)
+let get_formule_of_list_list (ll : formule list list) : formule option =
+  let conj_all (list : formule list) : formule option =
+    match list with
+    | [] -> None
+    | x::q -> Some (List.fold_left (fun acc x -> Et (acc,x)) x q)
+  in
+  let rec disj_all (list : formule list list) : formule option =
+    match list with
+    | [] -> None
+    | x::q ->
+       let f = disj_all q in
+       let g = conj_all x in
+       maybe2 (fun x y -> Ou (x,y)) f g
+  in
+  disj_all ll
+
 (* L ({ coord=36; colored=true }, R (Some Blue), L ({ coord=596; colored=true }, R (Some Red), R (Some Red))) *)
 (* Renvoie la formule correspondant à la conjonction des contraintes de bsp_sat
  et de tout ses fils*)
