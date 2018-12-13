@@ -66,6 +66,7 @@ let print_maybe_other_sol_soluce working_bsp linetree =
 
 let fill_one_rectangle working_bsp linetree =
   let _ = sat_solve (get_fnc_of_bsp_soluce working_bsp linetree) in
+  (* print_possible_sol sol; *)
   working_bsp
       
 

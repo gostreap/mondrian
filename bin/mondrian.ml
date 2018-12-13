@@ -92,6 +92,9 @@ let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (working_bsp 
     match e.key with
     | 'q' -> ()
     | 'h' ->
+       set_color black;
+       moveto 9 9;
+       draw_string "Processing...";
        let new_bsp = fill working_bsp linetree in
        loop origin_bsp new_bsp linetree pmothersol fill chcol infos
     | _ -> loop origin_bsp working_bsp linetree pmothersol fill chcol infos
