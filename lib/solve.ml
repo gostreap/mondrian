@@ -68,8 +68,14 @@ let fill_one_rectangle working_bsp linetree =
   let sol = sat_solve (get_fnc_of_bsp_soluce working_bsp linetree) in
   match sol with
   | None ->
-     print_endline "Pas de solution : impossible de remplir";
-     working_bsp
+     let (b,r) = tryred working_bsp in
+     if b
+     then r
+     else
+       begin
+         print_endline "Pas de solution : impossible de remplir";
+         working_bsp
+       end
   | Some l ->
      let lclean = List.filter (fun x -> (snd x) >= 0) (List.sort (fun x y -> compare (snd x) (snd y)) l) in
      match lclean with
