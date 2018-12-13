@@ -169,3 +169,14 @@ let get_fnc_of_bsp_soluce (* (prof : int) *) (working_bsp : couleur bsp) (linetr
           | None -> None
           | _ -> f
       end
+
+let rec tryred (bsp : [`Red | `Blue] bsp) =
+  match bsp with
+  | R c -> maybe (true,R (Some `Red)) (fun _ -> (false,R c)) c
+  | L (l,a,b) ->
+     let (r,a') = tryred a in
+     if r
+     then (r,L (l,a',b))
+     else
+       let (r',b') = tryred b in
+       (r', L (l,a,if r' then b' else b))

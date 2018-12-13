@@ -9,3 +9,4 @@ val generate_triplet : (int*int*int -> bool) -> couleur couleur_l
 val generate_config : int * int * int -> int * int * int -> int list -> (lit * lit) option list list
 val generate_all_config : couleur couleur_l ->
                           int -> int -> int -> int -> int list -> (lit * lit) option list list
+val tryred : ([`Red | `Blue] bsp) -> (bool*([`Red | `Blue] bsp))

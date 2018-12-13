@@ -68,7 +68,6 @@ let fill_one_rectangle working_bsp linetree =
   let _ = sat_solve (get_fnc_of_bsp_soluce working_bsp linetree) in
   (* print_possible_sol sol; *)
   working_bsp
-      
 
 (* For 2 colors *)
 let is_uniq2 prof bsp = maybe true (fun _ -> false) (sat_solve (get_fnc_of_bsp2 prof bsp))
@@ -87,8 +86,14 @@ let fill_one_rectangle2 working_bsp linetree =
   let sol = sat_solve (get_fnc_of_bsp_soluce2 working_bsp linetree) in
   match sol with
   | None ->
-     print_endline "Pas de solution : impossible de remplir";
-     working_bsp
+     let (b,r) = tryred working_bsp in
+     if b
+     then r
+     else
+       begin
+         print_endline "Pas de solution : impossible de remplir";
+         working_bsp
+       end
   | Some l ->
      match l with
      | [] ->
