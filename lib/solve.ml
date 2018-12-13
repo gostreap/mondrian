@@ -1,4 +1,5 @@
 open Utils
+open Bsp
 open Formule
 open Generate_formule
 open Generate_formule2
@@ -62,6 +63,12 @@ let print_maybe_other_sol_soluce working_bsp linetree =
   | None -> print_endline "Pas de solution"
   | _ -> print_endline "Solution possible"
 
+
+let fill_one_rectangle working_bsp linetree =
+  let _ = sat_solve (get_fnc_of_bsp_soluce working_bsp linetree) in
+  working_bsp
+      
+
 (* For 2 colors *)
 let is_uniq2 prof bsp = maybe true (fun _ -> false) (sat_solve (get_fnc_of_bsp2 prof bsp))
 
@@ -69,8 +76,21 @@ let is_uniq2 prof bsp = maybe true (fun _ -> false) (sat_solve (get_fnc_of_bsp2 
 let print_maybe_other_sol2 prof bsp = print_possible_sol (sat_solve (get_fnc_of_bsp2 prof bsp))
 
 (* Test si le bsp possède une solution et affiche le résultat *)
-let print_maybe_other_sol_soluce2 (* prof *) working_bsp linetree =
-   let sol = sat_solve (get_fnc_of_bsp_soluce2 working_bsp linetree) in
+let print_maybe_other_sol_soluce2 working_bsp linetree =
+  let sol = sat_solve (get_fnc_of_bsp_soluce2 working_bsp linetree) in
   match sol with
   | None -> print_endline "Pas de solution"
   | _ -> print_endline "Solution possible"
+
+let fill_one_rectangle2 working_bsp linetree =
+  let sol = sat_solve (get_fnc_of_bsp_soluce2 working_bsp linetree) in
+  match sol with
+  | None ->
+     print_endline "Pas de solution : impossible de remplir";
+     working_bsp
+  | Some l ->
+     match l with
+     | [] ->
+        print_endline "ERREUR : fill_one_rectangle2 -> liste vide";
+        working_bsp
+     | x::_ -> change_coul_with_id working_bsp (snd x) (if (fst x) then `Blue else `Red)
