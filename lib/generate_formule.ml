@@ -41,7 +41,7 @@ let generate_triplet is_valid coul nadja rs gs bs =
   let all_l = List.rev_map (fun x -> List.rev_map (fun y -> List.rev_map (fun z -> (x,y,z)) bl) gl ) rl in
   let filtered = List.filter is_valid (List.concat (List.concat all_l)) in
   match coul with
-  | C `Red -> (nadja/2+1,gs,bs):: filtered
+  | C `Red -> (nadja/2+1,gs,bs)::filtered
   | C `Green -> (rs,nadja/2+1,bs)::filtered
   | C `Blue -> (rs,gs,nadja/2+1)::filtered
   | _ -> filtered

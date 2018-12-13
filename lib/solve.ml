@@ -65,9 +65,24 @@ let print_maybe_other_sol_soluce working_bsp linetree =
 
 
 let fill_one_rectangle working_bsp linetree =
-  let _ = sat_solve (get_fnc_of_bsp_soluce working_bsp linetree) in
-  (* print_possible_sol sol; *)
-  working_bsp
+  let sol = sat_solve (get_fnc_of_bsp_soluce working_bsp linetree) in
+  match sol with
+  | None ->
+     print_endline "Pas de solution : impossible de remplir";
+     working_bsp
+  | Some l ->
+     let lclean = List.filter (fun x -> (snd x) >= 0) (List.sort (fun x y -> compare (snd x) (snd y)) l) in
+     match lclean with
+     | [] ->
+        print_endline "ERREUR : fill_one_rectangle2 -> liste vide";
+        working_bsp
+     | x::y::_ ->
+        let c = 
+          if fst x && fst y then `Blue
+          else if fst x || fst y then `Green
+          else `Red in
+        change_coul_with_id working_bsp (snd x/2) c;
+     | _ -> failwith "ERREUR : fill_one_rectanlgle -> paire de variable incomplète"
       
 
 (* For 2 colors *)
