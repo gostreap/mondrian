@@ -15,39 +15,29 @@ let choose coul n =
    à une fnc satisfaisable ssi il existe un choix de
    coloration possible pour la ligne bsp_sat
    ATTENTION : seulement pour cette ligne, pas pour ces fils *)
-let generate_all_config (coul : [< `Blue | `Red ] couleur_l ) nadja rs bs list =
+let generate_all_config (coul : [`Blue | `Red ] couleur_l ) nadja rs bs list =
+  let chooseRed  = choose (Some `Red) in
+  let chooseBlue = choose (Some `Blue) in
   match coul with
   | Purple ->
-     begin
-         (* On suppose notamment ici que ni bs ni rs ne sont strictement supérieur à nadja/2 *)
-         let red = get_n_tuples_in_list (nadja / 2 + 1 - bs) list in
-         let litred = rev_map_ap (fun l -> List.map (fun n -> choose (Some `Red) n) l) red [] in
-         let blue = get_n_tuples_in_list (nadja / 2 + 1 - rs) list in
-         rev_map_ap (fun l -> List.map (fun n -> choose (Some `Blue) n) l) blue litred
-     end
+     (* On suppose notamment ici que ni bs ni rs ne sont strictement supérieur à nadja/2 *)
+     let red = get_n_tuples_in_list (nadja / 2 + 1 - bs) list in
+     let litred = List.map (List.map chooseRed) red in
+     let blue = get_n_tuples_in_list (nadja / 2 + 1 - rs) list in
+     rev_map_ap (List.map chooseBlue) blue litred
   | C co ->
      begin
          match co with
          | `Red ->
-            begin
-                if rs > nadja / 2 then [[]]
-                else
-                    let size = if nadja - nadja / 2 - bs > nadja - rs - bs
-                               then nadja - rs - bs
-                               else nadja - nadja / 2 - bs in
-                    let red = get_n_tuples_in_list size list in
-                    rev_map_ap (fun l -> List.map (fun n -> choose (Some `Red) n) l) red []
-            end
+            if rs > nadja / 2 then [[]]
+            else
+              let size = min (nadja - nadja / 2 - bs) (nadja - rs - bs) in
+              List.map (List.map chooseRed) (get_n_tuples_in_list size list)
          | `Blue ->
-            begin
-                if bs > nadja / 2 then [[]]
-                else
-                    let size = if nadja - nadja / 2 - rs > nadja - rs - bs
-                               then nadja - rs - bs
-                               else nadja - nadja / 2 - rs in
-                    let blue = get_n_tuples_in_list size list in
-                    rev_map_ap (fun l -> List.map (fun n -> choose (Some `Blue) n) l) blue []
-            end
+            if bs > nadja / 2 then [[]]
+            else
+              let size = min (nadja - nadja / 2 - rs) (nadja - rs - bs) in
+              List.map (List.map chooseBlue) (get_n_tuples_in_list size list)
      end
   | _ -> failwith "Unexpected Color"
 
@@ -68,15 +58,12 @@ let get_list_list_of_bsp_sat (ligne: [`Blue | `Red ] bsp_sat) : formule list lis
        | None -> filter_None xs
        | Some x -> (Lit x) :: filter_None xs
   in
-  let aux (list : lit option list list) : formule list list =
-    List.map filter_None list
-  in
   match ligne with
   | R_sat (_,_,_) -> []
   | L_sat (c,_,_,_) ->
      match c with
      | None -> []
-     | Some c -> aux (generate_all_config c size rs bs list)
+     | Some c -> List.map filter_None (generate_all_config c size rs bs list)
 
 (* Prend une liste de liste de formule et retourne une formule de la forme
  * (_ ou _ ou ... ou _) et (_ ou _ ou ... ou _) et ... et (_ ou _ ou ... ou _)*)
