@@ -8,18 +8,17 @@ open Tseitin
 
 let choose coul n =
   match coul with
-  | None -> None
-  | Some `Red -> Some (Var (2*n), Var(2*n+1))
-  | Some `Green -> Some (Var (2*n), Neg (2*n+1))
-  | Some `Blue -> Some (Neg (2*n), Neg (2*n+1))
+  | `Red -> (Var (2*n), Var(2*n+1))
+  | `Green -> (Var (2*n), Neg (2*n+1))
+  | `Blue -> (Neg (2*n), Neg (2*n+1))
 
 let generate_config (r,g,b) (rs,gs,bs) list =
   let red = get_n_tuples_in_list (r-rs) list in
-  let mkredform = rev_map_ap (fun n -> choose (Some `Red) n) in
+  let mkredform = rev_map_ap (fun n -> choose `Red n) in
   let mkgreen r = get_n_tuples_in_list (g-gs) (get_compl r list) in
-  let mkgreenform =  List.map (fun n -> choose (Some `Green) n) in
+  let mkgreenform =  List.map (fun n -> choose `Green n) in
   let mkblue r g = get_n_tuples_in_list (b-bs) (get_compl (List.rev_append r g) list) in
-  let mkblueform = rev_map_ap (fun n -> choose (Some `Blue) n) in
+  let mkblueform = rev_map_ap (fun n -> choose `Blue n) in
   let mkgreenblueform r g =
     let g' = mkgreenform g in
     List.map (fun b ->  mkredform r (mkblueform b g')) (mkblue r g)
@@ -69,23 +68,12 @@ let generate_all_config coul nadja rs gs bs list=
 let get_list_list_of_bsp_sat (ligne : couleur bsp_sat) : formule list list =
   let rs,gs,bs,list = get_adja_stat ligne in
   let size = rs + gs + bs + List.length list in
-  let rec filter_None (f : ((lit * lit) option) list) =
-    match f with
-    | [] -> []
-    | x::xs ->
-       match x with
-       | None -> filter_None xs
-       | Some (x,y) -> (Et(Lit x, Lit y)) :: filter_None xs
-  in
-  let aux (list : (lit*lit) option list list) : formule list list =
-    List.map filter_None list
-  in
   match ligne with
   | R_sat (_,_,_) -> []
   | L_sat (c,_,_,_) ->
      match c with
      | None -> []
-     | Some c -> aux (generate_all_config c size rs gs bs list)
+     | Some c -> List.map (List.map (fun (x,y) -> (Et(Lit x, Lit y)))) (generate_all_config c size rs gs bs list)
 
 (* Prend une liste de liste de formule et retourne une formule de la forme
  * (_ et _ et ... et _) ou (_ et _ et ... et _) ou ... ou (_ et _ et ... et _)*)
@@ -135,9 +123,11 @@ let rec get_actual_sol (orig : couleur bsp_sat) =
      if s then None
      else
        begin
-         match choose c i with
+         match c with
          | None -> None
-         | Some (x,y) -> Some (Ou (Lit (neg x), Lit (neg y)))
+         | Some c ->
+            let (x,y) = choose c i in
+            Some (Ou (Lit (neg x), Lit (neg y)))
        end
   | L_sat (_,s,l,r) ->
      if s
