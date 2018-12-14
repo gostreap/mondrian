@@ -46,7 +46,10 @@ let bsp_sat_of_working_bsp (working_bsp : [< `Blue | `Red | `Green] bsp) (linetr
        let (n,ll) = aux v l in
        let (m,rr) = aux n r in
        (m,L_sat (None, false, ll, rr))
-    | R x ->  (v+1, R_sat(v, maybe false (fun _ -> true) x,x))
+    | R x ->
+       match x with
+         | None -> (v+1, R_sat(v, false, None))
+         | Some x -> (v+1, R_sat(v, true, Some x))
   in  color_bsp_sat_line (snd (aux 0 working_bsp)) linetree
 
 (* Renvoie un bsp ou les feuilles ont un indice différent de 1 si leur couleur est fixé *)

@@ -29,5 +29,4 @@ val linetree_of_bsp : (([< `Blue | `Green | `Red ] as 'a) bsp -> 'a couleur_l op
 
 val change_coul_with_id : 'a bsp -> int -> 'a -> 'a bsp
 
-val tryred : (([< `Blue | `Green | `Red > `Red ] as 'a) bsp) -> (bool*('a bsp))
-val get_possible_lines : (([< `Blue | `Green | `Red ] as 'a) bsp) -> 'a linetree -> point -> ('a bsp * 'a linetree) list
+val tryred :  (([< `Blue | `Green | `Red > `Red ] as 'a) bsp) -> (bool*('a bsp))

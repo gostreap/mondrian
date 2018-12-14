@@ -93,6 +93,7 @@ let get_formule_of_list_list (ll : formule list list) : formule option =
   in
   disj_all ll
 
+(* L ({ coord=36; colored=true }, R (Some Blue), L ({ coord=596; colored=true }, R (Some Red), R (Some Red))) *)
 (* Renvoie la formule correspondant à la conjonction des contraintes de bsp_sat
  et de tout ses fils*)
 let rec get_formule_complete nvar (bsp_sat : couleur bsp_sat) : tseitinD * formule option =
@@ -113,20 +114,6 @@ let rec get_formule_complete nvar (bsp_sat : couleur bsp_sat) : tseitinD * formu
   | Some (n,a), None -> (n, Some a)
   | None, Some b -> (nvar2, Some b)
   | Some (n,a), Some b -> (n, Some (Et (a,b)))
-
-let rec get_formule_from_list nvar (ll : couleur bsp_sat list) : tseitinD * formule option =
-  match ll with
-  | [] -> (nvar, None)
-  | x :: xs ->
-    let (nvar2,formfils) =  get_formule_from_list nvar xs in
-    let form = get_formule_of_list_list (get_list_list_of_bsp_sat x) in
-    (* on met sous FNC form *)
-    let fnc_form = maybe None (fun x -> Some (tseitin nvar2 x)) form in
-    match fnc_form, formfils with
-    | None, None -> (nvar2, None)
-    | Some (n,a), None -> (n, Some a)
-    | None, Some b -> (nvar2, Some b)
-    | Some (n,a), Some b -> (n, Some (Et (a,b)))
 
 (* Renvoie la formule correspondant à la solution encodé dans bsp_sat *)
 (* DÉJA SOUS FNC ET NIÉ*)
@@ -160,9 +147,3 @@ let get_fnc_of_bsp_soluce (working_bsp : couleur bsp) (linetree : couleur linetr
   if not (check_all_lines sat)
   then None
   else snd (get_formule_complete (-1,Hashtbl.create 100) sat)
-
-let get_fnc_of_bsp_soluce_for_point (bsp : couleur bsp) (linet : couleur linetree) (p : point) =
-  let satlist = List.map (fun (x,y) -> bsp_sat_of_working_bsp x y) (get_possible_lines bsp linet p)  in
-  if List.length satlist != 0 && not (check_all_lines (List.hd satlist))
-  then None
-  else snd (get_formule_from_list (-1,Hashtbl.create 100) satlist)
