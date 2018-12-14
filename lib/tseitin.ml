@@ -15,40 +15,42 @@ let et a b =
 
 let ou a b = Ou (Lit a, Lit b)
 
-type tseitinD = int * (formule, int) t
+type tseitinD = int ref * (formule, int) t
 
 (* Auxiliaire de Tseitin-Plaisted-Greenbaum *)
-let rec tseitinPlaisted (((_,tabl) as t ): tseitinD) (f : formule) =
+let rec tseitinPlaisted (((nvar,tabl) as t ): tseitinD) (f : formule) =
   match find_opt tabl f with
   | Some e ->
-     (t,Var e, B true)
+     (Var e, B true)
   | None ->
      match f with
-     | Lit x -> t,x,B true
+     | Lit x -> x,B true
      | Ou (a,b) ->
-        let (x,la,a) =  tseitinPlaisted t a in
-        let (x',lb,b) = tseitinPlaisted x b in
-        let q = Var (fst x') in
+        let (la,a) =  tseitinPlaisted t a in
+        let (lb,b) = tseitinPlaisted t b in
+        let q = Var !nvar in
         let clause =
           let c1 = F (Ou (Lit (neg q),ou la lb)) in
           et a (et b c1) in
-        add (snd x') f (fst x');
-        ((fst x')-1,snd x'),q,clause
+        add tabl f !nvar;
+        nvar := !nvar - 1 ;
+        q,clause
      | Et (a,b) ->
-        let (x,la,a) = tseitinPlaisted t a in
-        let (x',lb,b) = tseitinPlaisted x b in
-        let q = Var (fst x') in
+        let (la,a) = tseitinPlaisted t a in
+        let (lb,b) = tseitinPlaisted t b in
+        let q = Var !nvar in
         let clause =
           let c2 = F (ou (neg q) lb) in
           let c3 = F (ou (neg q) la) in
           et a (et b (et c3 c2)) in
-        add (snd x') f (fst x');
-        ((fst x')-1,snd x'),q,clause
+        add tabl f !nvar;
+        nvar := !nvar - 1 ;
+        q,clause
 
 (* Algorithme de Tseitin (1970), transforme une formule en FNC de manière efficace *)
 (* Utilise une Hashtabl pour éviter d'avoir vraiment plein de variables, à appeler avec une table vite à l'initialisation puis la réutiliser *)
-let tseitin nvar (f : formule) =
-  let ((n,t),l,f') = tseitinPlaisted nvar f in
+let tseitin ((nvar,t) as n : tseitinD) (f : formule) =
+  let (l,f') = tseitinPlaisted n f in
   let l' = Lit l in
   let fnc =
     match f' with
@@ -62,4 +64,5 @@ let tseitin nvar (f : formule) =
     | Neg x -> x
     | Var x -> x in
   add t f l'';
-  ((n-1,t),fnc)
+  nvar := !nvar - 1 ;
+  fnc

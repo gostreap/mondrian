@@ -1,8 +1,8 @@
 open Formule
 
-type tseitinD = int * (formule, int) Hashtbl.t
+type tseitinD = int ref * (formule, int) Hashtbl.t
 
 val tseitin :
-           tseitinD ->
-           Formule.formule ->
-           (int * (Formule.formule, int) Hashtbl.t) * Formule.formule
+  tseitinD ->
+  Formule.formule ->
+  Formule.formule
