@@ -1,5 +1,6 @@
 open Utils
 open Bsp
+open Bsp_sat
 open Formule
 open Generate_formule
 open Generate_formule2
@@ -50,6 +51,14 @@ let sat_solve (f : formule option) =
   | None -> None
   | Some f -> Sat.solve (list_of_fnc f)
 
+(*Renvoie vrai si tout les rectangles sécurisés dans bsp_sat sont de la bonne couleur dans working_bsp*)
+let rec check_all_secure_rect bsp_sat working_bsp =
+  match bsp_sat, working_bsp with
+  | R_sat(_,b,csat), R c -> if not b || csat = c then true else false
+  | L_sat(_,_,lsat,rsat), L (_,l,r) -> check_all_secure_rect lsat l && check_all_secure_rect rsat r
+  | _ -> failwith ("ERREUR : (solve.ml) check_all_secure_rect -> bsp_sat et working_bsp different")
+
+
 (* Renvoie vrai si le bsp possède une unique solution et faux sinon *)
 let is_uniq prof bsp = maybe true (fun _ -> false) (sat_solve (get_fnc_of_bsp prof bsp))
 
@@ -57,11 +66,18 @@ let is_uniq prof bsp = maybe true (fun _ -> false) (sat_solve (get_fnc_of_bsp pr
 let print_maybe_other_sol prof bsp = print_possible_sol (sat_solve (get_fnc_of_bsp prof bsp))
 
 (* Test si le bsp possède une solution et affiche le résultat *)
-let print_maybe_other_sol_soluce working_bsp linetree point =
-  let sol = sat_solve (get_fnc_of_bsp_soluce_for_point working_bsp linetree point) in
-  match sol with
-  | None -> print_endline "Pas de solution"
-  | _ -> print_endline "Solution possible"
+let print_maybe_other_sol_soluce origin_bsp_sat working_bsp linetree point =
+  if check_all_secure_rect origin_bsp_sat working_bsp then
+      begin
+          print_endline "Secure incorrect : pas de solution";
+      end
+  else
+      begin
+          let sol = sat_solve (get_fnc_of_bsp_soluce_for_point working_bsp linetree point) in
+          match sol with
+          | None -> print_endline "Pas de solution"
+          | _ -> print_endline "Solution possible"
+      end
 
 let fill_one_rectangle working_bsp linetree =
   let sol = sat_solve (get_fnc_of_bsp_soluce working_bsp linetree) in
@@ -94,13 +110,20 @@ let is_uniq2 prof bsp = maybe true (fun _ -> false) (sat_solve (get_fnc_of_bsp2 
 
 (* Test si le bsp possède une unique solution et affiche le résultat *)
 let print_maybe_other_sol2 prof bsp = print_possible_sol (sat_solve (get_fnc_of_bsp2 prof bsp))
-
+  
 (* Test si le bsp possède une solution et affiche le résultat *)
-let print_maybe_other_sol_soluce2 working_bsp linetree =
-  let sol = sat_solve (get_fnc_of_bsp_soluce2 working_bsp linetree) in
-  match sol with
-  | None -> print_endline "Pas de solution"
-  | _ -> print_endline "Solution possible"
+let print_maybe_other_sol_soluce2 origin_bsp_sat working_bsp linetree =
+  if check_all_secure_rect origin_bsp_sat working_bsp then
+      begin
+          print_endline "Secure incorrect : pas de solution";
+      end
+  else
+      begin
+          let sol = sat_solve (get_fnc_of_bsp_soluce2 working_bsp linetree) in
+          match sol with
+          | None -> print_endline "Pas de solution"
+          | _ -> print_endline "Solution possible"
+      end
 
 let fill_one_rectangle2 working_bsp linetree =
   let sol = sat_solve (get_fnc_of_bsp_soluce2 working_bsp linetree) in

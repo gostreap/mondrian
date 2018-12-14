@@ -65,23 +65,23 @@ let affiche_cadre (larg : int) (haut : int) =
                  (larg + offset, offset, offset, offset)|]
 
 (* Génère un bsp et sa copie vide  *)
-let init3coul infos : (couleur bsp * couleur linetree * couleur bsp) =
+let init3coul infos : (couleur bsp * couleur bsp_sat * couleur linetree * couleur bsp) =
   let origin_bsp = random_bsp_naive infos.prof infos.larg infos.haut rand_three_coul in
+  let bsp_sat = loop_sat infos.prof (bsp_sat_of_bsp get_color_line origin_bsp) in
   let linetree = linetree_of_bsp get_color_line origin_bsp infos.larg infos.haut in
   let working_bsp = empty_copy_of_bsp origin_bsp in
-  (origin_bsp,linetree,working_bsp)
+  (origin_bsp,bsp_sat,linetree,working_bsp)
 
-let init2coul infos :
-      (([`Red | `Blue] as 'a) bsp * 'a linetree * 'a bsp) =
+let init2coul infos : (([`Red | `Blue] as 'a) bsp * 'a bsp_sat * 'a linetree * 'a bsp) =
   let origin_bsp = random_bsp_naive infos.prof infos.larg infos.haut rand_two_coul in
+  let bsp_sat = loop_sat infos.prof (bsp_sat_of_bsp get_color_line2 origin_bsp) in
   let linetree = linetree_of_bsp get_color_line2 origin_bsp infos.larg infos.haut in
   let working_bsp = empty_copy_of_bsp origin_bsp in
-  (origin_bsp,linetree,working_bsp)
+  (origin_bsp,bsp_sat,linetree,working_bsp)
 
-let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (working_bsp : 'a bsp) (linetree : 'a linetree) (pmothersol : 'a bsp -> 'a linetree -> point -> unit) (fill : 'a bsp -> 'a linetree -> 'a bsp)(chcol : (([< `Blue | `Green | `Red ] as 'a) option -> 'a)) infos =
+let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 'a bsp_sat) (working_bsp : 'a bsp) (linetree : 'a linetree) (pmothersol : 'a bsp_sat -> 'a bsp -> 'a linetree -> point -> unit) (fill : 'a bsp -> 'a linetree -> 'a bsp)(chcol : (([< `Blue | `Green | `Red ] as 'a) option -> 'a)) infos =
   if check_current origin_bsp working_bsp
-  then
-    print_endline "victory";
+  then print_endline "victory";
   affiche_linetree linetree;
   affiche_cadre infos.larg infos.haut;
   affiche_coloration 0 0 infos.larg infos.haut working_bsp;
@@ -92,20 +92,19 @@ let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (working_bsp 
     | 'q' -> ()
     | 'h' ->
        let new_bsp = fill working_bsp linetree in
-       loop origin_bsp new_bsp linetree pmothersol fill chcol infos
-    | _ -> loop origin_bsp working_bsp linetree pmothersol fill chcol infos
+       loop origin_bsp origin_bsp_sat new_bsp linetree pmothersol fill chcol infos
+    | _ -> loop origin_bsp origin_bsp_sat working_bsp linetree pmothersol fill chcol infos
   else
     if e.button
     then
       let pt =(e.mouse_x - offset, e.mouse_y - offset) in
       let bsp = change_color chcol working_bsp pt in
-      pmothersol bsp linetree pt;
-      loop origin_bsp bsp linetree pmothersol fill chcol infos
-    else loop origin_bsp working_bsp linetree pmothersol fill chcol infos
+      pmothersol origin_bsp_sat bsp linetree pt;
+      loop origin_bsp origin_bsp_sat bsp linetree pmothersol fill chcol infos
+    else loop origin_bsp origin_bsp_sat working_bsp linetree pmothersol fill chcol infos
 
-let debug_main (origin_bsp : [< `Red | `Green | `Blue] bsp) fnc_of_bsp pmothersol get_col prof =
-  let bsp_sat = loop_sat prof (bsp_sat_of_bsp get_col origin_bsp) in
-  print_endline (string_of_bsp_sat bsp_sat);
+let debug_main (origin_bsp : [< `Red | `Green | `Blue] bsp) origin_bsp_sat fnc_of_bsp pmothersol prof =
+  print_endline (string_of_bsp_sat origin_bsp_sat);
   print_endline "#########################";
   print_formule (fnc_of_bsp prof origin_bsp);
   print_endline "#########################";
@@ -125,12 +124,12 @@ let main () =
   open_graph (" " ^ string_of_int (infos.larg + 2 * offset) ^ "x" ^ string_of_int (infos.haut + 2 * offset)) ;
   if col3
    then
-     let (origin_bsp,linetree,working_bsp) = init3coul infos in
-     debug_main origin_bsp get_fnc_of_bsp print_maybe_other_sol get_color_line infos.prof ;
-     loop origin_bsp working_bsp linetree print_maybe_other_sol_soluce fill_one_rectangle next_coul infos
+     let (origin_bsp,origin_bsp_sat,linetree,working_bsp) = init3coul infos in
+     debug_main origin_bsp origin_bsp_sat get_fnc_of_bsp print_maybe_other_sol infos.prof ;
+     loop origin_bsp origin_bsp_sat working_bsp linetree print_maybe_other_sol_soluce fill_one_rectangle next_coul infos
   else
-    let (origin_bsp,linetree,working_bsp) = init2coul infos in
-     debug_main origin_bsp get_fnc_of_bsp2 print_maybe_other_sol2 get_color_line2 infos.prof;
-     loop origin_bsp working_bsp linetree (fun x y _ -> print_maybe_other_sol_soluce2 x y) fill_one_rectangle2 next_coul2 infos
+    let (origin_bsp,origin_bsp_sat,linetree,working_bsp) = init2coul infos in
+     debug_main origin_bsp origin_bsp_sat get_fnc_of_bsp2 print_maybe_other_sol2 infos.prof;
+     loop origin_bsp origin_bsp_sat working_bsp linetree (fun x y _ -> print_maybe_other_sol_soluce2 x y) fill_one_rectangle2 next_coul2 infos
 
 let _ = main()
