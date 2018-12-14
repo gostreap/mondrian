@@ -119,20 +119,18 @@ let rec get_formule_complete nvar (bsp_sat : couleur bsp_sat) : tseitinD * formu
 (* DÉJA SOUS FNC ET NIÉ*)
 let rec get_actual_sol (orig : couleur bsp_sat) =
   match orig with
-  | R_sat (i,s,c) ->
-     if s then None
-     else
-       begin
-         match c with
-         | None -> None
-         | Some c ->
-            let (x,y) = choose c i in
-            Some (Ou (Lit (neg x), Lit (neg y)))
-       end
   | L_sat (_,s,l,r) ->
      if s
      then None
      else maybe2 (fun x y -> Ou (x,y)) (get_actual_sol l) (get_actual_sol r)
+  | R_sat (i,s,c) ->
+     if s then None
+     else
+       match c with
+       | None -> None
+       | Some c ->
+          let (x,y) = choose c i in
+          Some (Ou (Lit (neg x), Lit (neg y)))
 
 (* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution *)
 let get_fnc_of_bsp (prof : int) (bsp : couleur bsp) =
@@ -144,18 +142,8 @@ let get_fnc_of_bsp (prof : int) (bsp : couleur bsp) =
      let (_,f) = get_formule_complete (-1,Hashtbl.create 100) sat in
      maybe None (fun fnc -> Some (Et (fnc, sol))) f
 
-let get_fnc_of_bsp_soluce (* (prof : int) *) (working_bsp : couleur bsp) (linetree : couleur linetree)=
-  let sat = bsp_sat_of_working_bsp working_bsp linetree (*|> loop_sat prof*) in
-  if not (check_all_lines sat) then
-      begin
-          (* print_endline "NON CHECK !"; *)
-          None
-      end
-  else
-      begin
-          (* print_endline "CHECK !"; *)
-          let (_,f) = get_formule_complete (-1,Hashtbl.create 100) sat in
-          match f with
-          | None -> None
-          | _ -> f
-      end
+let get_fnc_of_bsp_soluce (working_bsp : couleur bsp) (linetree : couleur linetree)=
+  let sat = bsp_sat_of_working_bsp working_bsp linetree in
+  if not (check_all_lines sat)
+  then None
+  else snd (get_formule_complete (-1,Hashtbl.create 100) sat)
