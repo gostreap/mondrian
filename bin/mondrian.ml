@@ -78,7 +78,7 @@ let init2coul infos :
   let working_bsp = empty_copy_of_bsp origin_bsp in
   (origin_bsp,linetree,working_bsp)
 
-let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (working_bsp : 'a bsp) (linetree : 'a linetree) (pmothersol : 'a bsp -> 'a linetree -> unit) (fill : 'a bsp -> 'a linetree -> 'a bsp)(chcol : (([< `Blue | `Green | `Red ] as 'a) option -> 'a)) infos =
+let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (working_bsp : 'a bsp) (linetree : 'a linetree) (pmothersol : 'a bsp -> 'a linetree -> point -> unit) (fill : 'a bsp -> 'a linetree -> 'a bsp)(chcol : (([< `Blue | `Green | `Red ] as 'a) option -> 'a)) infos =
   if check_current origin_bsp working_bsp
   then
     print_endline "victory";
@@ -97,9 +97,10 @@ let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (working_bsp 
   else
     if e.button
     then
-        let bsp = change_color chcol working_bsp (e.mouse_x - offset, e.mouse_y - offset) in
-        pmothersol bsp linetree;
-        loop origin_bsp bsp linetree pmothersol fill chcol infos
+      let pt =(e.mouse_x - offset, e.mouse_y - offset) in
+      let bsp = change_color chcol working_bsp pt in
+      pmothersol bsp linetree pt;
+      loop origin_bsp bsp linetree pmothersol fill chcol infos
     else loop origin_bsp working_bsp linetree pmothersol fill chcol infos
 
 let debug_main (origin_bsp : [< `Red | `Green | `Blue] bsp) fnc_of_bsp pmothersol get_col prof =
@@ -130,6 +131,6 @@ let main () =
   else
     let (origin_bsp,linetree,working_bsp) = init2coul infos in
      debug_main origin_bsp get_fnc_of_bsp2 print_maybe_other_sol2 get_color_line2 infos.prof;
-     loop origin_bsp working_bsp linetree print_maybe_other_sol_soluce2 fill_one_rectangle2 next_coul2 infos
+     loop origin_bsp working_bsp linetree (fun x y _ -> print_maybe_other_sol_soluce2 x y) fill_one_rectangle2 next_coul2 infos
 
 let _ = main()
