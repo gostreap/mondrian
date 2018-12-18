@@ -122,6 +122,7 @@ module Make (V : VARIABLES) = struct
     ppc_order (S.empty,[]) order
 
   (* Algo de Kosaraju pour calculer les CFC *)
+  (* Les CFC sont normalement déjà triées topologiquement *)
   let kosaraju_scc g =
     let order = ppc_dt g in
     let g = transpose g in
@@ -141,7 +142,7 @@ module Make (V : VARIABLES) = struct
          then gamma
          else List.fold_left (fun acc x -> S.add x acc) gamma v
     in
-    let res = List.fold_left aux S.empty (List.rev m) (* TODO remove rev *) in
+    let res = List.fold_left aux S.empty (m) (* TODO remove rev *) in
     res
 
   (* SAT *)
