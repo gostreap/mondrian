@@ -53,13 +53,14 @@ module Make (V : VARIABLES) = struct
 
   (* Transpose un graph: TODO améliorer *)
   let transpose g =
-    let rec add_all k v acc =
+    let add_all k v acc =
+      let acc =
+        if Ml.mem k acc
+        then acc
+        else Ml.add k [] acc in
       match v with
-      | [] ->
-         if Ml.mem k acc
-         then acc
-         else Ml.add k [] acc
-      | x::xs -> add_all k xs (addFront Ml.update x k acc) in
+      | [] -> acc
+      | x::xs -> List.fold_left (fun acc x -> addFront Ml.update x k acc) (addFront Ml.update x k acc) xs in
     Ml.fold add_all g Ml.empty
 
   (* Renvoi la liste des sommets triés par ordre décroissant de date de fin de traitement par un PP *)
