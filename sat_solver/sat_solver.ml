@@ -163,15 +163,16 @@ module Make (V : VARIABLES) = struct
     let start =
       List.fold_left
         (fun env l ->
-          aux env l
-            (fun l ->
-              match l with
-              | [] -> raise Unsat (* conflict *)
-              | [f] -> assume env f
-              | _ -> { env with cl2 = l :: env.cl2 } (* Ne peut pas être plus qu'une 2-clause *)
-            ))
-        {env with cl2 = []}
-        env.cl2
+        aux env l
+          (fun l ->
+            match l with
+            | [] -> raise Unsat (* conflict *)
+            | [f] -> assume env f
+            | [_;_] -> { env with cl2 = l :: env.cl2 }
+            | _ -> { env with delta = l :: env.delta }
+        ))
+        {env with delta = []}
+        env.delta
     in
     List.fold_left
       (fun env l ->
@@ -180,11 +181,10 @@ module Make (V : VARIABLES) = struct
             match l with
             | [] -> raise Unsat (* conflict *)
             | [f] -> assume env f
-            | [_;_] -> { env with cl2 = l :: env.cl2 }
-            | _ -> { env with delta = l :: env.delta }
-          ))
-      { start with delta = [] }
-      env.delta
+            | _ -> { env with cl2 = l :: env.cl2 } (* Ne peut pas être plus qu'une 2-clause *)
+      ))
+      {start with cl2 = []}
+      env.cl2
 
   let rec unsat env = try
       (* 3 clauses *)
