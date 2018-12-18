@@ -64,7 +64,7 @@ module Make (V : VARIABLES) = struct
     | None -> n
     | Some x -> f x
 
-  (* Renvoit la liste des sommets triés par ordre décroissant de date de fin de traitement par un PP *)
+  (* Renvoi la liste des sommets triés par ordre décroissant de date de fin de traitement par un PP *)
   let ppc_dt g =
     let res = ref Ml.empty in
     let date = ref 0 in
@@ -132,6 +132,7 @@ module Make (V : VARIABLES) = struct
     let verif ls = List.for_all (fun x -> not (List.mem (L.mk_not x) ls)) ls in
     Mi.fold (fun _ v acc -> verif v && acc) m true
 
+    (* Assigne les variables selon les CFC https://en.wikipedia.org/wiki/2-satisfiability#Strongly_connected_components *)
   let mkAssign m gamma =
     let aux _ v gamma =
       match v with
