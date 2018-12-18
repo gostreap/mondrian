@@ -93,7 +93,7 @@ module Make (V : VARIABLES) = struct
             match Ml.find_opt v g with
             | None -> (S.add v already, addFront Mi.update count v res)
             | Some x -> aux count a v x
-          ) (S.add k already,res) v
+          ) (S.add k already,addFront Mi.update count k res) v
     in
     let rec ppc_order count ((already,res) as a) order =
       match order with
