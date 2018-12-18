@@ -92,33 +92,32 @@ module Make (V : VARIABLES) = struct
   let ppc_final order g =
     let res = ref Mi.empty in
     let already = ref S.empty in
-    let count = ref 0 in
-    let rec aux k v =
+    let rec aux count k v =
       let f k =
         already := S.add k !already;
-        res := addFront Mi.update !count k !res
+        res := addFront Mi.update count k !res
       in
       if S.mem k !already
       then ()
       else
         begin
           f k;
-          List.iter (fun v -> maybe (f v) (aux v) (Ml.find_opt v g)) v
+          List.iter (fun v -> maybe (f v) (aux count v) (Ml.find_opt v g)) v
         end
     in
-    let rec ppc_order order =
+    let rec ppc_order count order =
       match order with
       | [] -> ()
       | (x,_)::xs ->
          if S.mem x !already
-         then ppc_order xs
+         then ppc_order count xs
          else
            begin
-             aux x (Ml.find x g) ;
-             count := !count + 1
+             aux count x (Ml.find x g) ;
+             ppc_order (count+1) xs
            end
     in
-    ppc_order order;
+    ppc_order 0 order;
     !res
 
   (* Algo de Kosaraju pour calculer les CFC *)
