@@ -72,12 +72,12 @@ module Make (V : VARIABLES) = struct
         let (res,already,date) =
           List.fold_left
             (fun ((res, already,date) as a) v ->
-                match Ml.find_opt v g with
-                | None ->
-                   if S.mem v already
-                   then a
-                   else (Ml.add v date res, S.add v already,date+1)
-                | Some x -> aux v x a (* Test de présence fait dans l'appel récursif *)
+              match Ml.find_opt v g with
+              | None ->
+                 if S.mem v already
+                 then a
+                 else (Ml.add v date res, S.add v already,date+1)
+              | Some x -> aux v x a (* Test de présence fait dans l'appel récursif *)
             ) (res,S.add k already,date) vs in
           (Ml.add k date res,already,date+1)
     in
@@ -93,13 +93,13 @@ module Make (V : VARIABLES) = struct
       then a
       else
         List.fold_left
-          (fun ((already,(res : literal list)) as a) v ->
-              match Ml.find_opt v g with
-              | None ->
-                 if S.mem v already
-                 then a
-                 else (S.add v already, v:: res)
-              | Some x -> aux a v x
+          (fun ((already,res) as a) v ->
+            match Ml.find_opt v g with
+            | None ->
+               if S.mem v already
+               then a
+               else (S.add v already, v:: res)
+            | Some x -> aux a v x
           ) (S.add k already,k::res) v
     in
     let rec ppc_order ((already,(res : literal list list)) as a) order =
@@ -134,7 +134,7 @@ module Make (V : VARIABLES) = struct
          then gamma
          else List.fold_left (fun acc x -> S.add x acc) gamma v
     in
-    List.fold_left aux gamma (List.rev m)
+    List.fold_left aux gamma (List.rev m) (* TODO remove rev *)
 
   (* SAT *)
   let rec assume env f =
