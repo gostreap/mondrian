@@ -142,8 +142,7 @@ module Make (V : VARIABLES) = struct
          then gamma
          else List.fold_left (fun acc x -> S.add x acc) gamma v
     in
-    let res = List.fold_left aux S.empty (m) (* TODO remove rev *) in
-    res
+    List.fold_left aux gamma m
 
   (* SAT *)
   let rec assume env f =
