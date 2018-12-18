@@ -88,31 +88,31 @@ module Make (V : VARIABLES) = struct
 
   (* Un PP suivant un ordre particulier *)
   let ppc_final order g =
-    let rec aux count (already,res) k v =
+    let rec aux ((already,(res : literal list)) as a) k v =
       if S.mem k already
-      then (already,res)
+      then a
       else
         List.fold_left
-          (fun ((already,res) as a) v ->
+          (fun ((already,(res : literal list)) as a) v ->
               match Ml.find_opt v g with
               | None ->
                  if S.mem v already
                  then a
-                 else (S.add v already, addFront Mi.update count v res)
-              | Some x -> aux count a v x
-          ) (S.add k already,addFront Mi.update count k res) v
+                 else (S.add v already, v:: res)
+              | Some x -> aux a v x
+          ) (S.add k already,k::res) v
     in
-    let rec ppc_order count ((already,res) as a) order =
+    let rec ppc_order ((already,(res : literal list list)) as a) order =
       match order with
       | [] -> res
       | (x,_)::xs ->
          if S.mem x already
-         then ppc_order count a xs
+         then ppc_order a xs
          else
-           let acc = aux count a x (Ml.find x g) in
-           ppc_order (count+1) acc xs
+           let (already,acc) = aux (already,[]) x (Ml.find x g) in
+           ppc_order (already,acc::res) xs
     in
-    ppc_order 0 (S.empty,Mi.empty) order
+    ppc_order (S.empty,[]) order
 
   (* Algo de Kosaraju pour calculer les CFC *)
   let kosaraju_scc g =
@@ -122,11 +122,11 @@ module Make (V : VARIABLES) = struct
 
   (* Vérifie que les CFC sont "valables", ie qu'un l'itéral n'est pas dans la même CFC que sont opposé *)
   let verif ls = List.for_all (fun x -> not (List.mem (L.mk_not x) ls)) ls
-  let verify = Mi.for_all (fun _ v -> verif v)
+  let verify = List.for_all (fun v -> verif v)
 
     (* Assigne les variables selon les CFC https://en.wikipedia.org/wiki/2-satisfiability#Strongly_connected_components *)
   let mkAssign m gamma =
-    let aux _ v gamma =
+    let aux acc v =
       match v with
       | [] -> gamma
       | x::_ ->
@@ -134,7 +134,7 @@ module Make (V : VARIABLES) = struct
          then gamma
          else List.fold_left (fun acc x -> S.add x acc) gamma v
     in
-    Mi.fold aux m gamma
+    List.fold_left aux gamma (List.rev m)
 
   (* SAT *)
   let rec assume env f =
