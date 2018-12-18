@@ -187,7 +187,7 @@ module Make (V : VARIABLES) = struct
       env.cl2
 
   let rec unsat env = try
-      (* 3 clauses *)
+      (* 3 clauses OU PLUS *)
       match env.delta with
       | [] ->
          let g = mk_implication_graph env.cl2 in
@@ -202,7 +202,11 @@ module Make (V : VARIABLES) = struct
              unsat (assume {env with delta = ys} a)
            with Unsat -> ()
          end ;
-        unsat (assume {env with cl2 = xs::env.cl2} (L.mk_not a))
+         let nenv =
+           match xs with
+           | [_;_] -> {env with cl2 = xs::env.cl2}
+           | _ -> {env with delta = xs::ys } in
+        unsat (assume nenv (L.mk_not a))
     with Unsat -> ()
 
   let solve delta = try
