@@ -149,41 +149,39 @@ module Make (V : VARIABLES) = struct
     else bcp { env with gamma = S.add f env.gamma}
 
   and bcp env =
-    (* TODO facto + décider dans quel ordre: start doit travailler sur les 2 cl ou sur delta ? *)
+    let aux env l f =
+      try
+        let l =
+          List.filter
+            (fun f ->
+              if S.mem f env.gamma then raise Exit;
+              not (S.mem (L.mk_not f) env.gamma)
+            ) l
+        in f l
+      with Exit -> env in
     let start =
       List.fold_left
         (fun env l ->
-          try
-            let l =
-              List.filter
-                (fun f ->
-                  if S.mem f env.gamma then raise Exit;
-                  not (S.mem (L.mk_not f) env.gamma)
-                ) l
-            in
-            match l with
-            | [] -> raise Unsat (* conflict *)
-            | [f] -> assume env f
-            | _ -> { env with cl2 = l :: env.cl2 } (* Ne peut pas être plus qu'une 2-clause *)
-          with Exit -> env)
+          aux env l
+            (fun l ->
+              match l with
+              | [] -> raise Unsat (* conflict *)
+              | [f] -> assume env f
+              | _ -> { env with cl2 = l :: env.cl2 } (* Ne peut pas être plus qu'une 2-clause *)
+            ))
         {env with cl2 = []}
         env.cl2
     in
     List.fold_left
       (fun env l ->
-        try
-          let l = List.filter
-              (fun f ->
-                 if S.mem f env.gamma then raise Exit;
-                 not (S.mem (L.mk_not f) env.gamma)
-              ) l
-          in
-          match l with
-          | [] -> raise Unsat (* conflict *)
-          | [f] -> assume env f
-          | [_;_] -> { env with cl2 = l :: env.cl2 }
-          | _ -> { env with delta = l :: env.delta }
-        with Exit -> env)
+        aux env l
+          (fun l ->
+            match l with
+            | [] -> raise Unsat (* conflict *)
+            | [f] -> assume env f
+            | [_;_] -> { env with cl2 = l :: env.cl2 }
+            | _ -> { env with delta = l :: env.delta }
+          ))
       { start with delta = [] }
       env.delta
 
