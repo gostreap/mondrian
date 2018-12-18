@@ -183,9 +183,8 @@ module Make (V : VARIABLES) = struct
       | [] ->
          let g = mk_implication_graph env.cl2 in
          let cfc = kosaraju_scc g in
-         let assign = mkAssign cfc env.gamma in
          if verify cfc
-         then raise (Sat assign)
+         then raise (Sat (mkAssign cfc env.gamma))
          else raise Unsat
       | ([_] | []) :: _ -> assert false
       | (a :: xs) :: ys ->
