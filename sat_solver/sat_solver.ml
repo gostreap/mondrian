@@ -28,8 +28,6 @@ module Make (V : VARIABLES) = struct
 
   module Ml = Map.Make(L)
 
-  module Mi = Map.Make(struct type t = int let compare = compare end)
-
   exception Unsat
   exception Sat of S.t
 
@@ -46,8 +44,16 @@ module Make (V : VARIABLES) = struct
   let mk_implication_graph =
     let aux acc l = (* TODO Use tuples *)
       match l with
-      | [a;b] ->
-          addFront Ml.update (L.mk_not b) a (addFront Ml.update (L.mk_not a) b acc)
+      | [a;b] -> (* TODO change this, it can certainly made a better way *)
+         let acc =
+           if Ml.mem a acc
+           then acc
+           else Ml.add a [] acc in
+         let acc =
+           if Ml.mem b acc
+           then acc
+           else Ml.add b [] acc in
+         addFront Ml.update (L.mk_not b) a (addFront Ml.update (L.mk_not a) b acc)
       | _ -> assert false in
     List.fold_left aux Ml.empty
 
@@ -60,7 +66,8 @@ module Make (V : VARIABLES) = struct
         else Ml.add k [] acc in
       match v with
       | [] -> acc
-      | x::xs -> List.fold_left (fun acc x -> addFront Ml.update x k acc) (addFront Ml.update x k acc) xs in
+      | x::xs ->
+         List.fold_left (fun acc x -> addFront Ml.update x k acc) (addFront Ml.update x k acc) xs in
     Ml.fold add_all g Ml.empty
 
   (* Renvoi la liste des sommets triés par ordre décroissant de date de fin de traitement par un PP *)
@@ -83,12 +90,12 @@ module Make (V : VARIABLES) = struct
     in
     let (a,_,_) = Ml.fold aux g (Ml.empty,S.empty,0) in
     List.sort
-      (fun x y -> compare (snd y) (snd x))
+      (fun x y -> compare (snd y) (snd x)) (* TODO insérer dans la liste triée durant le fold *)
       (Seq.fold_left (fun acc x -> x::acc) [] (Ml.to_seq a))
 
   (* Un PP suivant un ordre particulier *)
   let ppc_final order g =
-    let rec aux ((already,(res : literal list)) as a) k v =
+    let rec aux ((already,(res : literal list)) as a) k vs =
       if S.mem k already
       then a
       else
@@ -98,9 +105,9 @@ module Make (V : VARIABLES) = struct
             | None ->
                if S.mem v already
                then a
-               else (S.add v already, v:: res)
+               else (S.add v already, v::res)
             | Some x -> aux a v x
-          ) (S.add k already,k::res) v
+          ) (S.add k already,k::res) vs
     in
     let rec ppc_order ((already,(res : literal list list)) as a) order =
       match order with
@@ -126,7 +133,7 @@ module Make (V : VARIABLES) = struct
 
     (* Assigne les variables selon les CFC https://en.wikipedia.org/wiki/2-satisfiability#Strongly_connected_components *)
   let mkAssign m gamma =
-    let aux acc v =
+    let aux gamma v =
       match v with
       | [] -> gamma
       | x::_ ->
@@ -134,7 +141,8 @@ module Make (V : VARIABLES) = struct
          then gamma
          else List.fold_left (fun acc x -> S.add x acc) gamma v
     in
-    List.fold_left aux gamma (List.rev m) (* TODO remove rev *)
+    let res = List.fold_left aux S.empty (List.rev m) (* TODO remove rev *) in
+    res
 
   (* SAT *)
   let rec assume env f =
