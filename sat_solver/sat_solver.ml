@@ -1,6 +1,8 @@
 (* Code extrait de:
    SAT-MICRO: petit mais costaud !
    par Sylvain Conchon, Johannes Kanig, Stéphane Lescuyer
+
+   MODIFIÉ
 *)
 
 module type VARIABLES = sig
@@ -27,15 +29,36 @@ module Make (V : VARIABLES) = struct
   exception Unsat
   exception Sat of S.t
 
-  type t = { gamma : S.t ; delta : L.t list list }
+  type t = { gamma : S.t ; cl2 : L.t list list ; delta : L.t list list }
 
   let rec assume env f =
     if S.mem f env.gamma then env
-    else bcp { gamma = S.add f env.gamma ; delta = env.delta }
+    else bcp { env with gamma = S.add f env.gamma}
 
   and bcp env =
+    (* TODO facto + décider dans quel ordre: start doit travailler sur les 2 cl ou sur delta ? *)
+    let start =
+      List.fold_left
+        (fun env l ->
+          try
+            let l =
+              List.filter
+                (fun f ->
+                  if S.mem f env.gamma then raise Exit;
+                  not (S.mem (L.mk_not f) env.gamma)
+                ) l
+            in
+            match l with
+            | [] -> raise Unsat (* conflict *)
+            | [f] -> assume env f
+            | _ -> { env with cl2 = l :: env.cl2 } (* Ne peut pas être plus qu'une 2-clause *)
+          with Exit -> env)
+        {env with cl2 = []}
+        env.cl2
+    in
     List.fold_left
-      (fun env l -> try
+      (fun env l ->
+        try
           let l = List.filter
               (fun f ->
                  if S.mem f env.gamma then raise Exit;
@@ -45,22 +68,40 @@ module Make (V : VARIABLES) = struct
           match l with
           | [] -> raise Unsat (* conflict *)
           | [f] -> assume env f
+          | [_;_] as p -> { env with cl2 = l :: env.cl2 }
           | _ -> { env with delta = l :: env.delta }
         with Exit -> env)
-      { env with delta = [] }
+      { start with delta = [] }
       env.delta
 
   let rec unsat env = try
+      (* 3 clauses *)
       match env.delta with
-      | [] -> raise (Sat env.gamma)
+      | [] -> failwith "solve2 not made" (* raise (Sat env.gamma) *)
       | ([_] | []) :: _ -> assert false
-      | (a :: _ ) :: _ ->
-        begin try unsat (assume env a) with Unsat -> () end ;
-        unsat (assume env (L.mk_not a))
+      | (a :: xs) :: ys ->
+         begin
+           try
+             unsat (assume {env with delta = ys} a)
+           with Unsat -> ()
+         end ;
+        unsat (assume {env with cl2 = xs::env.cl2} (L.mk_not a))
     with Unsat -> ()
 
   let solve delta = try
-      unsat (bcp { gamma = S.empty ; delta }) ; None
+      print_endline "SAT";
+      print_endline (string_of_int (List.length delta));
+      let b = bcp { gamma = S.empty ; cl2 = [];  delta } in
+      print_endline (string_of_int (List.length b.delta));
+      let c2,c3p = List.partition (fun x -> List.length x = 2) b.delta in
+      let b =
+        {b with
+          cl2 = b.cl2 @ c2;
+          delta = c3p
+        } in
+      print_endline "cc";
+      unsat b ;
+      None
     with
     | Sat g -> Some (S.elements g)
     | Unsat -> None
