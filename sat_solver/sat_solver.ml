@@ -71,9 +71,12 @@ module Make (V : VARIABLES) = struct
         let (res,already,date) =
           List.fold_left
             (fun ((res, already,date) as a) v ->
-              match Ml.find_opt v g with
-              | None -> if not (S.mem v already) then (Ml.add v date res, S.add v already,date+1) else a
-              | Some x -> aux v x a
+              if S.mem v already
+              then a
+              else
+                match Ml.find_opt v g with
+                | None ->  (Ml.add v date res, S.add v already,date+1)
+                | Some x -> aux v x a
             ) (res,S.add k already,date) vs in
           (Ml.add k date res,already,date+1)
     in
@@ -90,9 +93,12 @@ module Make (V : VARIABLES) = struct
       else
         List.fold_left
           (fun ((already,res) as a) v ->
-            match Ml.find_opt v g with
-            | None -> (S.add v already, addFront Mi.update count v res)
-            | Some x -> aux count a v x
+            if S.mem v already
+            then a
+            else
+              match Ml.find_opt v g with
+              | None -> (S.add v already, addFront Mi.update count v res)
+              | Some x -> aux count a v x
           ) (S.add k already,addFront Mi.update count k res) v
     in
     let rec ppc_order count ((already,res) as a) order =
