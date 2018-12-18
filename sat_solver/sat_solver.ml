@@ -79,7 +79,7 @@ module Make (V : VARIABLES) = struct
     in
     let (a,_,_) = Ml.fold aux g (Ml.empty,S.empty,0) in
     List.sort
-      (fun x y -> compare (snd x) (snd y))
+      (fun x y -> compare (snd y) (snd x))
       (Seq.fold_left (fun acc x -> x::acc) [] (Ml.to_seq a))
 
   (* Un PP suivant un ordre particulier *)
