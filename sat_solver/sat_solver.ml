@@ -132,6 +132,17 @@ module Make (V : VARIABLES) = struct
     let verif ls = List.for_all (fun x -> not (List.mem (L.mk_not x) ls)) ls in
     Mi.fold (fun _ v acc -> verif v && acc) m true
 
+  let mkAssign m gamma =
+    let aux _ v gamma =
+      match v with
+      | [] -> gamma
+      | x::_ ->
+         if S.mem (L.mk_not x) gamma
+         then gamma
+         else List.fold_left (fun acc x -> S.add x acc) gamma v
+    in
+    Mi.fold aux m gamma
+
   (* SAT *)
   let rec assume env f =
     if S.mem f env.gamma then env
@@ -181,8 +192,9 @@ module Make (V : VARIABLES) = struct
       match env.delta with
       | [] ->
          let g = mk_implication_graph env.cl2 in
-         if verify (kosaraju_scc g)
-         then raise (Sat S.empty)
+         let cfc = kosaraju_scc g in
+         if verify cfc
+         then raise (Sat (mkAssign cfc env.gamma))
          else raise Unsat
       | ([_] | []) :: _ -> assert false
       | (a :: xs) :: ys ->
@@ -205,7 +217,6 @@ module Make (V : VARIABLES) = struct
           cl2 = b.cl2 @ c2;
           delta = c3p
         } in
-      print_endline "cc";
       unsat b ;
       None
     with
