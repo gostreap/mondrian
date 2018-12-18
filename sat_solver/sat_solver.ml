@@ -42,51 +42,68 @@ module Make (V : VARIABLES) = struct
       | Some xs -> Some (v :: xs) in
     update k maybe m
 
+  (* Créer le graphe des implications https://en.wikipedia.org/wiki/Implication_graph *)
   let mk_implication_graph =
     let aux acc l = (* TODO Use tuples *)
       match l with
       | [a;b] ->
-          addFront Ml.update (L.mk_not b) a (addFront  Ml.update (L.mk_not a) b acc)
+          addFront Ml.update (L.mk_not b) a (addFront Ml.update (L.mk_not a) b acc)
       | _ -> assert false in
     List.fold_left aux Ml.empty
 
-  let transpose g = (* TODO verifier if transpose *)
+  (* Transpose un graph *)
+  let transpose g =
     let rec add_all k v acc =
       match v with
-      | [] -> acc
+      | [] -> Ml.add k [] acc
       | x::xs -> add_all k xs (addFront Ml.update x k acc) in
     Ml.fold add_all g Ml.empty
 
+  let maybe n f x =
+    match x with
+    | None -> n
+    | Some x -> f x
+
+  (* Renvoit la liste des sommets triés par ordre décroissant de date de fin de traitement par un PP *)
   let ppc_dt g =
     let res = ref Ml.empty in
     let date = ref 0 in
-    let ppc =
-      let rec aux k v =
-        if Ml.mem k !res
-        then ()
-        else
-          begin
-            res := Ml.add k !date !res ;
-            List.iter (fun v -> aux v (Ml.find v g)) v ;
-            date := !date + 1
-          end
+    let rec aux k v =
+      let f k =
+        res := Ml.add k !date !res ;
+        date := !date + 1
       in
-      Ml.iter aux g in
-    ppc;
-    List.sort (fun x y -> compare (snd x) (snd y)) (Seq.fold_left (fun acc x -> x::acc) [] (Ml.to_seq !res))
+      if Ml.mem k !res
+      then ()
+      else
+        begin
+          f k ;
+          List.iter
+            (fun v ->
+              maybe (f v) (aux v) (Ml.find_opt v g)) v;
+        end
+    in
+    Ml.iter aux g;
+    List.sort
+      (fun x y -> compare (snd x) (snd y))
+      (Seq.fold_left (fun acc x -> x::acc) [] (Ml.to_seq !res))
 
+  (* Un PP suivant un ordre particulier *)
   let ppc_final order g =
     let res = ref Mi.empty in
     let already = ref S.empty in
     let count = ref 0 in
     let rec aux k v =
+      let f k =
+        already := S.add k !already;
+        res := addFront Mi.update !count k !res
+      in
       if S.mem k !already
       then ()
       else
         begin
-          already := S.add k !already;
-          res := addFront Mi.update !count k !res;
-          List.iter (fun v -> aux v (Ml.find v g)) v
+          f k;
+          List.iter (fun v -> maybe (f v) (aux v) (Ml.find_opt v g)) v
         end
     in
     let rec ppc_order order =
@@ -100,16 +117,17 @@ module Make (V : VARIABLES) = struct
              aux x (Ml.find x g) ;
              count := !count + 1
            end
-
     in
     ppc_order order;
     !res
 
+  (* Algo de Kosaraju pour calculer les CFC *)
   let kosaraju_scc g =
     let order = ppc_dt g in
     let g = transpose g in
     ppc_final order g
 
+  (* Vérifie que les CFC sont "valables", ie qu'un l'itéral n'est pas dans la même CFC que sont opposé *)
   let verify m =
     let verif ls = List.for_all (fun x -> not (List.mem (L.mk_not x) ls)) ls in
     Mi.fold (fun _ v acc -> verif v && acc) m true
