@@ -80,7 +80,7 @@ let fill_one_rectangle working_bsp linetree =
      let lclean = List.filter (fun x -> (snd x) >= 0) (List.sort (fun x y -> compare (snd x) (snd y)) l) in
      match lclean with
      | [] ->
-        print_endline "ERREUR : fill_one_rectangle2 -> liste vide";
+        print_endline "ERREUR : fill_one_rectangle -> liste vide";
         working_bsp
      | x::y::_ ->
         let c =
