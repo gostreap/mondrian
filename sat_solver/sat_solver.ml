@@ -70,23 +70,20 @@ module Make (V : VARIABLES) = struct
   (* Renvoi la liste des sommets triés par ordre décroissant de date de fin de traitement par un PP *)
   let ppc_dt g =
     let res = ref Ml.empty in
-    let date = ref 0 in
-    let rec aux k v =
-      let f k =
-        res := Ml.add k !date !res ;
-        date := !date + 1
-      in
-      if Ml.mem k !res
-      then ()
+    let rec aux k v ((already,date) as a )=
+      if S.mem k already
+      then a
       else
         begin
-          f k ;
-          List.iter
-            (fun v ->
-              maybe (f v) (aux v) (Ml.find_opt v g)) v;
+          let already = S.add k already in
+          let alreadyD = List.fold_left
+            (fun ((acc,d) as a) v ->
+              maybe (if not (S.mem v already) then begin res := Ml.add v date !res; (S.add v acc, date+1) end else a) (fun x -> aux v x a) (Ml.find_opt v g)) (already,date) v in
+          res := Ml.add k date !res ;
+          alreadyD
         end
     in
-    Ml.iter aux g;
+    let _ = Ml.fold aux g (S.empty,0) in
     List.sort
       (fun x y -> compare (snd x) (snd y))
       (Seq.fold_left (fun acc x -> x::acc) [] (Ml.to_seq !res))
@@ -94,33 +91,30 @@ module Make (V : VARIABLES) = struct
   (* Un PP suivant un ordre particulier *)
   let ppc_final order g =
     let res = ref Mi.empty in
-    let already = ref S.empty in
-    let rec aux count k v =
-      let f k =
-        already := S.add k !already;
-        res := addFront Mi.update count k !res
+    let rec aux count already k v =
+      let f already k =
+        res := addFront Mi.update count k !res ;
+        S.add k already
       in
-      if S.mem k !already
-      then ()
+      if S.mem k already
+      then already
       else
-        begin
-          f k;
-          List.iter (fun v -> maybe (f v) (aux count v) (Ml.find_opt v g)) v
-        end
+        let al = f already k in
+        List.fold_left (fun acc v -> maybe (if not(S.mem v acc) then f acc v else acc) (aux count acc v) (Ml.find_opt v g)) al v
     in
-    let rec ppc_order count order =
+    let rec ppc_order count already order =
       match order with
       | [] -> ()
       | (x,_)::xs ->
-         if S.mem x !already
-         then ppc_order count xs
+         if S.mem x already
+         then ppc_order count already xs
          else
            begin
-             aux count x (Ml.find x g) ;
-             ppc_order (count+1) xs
+             let al = aux count already x (Ml.find x g) in
+             ppc_order (count+1) al xs
            end
     in
-    ppc_order 0 order;
+    ppc_order 0 S.empty order;
     !res
 
   (* Algo de Kosaraju pour calculer les CFC *)
