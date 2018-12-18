@@ -62,60 +62,50 @@ module Make (V : VARIABLES) = struct
       | x::xs -> add_all k xs (addFront Ml.update x k acc) in
     Ml.fold add_all g Ml.empty
 
-  let maybe n f x =
-    match x with
-    | None -> n
-    | Some x -> f x
-
   (* Renvoi la liste des sommets triés par ordre décroissant de date de fin de traitement par un PP *)
   let ppc_dt g =
-    let res = ref Ml.empty in
-    let rec aux k v ((already,date) as a )=
+    let rec aux k vs ((res,already,date) as a )=
       if S.mem k already
       then a
       else
-        begin
-          let already = S.add k already in
-          let alreadyD = List.fold_left
-            (fun ((acc,d) as a) v ->
-              maybe (if not (S.mem v already) then begin res := Ml.add v date !res; (S.add v acc, date+1) end else a) (fun x -> aux v x a) (Ml.find_opt v g)) (already,date) v in
-          res := Ml.add k date !res ;
-          alreadyD
-        end
+        let (res,already,date) =
+          List.fold_left
+            (fun ((res, already,date) as a) v ->
+              match Ml.find_opt v g with
+              | None -> if not (S.mem v already) then (Ml.add v date res, S.add v already,date+1) else a
+              | Some x -> aux v x a
+            ) (res,S.add k already,date) vs in
+          (Ml.add k date res,already,date+1)
     in
-    let _ = Ml.fold aux g (S.empty,0) in
+    let (a,_,_) = Ml.fold aux g (Ml.empty,S.empty,0) in
     List.sort
       (fun x y -> compare (snd x) (snd y))
-      (Seq.fold_left (fun acc x -> x::acc) [] (Ml.to_seq !res))
+      (Seq.fold_left (fun acc x -> x::acc) [] (Ml.to_seq a))
 
   (* Un PP suivant un ordre particulier *)
   let ppc_final order g =
-    let res = ref Mi.empty in
-    let rec aux count already k v =
-      let f already k =
-        res := addFront Mi.update count k !res ;
-        S.add k already
-      in
+    let rec aux count (already,res) k v =
       if S.mem k already
-      then already
+      then (already,res)
       else
-        let al = f already k in
-        List.fold_left (fun acc v -> maybe (if not(S.mem v acc) then f acc v else acc) (aux count acc v) (Ml.find_opt v g)) al v
+        List.fold_left
+          (fun ((already,res) as a) v ->
+            match Ml.find_opt v g with
+            | None -> (S.add v already, addFront Mi.update count v res)
+            | Some x -> aux count a v x
+          ) (S.add k already,res) v
     in
-    let rec ppc_order count already order =
+    let rec ppc_order count ((already,res) as a) order =
       match order with
-      | [] -> ()
+      | [] -> res
       | (x,_)::xs ->
          if S.mem x already
-         then ppc_order count already xs
+         then ppc_order count a xs
          else
-           begin
-             let al = aux count already x (Ml.find x g) in
-             ppc_order (count+1) al xs
-           end
+           let acc = aux count a x (Ml.find x g) in
+           ppc_order (count+1) acc xs
     in
-    ppc_order 0 S.empty order;
-    !res
+    ppc_order 0 (S.empty,Mi.empty) order
 
   (* Algo de Kosaraju pour calculer les CFC *)
   let kosaraju_scc g =
