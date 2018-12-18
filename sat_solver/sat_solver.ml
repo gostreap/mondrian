@@ -26,11 +26,95 @@ module Make (V : VARIABLES) = struct
 
   module S = Set.Make(L)
 
+  module Ml = Map.Make(L)
+
+  module Mi = Map.Make(struct type t = int let compare = compare end)
+
   exception Unsat
   exception Sat of S.t
 
   type t = { gamma : S.t ; cl2 : L.t list list ; delta : L.t list list }
 
+  let addFront update k v m =
+    let maybe y =
+      match y with
+      | None -> Some [v]
+      | Some xs -> Some (v :: xs) in
+    update k maybe m
+
+  let mk_implication_graph =
+    let aux acc l = (* TODO Use tuples *)
+      match l with
+      | [a;b] ->
+          addFront Ml.update (L.mk_not b) a (addFront  Ml.update (L.mk_not a) b acc)
+      | _ -> assert false in
+    List.fold_left aux Ml.empty
+
+  let transpose g = (* TODO verifier if transpose *)
+    let rec add_all k v acc =
+      match v with
+      | [] -> acc
+      | x::xs -> add_all k xs (addFront Ml.update x k acc) in
+    Ml.fold add_all g Ml.empty
+
+  let ppc_dt g =
+    let res = ref Ml.empty in
+    let date = ref 0 in
+    let ppc =
+      let rec aux k v =
+        if Ml.mem k !res
+        then ()
+        else
+          begin
+            res := Ml.add k !date !res ;
+            List.iter (fun v -> aux v (Ml.find v g)) v ;
+            date := !date + 1
+          end
+      in
+      Ml.iter aux g in
+    ppc;
+    List.sort (fun x y -> compare (snd x) (snd y)) (Seq.fold_left (fun acc x -> x::acc) [] (Ml.to_seq !res))
+
+  let ppc_final order g =
+    let res = ref Mi.empty in
+    let already = ref S.empty in
+    let count = ref 0 in
+    let rec aux k v =
+      if S.mem k !already
+      then ()
+      else
+        begin
+          already := S.add k !already;
+          res := addFront Mi.update !count k !res;
+          List.iter (fun v -> aux v (Ml.find v g)) v
+        end
+    in
+    let rec ppc_order order =
+      match order with
+      | [] -> ()
+      | (x,_)::xs ->
+         if S.mem x !already
+         then ppc_order xs
+         else
+           begin
+             aux x (Ml.find x g) ;
+             count := !count + 1
+           end
+
+    in
+    ppc_order order;
+    !res
+
+  let kosaraju_scc g =
+    let order = ppc_dt g in
+    let g = transpose g in
+    ppc_final order g
+
+  let verify m =
+    let verif ls = List.for_all (fun x -> not (List.mem (L.mk_not x) ls)) ls in
+    Mi.fold (fun _ v acc -> verif v && acc) m true
+
+  (* SAT *)
   let rec assume env f =
     if S.mem f env.gamma then env
     else bcp { env with gamma = S.add f env.gamma}
@@ -68,7 +152,7 @@ module Make (V : VARIABLES) = struct
           match l with
           | [] -> raise Unsat (* conflict *)
           | [f] -> assume env f
-          | [_;_] as p -> { env with cl2 = l :: env.cl2 }
+          | [_;_] -> { env with cl2 = l :: env.cl2 }
           | _ -> { env with delta = l :: env.delta }
         with Exit -> env)
       { start with delta = [] }
@@ -77,7 +161,11 @@ module Make (V : VARIABLES) = struct
   let rec unsat env = try
       (* 3 clauses *)
       match env.delta with
-      | [] -> failwith "solve2 not made" (* raise (Sat env.gamma) *)
+      | [] ->
+         let g = mk_implication_graph env.cl2 in
+         if verify (kosaraju_scc g)
+         then raise (Sat S.empty)
+         else raise Unsat
       | ([_] | []) :: _ -> assert false
       | (a :: xs) :: ys ->
          begin
