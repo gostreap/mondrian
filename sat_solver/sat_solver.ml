@@ -72,12 +72,12 @@ module Make (V : VARIABLES) = struct
         let (res,already,date) =
           List.fold_left
             (fun ((res, already,date) as a) v ->
-              if S.mem v already
-              then a
-              else
                 match Ml.find_opt v g with
-                | None ->  (Ml.add v date res, S.add v already,date+1)
-                | Some x -> aux v x a
+                | None ->
+                   if S.mem v already
+                   then a
+                   else (Ml.add v date res, S.add v already,date+1)
+                | Some x -> aux v x a (* Test de présence fait dans l'appel récursif *)
             ) (res,S.add k already,date) vs in
           (Ml.add k date res,already,date+1)
     in
@@ -94,11 +94,11 @@ module Make (V : VARIABLES) = struct
       else
         List.fold_left
           (fun ((already,res) as a) v ->
-            if S.mem v already
-            then a
-            else
               match Ml.find_opt v g with
-              | None -> (S.add v already, addFront Mi.update count v res)
+              | None ->
+                 if S.mem v already
+                 then a
+                 else (S.add v already, addFront Mi.update count v res)
               | Some x -> aux count a v x
           ) (S.add k already,addFront Mi.update count k res) v
     in
