@@ -51,11 +51,14 @@ module Make (V : VARIABLES) = struct
       | _ -> assert false in
     List.fold_left aux Ml.empty
 
-  (* Transpose un graph *)
+  (* Transpose un graph: TODO améliorer *)
   let transpose g =
     let rec add_all k v acc =
       match v with
-      | [] -> Ml.add k [] acc
+      | [] ->
+         if Ml.mem k acc
+         then acc
+         else Ml.add k [] acc
       | x::xs -> add_all k xs (addFront Ml.update x k acc) in
     Ml.fold add_all g Ml.empty
 
