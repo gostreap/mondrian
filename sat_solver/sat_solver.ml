@@ -173,7 +173,7 @@ module Make (V : VARIABLES) = struct
             | [f] -> assume env f
             | _ -> { env with cl2 = l :: env.cl2 } (* Ne peut pas être plus qu'une 2-clause *)
           with Exit -> env )
-        {env with cl2 = []}
+        {env with cl2 = []; delta = []}
         env.cl2
     in
     List.fold_left
@@ -194,7 +194,7 @@ module Make (V : VARIABLES) = struct
              then { env with cl2 = l :: env.cl2 } 
              else {env with delta = l :: env.delta}
         with Exit -> env )
-      { start with delta = [] }
+      start
       env.delta
 
   let rec unsat env = try
