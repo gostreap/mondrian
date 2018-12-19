@@ -202,18 +202,3 @@ let rec tryred (bsp : [< `Green | `Red | `Blue] bsp) =
      else
        let (r',b') = tryred b in
        (r', L (l,a,if r' then b' else b))
-
-let get_possible_lines  (bsp : ([< `Green | `Red | `Blue] as 'a) bsp) (linet : 'a linetree) ((x,y) : point) =
-  let rec traverse v bsp linet =
-    match bsp, linet with
-    | (L (lab, left, right) as l,(Line (_,_,_,left',right') as l')) -> (l,l') ::
-       (if v
-       then if x < lab.coord
-            then traverse (not v) left left'
-            else traverse (not v) right right'
-       else if y < lab.coord
-       then traverse (not v) left left'
-       else traverse (not v) right right')
-    | R _, _ -> []
-    | _ -> failwith "get_possible_lines"
-  in traverse true bsp linet
