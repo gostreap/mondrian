@@ -41,30 +41,27 @@ module Make (V : VARIABLES) = struct
       | Some xs -> Some (v :: xs) in
     update k maybe m
 
+  let mk_if_not_here k m =
+    let f z =
+      match z with
+      | None -> Some []
+      | Some _ -> z in
+    Ml.update k f m
+
   (* Créer le graphe des implications https://en.wikipedia.org/wiki/Implication_graph *)
   let mk_implication_graph =
     let aux acc l = (* TODO Use tuples *)
       match l with
-      | [a;b] -> (* TODO change this, it can certainly made a better way *)
-         let acc =
-           if Ml.mem a acc
-           then acc
-           else Ml.add a [] acc in
-         let acc =
-           if Ml.mem b acc
-           then acc
-           else Ml.add b [] acc in
+      | [a;b] ->
+         let acc = mk_if_not_here b (mk_if_not_here a acc) in
          addFront Ml.update (L.mk_not b) a (addFront Ml.update (L.mk_not a) b acc)
       | _ -> assert false in
     List.fold_left aux Ml.empty
 
-  (* Transpose un graph: TODO améliorer *)
+  (* Transpose un graph: TODO améliorer ? *)
   let transpose g =
     let add_all k v acc =
-      let acc =
-        if Ml.mem k acc
-        then acc
-        else Ml.add k [] acc in
+      let acc = mk_if_not_here k acc in
       match v with
       | [] -> acc
       | x::xs ->
