@@ -144,6 +144,9 @@ module Make (V : VARIABLES) = struct
     in
     List.fold_left aux gamma m
 
+  let filter_rev_l p = (* la taille de la liste est un by-product *)
+    List.fold_left (fun ((a,acc) as e) x -> if p x then (a && (List.length acc < 2),x::acc) else e) (true,[])
+
   let filter_rev p =
     List.fold_left (fun acc x -> if p x then x::acc else acc) []
 
@@ -153,38 +156,43 @@ module Make (V : VARIABLES) = struct
     else bcp { env with gamma = S.add f env.gamma}
 
   and bcp env =
-    let aux env l after =
-      try
-        let l =
-          filter_rev
-            (fun f ->
-              if S.mem f env.gamma then raise Exit;
-              not (S.mem (L.mk_not f) env.gamma)
-            ) l
-        in
-        match l with
-        | [] -> raise Unsat (* conflict *)
-        | f :: xs ->
-           match xs with
-           | [] -> assume env f
-           | _ :: ys -> after ys l
-      with Exit -> env in
     let start =
       List.fold_left
         (fun env l ->
-          aux env l
-            (fun _ l -> { env with cl2 = l :: env.cl2 }) (* Ne peut pas être plus qu'une 2-clause *)  )
+          try
+            let l =
+              filter_rev
+                (fun f ->
+                  if S.mem f env.gamma then raise Exit;
+                  not (S.mem (L.mk_not f) env.gamma)
+                ) l
+            in
+            match l with
+            | [] -> raise Unsat (* conflict *)
+            | [f] -> assume env f
+            | _ -> { env with cl2 = l :: env.cl2 } (* Ne peut pas être plus qu'une 2-clause *)
+          with Exit -> env )
         {env with cl2 = []}
         env.cl2
     in
     List.fold_left
       (fun env l ->
-        aux env l
-          (fun ys l ->
-            match ys with
-            | [] -> { env with cl2 = l :: env.cl2 }
-            | _ -> { env with delta = l :: env.delta }
-          ))
+        try
+          let b,l =
+            filter_rev_l
+              (fun f ->
+                if S.mem f env.gamma then raise Exit;
+                not (S.mem (L.mk_not f) env.gamma)
+              ) l
+          in
+          match l with
+          | [] -> raise Unsat (* conflict *)
+          | [f] -> assume env f
+          | _ ->
+             if b
+             then { env with cl2 = l :: env.cl2 } 
+             else {env with delta = l :: env.delta}
+        with Exit -> env )
       { start with delta = [] }
       env.delta
 
