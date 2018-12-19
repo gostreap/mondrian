@@ -95,6 +95,10 @@ module Make (V : VARIABLES) = struct
 
   (* Un PP suivant un ordre particulier *)
   let ppc_final order g =
+    let test_and_add v s=
+      if S.mem (L.mk_not v) s
+      then raise Unsat
+      else S.add v s in
     let rec aux ((already,res) as a) k vs =
       if S.mem k already
       then a
@@ -105,9 +109,9 @@ module Make (V : VARIABLES) = struct
             | None ->
                if S.mem v already
                then a
-               else (S.add v already, S.add v res) (* tester s'il n'y était pas avant *)
+               else (S.add v already, test_and_add v res)
             | Some x -> aux a v x
-          ) (S.add k already,S.add k res) vs
+          ) (S.add k already,test_and_add k res) vs
     in
     let rec ppc_order ((already,res) as a) order =
       match order with
@@ -136,10 +140,7 @@ module Make (V : VARIABLES) = struct
       | Some x ->
          if S.mem (L.mk_not x) gamma
          then gamma
-         else
-           if S.for_all (fun x -> not (S.mem (L.mk_not x) v)) v
-           then S.union gamma v
-           else raise Unsat
+         else S.union gamma v
     in
     List.fold_left aux gamma m
 
