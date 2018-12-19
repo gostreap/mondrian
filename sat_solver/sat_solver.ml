@@ -145,9 +145,6 @@ module Make (V : VARIABLES) = struct
     in
     List.fold_left aux gamma m
 
-  let filter_rev_l p = (* la taille de la liste est un by-product *)
-    List.fold_left (fun ((a,acc) as e) x -> if p x then (a && (List.length acc < 2),x::acc) else e) (true,[])
-
   let filter_rev p =
     List.fold_left (fun acc x -> if p x then x::acc else acc) []
 
@@ -179,8 +176,8 @@ module Make (V : VARIABLES) = struct
     List.fold_left
       (fun env l ->
         try
-          let b,l =
-            filter_rev_l
+          let l =
+            filter_rev
               (fun f ->
                 if S.mem f env.gamma then raise Exit;
                 not (S.mem (L.mk_not f) env.gamma)
@@ -189,10 +186,8 @@ module Make (V : VARIABLES) = struct
           match l with
           | [] -> raise Unsat (* conflict *)
           | [f] -> assume env f
-          | _ ->
-             if b
-             then { env with cl2 = l :: env.cl2 } 
-             else {env with delta = l :: env.delta}
+          | [_;_]-> {env with cl2 = l :: env.cl2}
+          | _ -> {env with delta = l :: env.delta}
         with Exit -> env )
       start
       env.delta
