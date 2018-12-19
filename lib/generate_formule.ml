@@ -10,7 +10,7 @@ let choose coul n =
   match coul with
   | `Red -> (Var (2*n), Var(2*n+1))
   | `Green -> (Var (2*n), Neg (2*n+1))
-  | `Blue -> (Neg (2*n), Neg (2*n+1))
+  | `Blue -> (Neg (2*n), Var (2*n+1))
 
 let generate_config (r,g,b) (rs,gs,bs) list =
   let red = get_n_tuples_in_list (r-rs) list in
@@ -136,7 +136,6 @@ let get_fnc_of_bsp (prof : int) (bsp : couleur bsp) =
 
 let get_fnc_of_bsp_soluce (prof : int) (working_bsp : couleur bsp) (linetree : couleur linetree)=
   let sat = bsp_sat_of_working_bsp working_bsp linetree |> loop_sat prof in
-  print_endline (string_of_bsp_sat sat);
   if not (check_all_lines sat)
   then None
   else get_formule_complete (ref (-1),Hashtbl.create 100) sat

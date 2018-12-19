@@ -117,7 +117,6 @@ let get_fnc_of_bsp2 (prof : int) (bsp : [`Red | `Blue] bsp) =
 
 let get_fnc_of_bsp_soluce2 (prof : int) (working_bsp : [`Red | `Blue] bsp) (linetree :  [`Red | `Blue] linetree)=
   let sat = bsp_sat_of_working_bsp working_bsp linetree |> loop_sat prof in
-  print_endline (string_of_bsp_sat sat);
   if not (check_all_lines sat)
   then None
   else get_formule_complete sat
