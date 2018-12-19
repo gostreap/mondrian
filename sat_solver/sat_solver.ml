@@ -150,7 +150,7 @@ module Make (V : VARIABLES) = struct
     else bcp { env with gamma = S.add f env.gamma}
 
   and bcp env =
-    let aux env l f =
+    let aux env l after =
       try
         let l =
           List.filter
@@ -161,23 +161,25 @@ module Make (V : VARIABLES) = struct
         in
         match l with
         | [] -> raise Unsat (* conflict *)
-        | [f] -> assume env f
-        | _ -> f l
+        | f :: xs ->
+           match xs with
+           | [] -> assume env f
+           | _ :: ys -> after ys l
       with Exit -> env in
     let start =
       List.fold_left
         (fun env l ->
           aux env l
-            (fun l -> { env with cl2 = l :: env.cl2 }) (* Ne peut pas être plus qu'une 2-clause *)  )
+            (fun _ l -> { env with cl2 = l :: env.cl2 }) (* Ne peut pas être plus qu'une 2-clause *)  )
         {env with cl2 = []}
         env.cl2
     in
     List.fold_left
       (fun env l ->
         aux env l
-          (fun l ->
-            match l with
-            | [_;_] -> { env with cl2 = l :: env.cl2 }
+          (fun ys l ->
+            match ys with
+            | [] -> { env with cl2 = l :: env.cl2 }
             | _ -> { env with delta = l :: env.delta }
           ))
       { start with delta = [] }
