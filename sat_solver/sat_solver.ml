@@ -128,10 +128,6 @@ module Make (V : VARIABLES) = struct
     let g = transpose g in
     ppc_final order g
 
-  (* Vérifie que les CFC sont "valables", ie qu'un l'itéral n'est pas dans la même CFC que sont opposé *)
-  let verif ls = List.for_all (fun x -> not (List.mem (L.mk_not x) ls)) ls
-  let verify = List.for_all (fun v -> verif v)
-
     (* Assigne les variables selon les CFC https://en.wikipedia.org/wiki/2-satisfiability#Strongly_connected_components *)
   let mkAssign m gamma =
     let aux gamma v =
@@ -140,7 +136,10 @@ module Make (V : VARIABLES) = struct
       | x::_ ->
          if S.mem (L.mk_not x) gamma
          then gamma
-         else List.fold_left (fun acc x -> S.add x acc) gamma v
+         else
+           if List.for_all (fun x -> not (List.mem (L.mk_not x) v)) v
+           then List.fold_left (fun acc x -> S.add x acc) gamma v
+           else raise Unsat
     in
     List.fold_left aux gamma m
 
@@ -192,9 +191,8 @@ module Make (V : VARIABLES) = struct
       | [] ->
          let g = mk_implication_graph env.cl2 in
          let cfc = kosaraju_scc g in
-         if verify cfc
-         then raise (Sat (mkAssign cfc env.gamma))
-         else raise Unsat
+         let assign = mkAssign cfc env.gamma in (* Va vérifier si les CFC sont correctes *)
+         raise (Sat assign)
       | ([_] | []) :: _ -> assert false
       | (a :: xs) :: ys ->
          begin
