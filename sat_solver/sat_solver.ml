@@ -153,7 +153,7 @@ module Make (V : VARIABLES) = struct
   (* SAT *)
   let rec assume env f =
     if S.mem f env.gamma then env
-    else bcp { env with gamma = S.add f env.gamma}
+    else bcp { env with gamma = S.add f env.gamma; more3 = None}
 
   and bcp env =
     List.fold_left
