@@ -144,6 +144,9 @@ module Make (V : VARIABLES) = struct
     in
     List.fold_left aux gamma m
 
+  let filter_rev p =
+    List.fold_left (fun acc x -> if p x then x::acc else acc) []
+
   (* SAT *)
   let rec assume env f =
     if S.mem f env.gamma then env
@@ -153,7 +156,7 @@ module Make (V : VARIABLES) = struct
     let aux env l after =
       try
         let l =
-          List.filter
+          filter_rev
             (fun f ->
               if S.mem f env.gamma then raise Exit;
               not (S.mem (L.mk_not f) env.gamma)
