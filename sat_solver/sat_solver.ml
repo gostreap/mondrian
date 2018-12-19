@@ -32,7 +32,7 @@ module Make (V : VARIABLES) = struct
   exception Sat of S.t
 
   (* TODO: on n'a pas forcément besoin de cl2 *)
-  type t = { gamma : S.t ; cl2 : L.t list list ; delta : L.t list list }
+  type t = { gamma : S.t ; more3 : L.t list option ; delta : L.t list list }
 
   let addFront update k v m =
     let maybe y =
@@ -145,11 +145,10 @@ module Make (V : VARIABLES) = struct
     in
     List.fold_left aux gamma m
 
-  let filter_rev_l p = (* la taille de la liste est un by-product *)
-    List.fold_left (fun ((a,acc) as e) x -> if p x then (a && (List.length acc < 2),x::acc) else e) (true,[])
-
-  let filter_rev p =
-    List.fold_left (fun acc x -> if p x then x::acc else acc) []
+  let filter_rev p = (* TODO: la taille de la liste est un by-product *)
+    List.fold_left
+      (fun acc x -> if p x then x::acc else acc)
+      []
 
   (* SAT *)
   let rec assume env f =
@@ -157,30 +156,11 @@ module Make (V : VARIABLES) = struct
     else bcp { env with gamma = S.add f env.gamma}
 
   and bcp env =
-    let start =
-      List.fold_left
-        (fun env l ->
-          try
-            let l =
-              filter_rev
-                (fun f ->
-                  if S.mem f env.gamma then raise Exit;
-                  not (S.mem (L.mk_not f) env.gamma)
-                ) l
-            in
-            match l with
-            | [] -> raise Unsat (* conflict *)
-            | [f] -> assume env f
-            | _ -> { env with cl2 = l :: env.cl2 } (* Ne peut pas être plus qu'une 2-clause *)
-          with Exit -> env )
-        {env with cl2 = []}
-        env.cl2
-    in
     List.fold_left
       (fun env l ->
         try
-          let b,l =
-            filter_rev_l
+          let l =
+            filter_rev
               (fun f ->
                 if S.mem f env.gamma then raise Exit;
                 not (S.mem (L.mk_not f) env.gamma)
@@ -189,47 +169,45 @@ module Make (V : VARIABLES) = struct
           match l with
           | [] -> raise Unsat (* conflict *)
           | [f] -> assume env f
-          | _ ->
-             if b
-             then { env with cl2 = l :: env.cl2 } 
-             else {env with delta = l :: env.delta}
+          | [_;_] ->  {env with delta = l :: env.delta}
+          | _ -> {env with delta = l :: env.delta; more3 = Some l}
         with Exit -> env )
-      { start with delta = [] }
+      { env with delta = [] }
       env.delta
 
   let rec unsat env = try
       (* 3 clauses OU PLUS *)
-      match env.delta with
-      | [] ->
-         let g = mk_implication_graph env.cl2 in
+      match env.more3 with
+      | None ->
+         let g = mk_implication_graph env.delta in
          let cfc = kosaraju_scc g in
          let assign = mkAssign cfc env.gamma in (* Va vérifier si les CFC sont correctes *)
          raise (Sat assign)
-      | ([_] | []) :: _ -> assert false
-      | (a :: xs) :: ys ->
-         begin
-           try
-             unsat (assume {env with delta = ys} a)
-           with Unsat -> ()
-         end ;
-         let nenv =
-           match xs with
-           | [_;_] -> {env with cl2 = xs::env.cl2}
-           | _ -> {env with delta = xs::ys } in
-        unsat (assume nenv (L.mk_not a))
+      | Some xs ->
+         match xs with
+         | ([_] | []) -> assert false
+         | (a :: _) ->
+            begin
+              try
+                unsat (assume {env with more3=None} a)
+              with Unsat -> ()
+            end ;
+            unsat (assume {env with more3=None} (L.mk_not a))
     with Unsat -> ()
+
+  let rec find3more xs =
+    match xs with
+    | [] -> None
+    | a::l ->
+       if List.length a > 2
+       then Some a
+       else find3more l
 
   let solve delta = try
       print_endline "SAT";
       print_endline (string_of_int (List.length delta));
-      let b = bcp { gamma = S.empty ; cl2 = [];  delta } in
-      print_endline (string_of_int (List.length b.delta));
-      let c2,c3p = List.partition (fun x -> List.length x = 2) b.delta in
-      let b =
-        {b with
-          cl2 = b.cl2 @ c2;
-          delta = c3p
-        } in
+      let b = bcp { gamma = S.empty ; more3 = find3more delta;  delta } in
+      print_endline (string_of_int (List.fold_left (fun acc x -> if List.length x > 2 then acc +1 else acc) 0 b.delta));
       unsat b ;
       None
     with
