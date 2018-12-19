@@ -73,8 +73,7 @@ let init3coul infos : (couleur bsp * couleur bsp_sat * couleur linetree * couleu
   (origin_bsp,bsp_sat,linetree,working_bsp)
 
 let init2coul infos : (([`Red | `Blue] as 'a) bsp * 'a bsp_sat * 'a linetree * 'a bsp) =
-  (* let origin_bsp = random_bsp_naive infos.prof infos.larg infos.haut rand_two_coul in *)
-  let origin_bsp = L ({ coord=529; colored=true }, L ({ coord=58; colored=true }, L ({ coord=492; colored=true }, R (Some `Red), R (Some `Red)), L ({ coord=28; colored=true }, R (Some `Red), R (Some `Blue))), L ({ coord=650; colored=true }, L ({ coord=637; colored=true }, R (Some `Blue), R (Some `Blue)), L ({ coord=632; colored=true }, R (Some `Red), R (Some `Red)))) in
+  let origin_bsp = random_bsp_naive infos.prof infos.larg infos.haut rand_two_coul in
   let bsp_sat = loop_sat infos.prof (bsp_sat_of_bsp get_color_line2 origin_bsp) in
   let linetree = linetree_of_bsp get_color_line2 origin_bsp infos.larg infos.haut in
   let working_bsp = empty_copy_of_bsp origin_bsp in

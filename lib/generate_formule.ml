@@ -10,7 +10,7 @@ let choose coul n =
   match coul with
   | `Red -> (Var (2*n), Var(2*n+1))
   | `Green -> (Var (2*n), Neg (2*n+1))
-  | `Blue -> (Neg (2*n), Neg (2*n+1))
+  | `Blue -> (Neg (2*n), Var (2*n+1))
 
 let generate_config (r,g,b) (rs,gs,bs) list =
   let red = get_n_tuples_in_list (r-rs) list in

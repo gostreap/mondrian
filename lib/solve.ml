@@ -18,8 +18,8 @@ module Sat = Sat_solver.Make(Variables)
 let rec list_of_fnc (fnc : formule) =
   let get_var f =
     match f with
-    | Var x -> (false,x)
-    | Neg x -> (true,x)
+    | Var x -> (true,x)
+    | Neg x -> (false,x)
   in
   let rec get_ou f =
     match f with
@@ -112,9 +112,9 @@ let fill_one_rectangle origin_bsp_sat working_bsp linetree =
                 working_bsp
              | x::y::_ ->
                 let c =
-                  if fst x && fst y then `Blue
-                  else if fst x || fst y then `Green
-                  else `Red in
+                  if fst x && fst y then `Red
+                  else if fst x && not (fst y) then `Green
+                  else `Blue in
                 change_coul_with_id working_bsp (snd x/2) c;
              | _ -> failwith "ERREUR : fill_one_rectanlgle -> paire de variable incomplète"
       end
@@ -141,27 +141,27 @@ let print_maybe_other_sol_soluce2 origin_bsp_sat working_bsp linetree =
 
 let fill_one_rectangle2 origin_bsp_sat working_bsp linetree =
   if not (check_all_secure_rect origin_bsp_sat working_bsp) then
-      begin
-          print_endline "Secure incorrect : pas de solution";
-          working_bsp
-      end
+    begin
+      print_endline "Secure incorrect : pas de solution";
+      working_bsp
+    end
   else
-      begin
-          let sol = sat_solve (get_fnc_of_bsp_soluce2 working_bsp linetree) in
-          match sol with
-          | None ->
-             let (b,r) = tryred working_bsp in
-             if b
-             then r
-             else
-                 begin
-                     print_endline "Pas de solution : impossible de remplir";
-                     working_bsp
-                 end
-          | Some l ->
-             match l with
-             | [] ->
-                print_endline "ERREUR : fill_one_rectangle2 -> liste vide";
-                working_bsp
-             | x::_ -> change_coul_with_id working_bsp (snd x) (if (fst x) then `Blue else `Red)
-      end
+    begin
+      let sol = sat_solve (get_fnc_of_bsp_soluce2 working_bsp linetree) in
+      match sol with
+      | None ->
+         let (b,r) = tryred working_bsp in
+         if b
+         then r
+         else
+           begin
+             print_endline "Pas de solution : impossible de remplir";
+             working_bsp
+           end
+      | Some l ->
+         match l with
+         | [] ->
+            print_endline "ERREUR : fill_one_rectangle2 -> liste vide";
+            working_bsp
+         | x::_ -> change_coul_with_id working_bsp (snd x) (if (fst x) then `Red else `Blue)
+    end
