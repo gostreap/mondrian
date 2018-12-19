@@ -16,7 +16,7 @@ let rec string_of_bsp_sat (bsp : [< `Red | `Green | `Blue] bsp_sat) =
                         (maybe "None" (switch_coul "r" "g" "b") c)
 
 let bsp_sat_of_bsp (get_col_line : 'a bsp -> 'a couleur_l option) (bsp : 'a bsp) : ('a bsp_sat) =
-  let rec aux v bsp  =
+  let rec aux v bsp =
     match bsp with
     | R x ->
        (v+1,R_sat (v,false, x))
@@ -61,7 +61,12 @@ let rec secure_bsp_sat (bsp :  [< `Red | `Green | `Blue] bsp_sat) =
       if maybe false (switch_coul_l false false false false (fun _ -> true)) c
       then
         match l, r with
-        | R_sat (n,_,co), R_sat (m,_,_) -> L_sat (c,true,R_sat (n,true,co),R_sat (m,true,co))
+        | R_sat (n,_,_), R_sat (m,_,_) ->
+           begin
+               match c with
+               | Some (C co) -> L_sat (c,true,R_sat (n,true,Some co),R_sat (m,true,Some co))
+               | _ -> failwith "Error secure_bsp_sat" (*Ne peut pas arriver*)
+           end 
         | L_sat (_,b,_,_) as l, (L_sat (_,b',_,_) as r) ->
            if b && b'
            then L_sat (c,true,l,r)

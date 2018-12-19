@@ -71,21 +71,21 @@ let is_uniq prof bsp = maybe true (fun _ -> false) (sat_solve (get_fnc_of_bsp pr
 let print_maybe_other_sol prof bsp = print_possible_sol (sat_solve (get_fnc_of_bsp prof bsp))
 
 (* Test si le bsp possède une solution et affiche le résultat *)
-let print_maybe_other_sol_soluce origin_bsp_sat working_bsp linetree =
+let print_maybe_other_sol_soluce prof origin_bsp_sat working_bsp linetree =
   if not (check_all_secure_rect origin_bsp_sat working_bsp) then
       begin
           print_endline "Secure incorrect : pas de solution";
       end
   else
       begin
-          let sol = sat_solve (get_fnc_of_bsp_soluce working_bsp linetree) in
+          let sol = sat_solve (get_fnc_of_bsp_soluce prof working_bsp linetree) in
           match sol with
           | None -> print_endline "Pas de solution"
           | _ -> print_endline "Solution possible"
       end
 
 
-let fill_one_rectangle origin_bsp_sat working_bsp linetree =
+let fill_one_rectangle prof origin_bsp_sat working_bsp linetree =
   if not (check_all_secure_rect origin_bsp_sat working_bsp) then
       begin
           print_endline "Secure incorrect : pas de solution";
@@ -93,7 +93,7 @@ let fill_one_rectangle origin_bsp_sat working_bsp linetree =
       end
   else
       begin
-          let sol = sat_solve (get_fnc_of_bsp_soluce working_bsp linetree) in
+          let sol = sat_solve (get_fnc_of_bsp_soluce prof working_bsp linetree) in
           match sol with
           | None ->
              let (b,r) = tryred working_bsp in
@@ -126,20 +126,20 @@ let is_uniq2 prof bsp = maybe true (fun _ -> false) (sat_solve (get_fnc_of_bsp2 
 let print_maybe_other_sol2 prof bsp = print_possible_sol (sat_solve (get_fnc_of_bsp2 prof bsp))
   
 (* Test si le bsp possède une solution et affiche le résultat *)
-let print_maybe_other_sol_soluce2 origin_bsp_sat working_bsp linetree =
+let print_maybe_other_sol_soluce2 prof origin_bsp_sat working_bsp linetree =
   if not (check_all_secure_rect origin_bsp_sat working_bsp) then
       begin
           print_endline "Secure incorrect : pas de solution";
       end
   else
       begin
-          let sol = sat_solve (get_fnc_of_bsp_soluce2 working_bsp linetree) in
+          let sol = sat_solve (get_fnc_of_bsp_soluce2 prof working_bsp linetree) in
           match sol with
           | None -> print_endline "Pas de solution"
           | _ -> print_endline "Solution possible"
       end
 
-let fill_one_rectangle2 origin_bsp_sat working_bsp linetree =
+let fill_one_rectangle2 prof origin_bsp_sat working_bsp linetree =
   if not (check_all_secure_rect origin_bsp_sat working_bsp) then
       begin
           print_endline "Secure incorrect : pas de solution";
@@ -147,7 +147,7 @@ let fill_one_rectangle2 origin_bsp_sat working_bsp linetree =
       end
   else
       begin
-          let sol = sat_solve (get_fnc_of_bsp_soluce2 working_bsp linetree) in
+          let sol = sat_solve (get_fnc_of_bsp_soluce2 prof working_bsp linetree) in
           match sol with
           | None ->
              let (b,r) = tryred working_bsp in

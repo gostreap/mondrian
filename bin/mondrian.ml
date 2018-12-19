@@ -73,14 +73,13 @@ let init3coul infos : (couleur bsp * couleur bsp_sat * couleur linetree * couleu
   (origin_bsp,bsp_sat,linetree,working_bsp)
 
 let init2coul infos : (([`Red | `Blue] as 'a) bsp * 'a bsp_sat * 'a linetree * 'a bsp) =
-  (* let origin_bsp = random_bsp_naive infos.prof infos.larg infos.haut rand_two_coul in *)
-  let origin_bsp = L ({ coord=529; colored=true }, L ({ coord=58; colored=true }, L ({ coord=492; colored=true }, R (Some `Red), R (Some `Red)), L ({ coord=28; colored=true }, R (Some `Red), R (Some `Blue))), L ({ coord=650; colored=true }, L ({ coord=637; colored=true }, R (Some `Blue), R (Some `Blue)), L ({ coord=632; colored=true }, R (Some `Red), R (Some `Red)))) in
+  let origin_bsp = random_bsp_naive infos.prof infos.larg infos.haut rand_two_coul in
   let bsp_sat = loop_sat infos.prof (bsp_sat_of_bsp get_color_line2 origin_bsp) in
   let linetree = linetree_of_bsp get_color_line2 origin_bsp infos.larg infos.haut in
   let working_bsp = empty_copy_of_bsp origin_bsp in
   (origin_bsp,bsp_sat,linetree,working_bsp)
 
-let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 'a bsp_sat) (working_bsp : 'a bsp) (linetree : 'a linetree) (pmothersol : 'a bsp_sat -> 'a bsp -> 'a linetree -> unit) (fill : 'a bsp_sat -> 'a bsp -> 'a linetree -> 'a bsp)(chcol : (([< `Blue | `Green | `Red ] as 'a) option -> 'a)) infos =
+let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 'a bsp_sat) (working_bsp : 'a bsp) (linetree : 'a linetree) (pmothersol : int -> 'a bsp_sat -> 'a bsp -> 'a linetree -> unit) (fill : int -> 'a bsp_sat -> 'a bsp -> 'a linetree -> 'a bsp)(chcol : (([< `Blue | `Green | `Red ] as 'a) option -> 'a)) infos =
   
   if check_current origin_bsp working_bsp
   then print_endline "victory";
@@ -93,14 +92,14 @@ let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_s
     match e.key with
     | 'q' -> ()
     | 'h' ->
-       let new_bsp = fill origin_bsp_sat working_bsp linetree in
+       let new_bsp = fill infos.prof origin_bsp_sat working_bsp linetree in
        loop origin_bsp origin_bsp_sat new_bsp linetree pmothersol fill chcol infos
     | _ -> loop origin_bsp origin_bsp_sat working_bsp linetree pmothersol fill chcol infos
   else
     if e.button
     then
         let bsp = change_color chcol working_bsp (e.mouse_x - offset, e.mouse_y - offset) in
-        pmothersol origin_bsp_sat bsp linetree;
+        pmothersol infos.prof origin_bsp_sat bsp linetree;
         loop origin_bsp origin_bsp_sat bsp linetree pmothersol fill chcol infos
     else loop origin_bsp origin_bsp_sat working_bsp linetree pmothersol fill chcol infos
 

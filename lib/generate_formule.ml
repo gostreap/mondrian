@@ -134,8 +134,9 @@ let get_fnc_of_bsp (prof : int) (bsp : couleur bsp) =
      let f = get_formule_complete (ref (-1),Hashtbl.create 100) sat in
      maybe None (fun fnc -> Some (Et (fnc, sol))) f
 
-let get_fnc_of_bsp_soluce (working_bsp : couleur bsp) (linetree : couleur linetree)=
-  let sat = bsp_sat_of_working_bsp working_bsp linetree in
+let get_fnc_of_bsp_soluce (prof : int) (working_bsp : couleur bsp) (linetree : couleur linetree)=
+  let sat = bsp_sat_of_working_bsp working_bsp linetree |> loop_sat prof in
+  print_endline (string_of_bsp_sat sat);
   if not (check_all_lines sat)
   then None
   else get_formule_complete (ref (-1),Hashtbl.create 100) sat
