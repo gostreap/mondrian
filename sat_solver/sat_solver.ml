@@ -95,7 +95,7 @@ module Make (V : VARIABLES) = struct
 
   (* Un PP suivant un ordre particulier *)
   let ppc_final order g =
-    let rec aux ((already,(res : literal list)) as a) k vs =
+    let rec aux ((already,res) as a) k vs =
       if S.mem k already
       then a
       else
@@ -105,18 +105,18 @@ module Make (V : VARIABLES) = struct
             | None ->
                if S.mem v already
                then a
-               else (S.add v already, v::res)
+               else (S.add v already, S.add v res) (* tester s'il n'y était pas avant *)
             | Some x -> aux a v x
-          ) (S.add k already,k::res) vs
+          ) (S.add k already,S.add k res) vs
     in
-    let rec ppc_order ((already,(res : literal list list)) as a) order =
+    let rec ppc_order ((already,res) as a) order =
       match order with
       | [] -> res
       | (x,_)::xs ->
          if S.mem x already
          then ppc_order a xs
          else
-           let (already,acc) = aux (already,[]) x (Ml.find x g) in
+           let (already,acc) = aux (already,S.empty) x (Ml.find x g) in
            ppc_order (already,acc::res) xs
     in
     ppc_order (S.empty,[]) order
@@ -131,14 +131,14 @@ module Make (V : VARIABLES) = struct
     (* Assigne les variables selon les CFC https://en.wikipedia.org/wiki/2-satisfiability#Strongly_connected_components *)
   let mkAssign m gamma =
     let aux gamma v =
-      match v with
-      | [] -> gamma
-      | x::_ ->
+      match S.choose_opt v with
+      | None -> gamma
+      | Some x ->
          if S.mem (L.mk_not x) gamma
          then gamma
          else
-           if List.for_all (fun x -> not (List.mem (L.mk_not x) v)) v
-           then List.fold_left (fun acc x -> S.add x acc) gamma v
+           if S.for_all (fun x -> not (S.mem (L.mk_not x) v)) v
+           then S.union gamma v
            else raise Unsat
     in
     List.fold_left aux gamma m
