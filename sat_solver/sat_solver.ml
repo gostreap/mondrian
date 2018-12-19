@@ -158,18 +158,17 @@ module Make (V : VARIABLES) = struct
               if S.mem f env.gamma then raise Exit;
               not (S.mem (L.mk_not f) env.gamma)
             ) l
-        in f l
+        in
+        match l with
+        | [] -> raise Unsat (* conflict *)
+        | [f] -> assume env f
+        | _ -> f l
       with Exit -> env in
     let start =
       List.fold_left
         (fun env l ->
           aux env l
-            (fun l ->
-              match l with
-              | [] -> raise Unsat (* conflict *)
-              | [f] -> assume env f
-              | _ -> { env with cl2 = l :: env.cl2 } (* Ne peut pas être plus qu'une 2-clause *)
-            ))
+            (fun l -> { env with cl2 = l :: env.cl2 }) (* Ne peut pas être plus qu'une 2-clause *)  )
         {env with cl2 = []}
         env.cl2
     in
@@ -178,8 +177,6 @@ module Make (V : VARIABLES) = struct
         aux env l
           (fun l ->
             match l with
-            | [] -> raise Unsat (* conflict *)
-            | [f] -> assume env f
             | [_;_] -> { env with cl2 = l :: env.cl2 }
             | _ -> { env with delta = l :: env.delta }
           ))
