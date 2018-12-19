@@ -31,6 +31,7 @@ module Make (V : VARIABLES) = struct
   exception Unsat
   exception Sat of S.t
 
+  (* TODO: on n'a pas forcément besoin de cl2 *)
   type t = { gamma : S.t ; cl2 : L.t list list ; delta : L.t list list }
 
   let addFront update k v m =
