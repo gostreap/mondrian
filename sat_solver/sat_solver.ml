@@ -31,7 +31,6 @@ module Make (V : VARIABLES) = struct
   exception Unsat
   exception Sat of S.t
 
-  (* TODO: on n'a pas forcément besoin de cl2 *)
   type t = { gamma : S.t ; cl2 : L.t list list ; delta : L.t list list }
 
   let addFront update k v m =
@@ -70,23 +69,24 @@ module Make (V : VARIABLES) = struct
 
   (* Renvoi la liste des sommets triés par ordre décroissant de date de fin de traitement par un PP *)
   let ppc_dt g =
-    let rec aux k vs ((res,already,date) as a )=
-      if S.mem k already
+    let rec aux k vs ((res,date) as a )=
+      if Ml.mem k res
       then a
       else
-        let (res,already,date) =
+        let (res,date) =
           List.fold_left
-            (fun ((res, already,date) as a) v ->
-              match Ml.find_opt v g with
-              | None ->
-                 if S.mem v already
+            (fun ((res, date) as a) v ->
+              try
+                aux v (Ml.find v g) a
+              with
+              Not_found ->
+                 if Ml.mem v res
                  then a
-                 else (Ml.add v date res, S.add v already,date+1)
-              | Some x -> aux v x a (* Test de présence fait dans l'appel récursif *)
-            ) (res,S.add k already,date) vs in
-          (Ml.add k date res,already,date+1)
+                 else (Ml.add v date res, date+1)
+            ) (Ml.add k (-1) res,date) vs in
+          (Ml.add k date res,date+1)
     in
-    let (a,_,_) = Ml.fold aux g (Ml.empty,S.empty,0) in
+    let (a,_) = Ml.fold aux g (Ml.empty,0) in
     List.sort
       (fun x y -> compare (snd y) (snd x)) (* TODO insérer dans la liste triée durant le fold *)
       (Seq.fold_left (fun acc x -> x::acc) [] (Ml.to_seq a))
@@ -103,12 +103,13 @@ module Make (V : VARIABLES) = struct
       else
         List.fold_left
           (fun ((already,res) as a) v ->
-            match Ml.find_opt v g with
-            | None ->
-               if S.mem v already
-               then a
-               else (S.add v already, test_and_add v res)
-            | Some x -> aux a v x
+              try
+                aux a v (Ml.find v g)
+              with
+                Not_found ->
+                if S.mem v already
+                then a
+                else (S.add v already, test_and_add v res)
           ) (S.add k already,test_and_add k res) vs
     in
     let rec ppc_order ((already,res) as a) order =
@@ -133,12 +134,12 @@ module Make (V : VARIABLES) = struct
     (* Assigne les variables selon les CFC https://en.wikipedia.org/wiki/2-satisfiability#Strongly_connected_components *)
   let mkAssign m gamma =
     let aux gamma v =
-      match S.choose_opt v with
-      | None -> gamma
-      | Some x ->
-         if S.mem (L.mk_not x) gamma
-         then gamma
-         else S.union gamma v
+      try
+        if S.mem (L.mk_not (S.choose v)) gamma
+        then gamma
+        else S.union gamma v
+      with
+        Not_found -> gamma
     in
     List.fold_left aux gamma m
 
