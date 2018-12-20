@@ -104,9 +104,11 @@ let fill_one_rectangle prof origin_bsp_sat working_bsp linetree =
       end
   else
       begin
-          let sol = sat_solve (get_fnc_of_bsp_soluce prof working_bsp linetree) in
+          let form = (get_fnc_of_bsp_soluce prof working_bsp linetree) in
+          let sol = sat_solve form in
           match sol with
           | None ->
+             print_formule form;
              print_endline ("None");
              let (b,r) = tryred working_bsp in
              if b

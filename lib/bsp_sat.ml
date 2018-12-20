@@ -113,18 +113,29 @@ let check_line (line :  [< `Red | `Green | `Blue] bsp_sat) =
   match line with
   | R_sat _ -> true
   | L_sat (c,_,_,_) ->
+     let borne1 =
+       if size mod 3 = 0 then (size - 6)/3
+       else if size mod 3 = 1 then (size - 4)/3
+       else (size - 2)/3
+     in
      match c with
      | None -> true
-     | Some Purple -> r <= size/2 && (g < size/3 || g = 0) && b <= size/2
-     | Some Yellow -> r <= size/2 && g <= size/2 && (b < size/3 || b = 0)
-     | Some Cyan -> (r < size/3 || r = 0) && g <= size/2 && b <= size/2
+     | Some Purple ->
+        if size = 1 || size = 3 then false (* si l'arbre a été bien généré, ceci est impossible *)
+        else r <= size/2 && (g <= borne1) && b <= size/2 
+     | Some Yellow ->
+        if size = 1 || size = 3 then false
+        else r <= size/2 && g <= size/2 && (b <= borne1)
+     | Some Cyan ->
+        if size = 1 || size = 3 then false
+        else (r <= borne1) && g <= size/2 && b <= size/2 
      | Some White -> r <= size/3 && g <= size/3 && b <= size/3
      | Some (C co) ->
-        let borne = if size mod 2 = 1 then size/2+1 else size/2 in
+        let borne2 = if size mod 2 = 1 then size/2+1 else size/2 in
         match co with
-        | `Red -> g < borne && b < borne
-        | `Green -> r < borne && b < borne
-        | `Blue -> r < borne && g < borne
+        | `Red -> g < borne2 && b < borne2 
+        | `Green -> r < borne2 && b < borne2 
+        | `Blue -> r < borne2 && g < borne2 
 
 let rec check_all_lines (bsp_sat : [< `Red | `Green | `Blue] bsp_sat) : bool =
   if not (check_line bsp_sat) then false

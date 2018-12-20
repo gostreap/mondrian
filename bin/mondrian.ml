@@ -66,8 +66,7 @@ let affiche_cadre (larg : int) (haut : int) =
 
 (* Génère un bsp et sa copie vide  *)
 let init3coul infos : (couleur bsp * couleur bsp_sat * couleur linetree * couleur bsp) =
-  (* let origin_bsp = random_bsp_naive infos.prof infos.larg infos.haut rand_three_coul in *)
-  let origin_bsp = L ({ coord=405; colored=true }, L ({ coord=316; colored=true }, L ({ coord=115; colored=true }, L ({ coord=62; colored=true }, R (Some `Red), R (Some `Green)), L ({ coord=196; colored=true }, R (Some `Green), R (Some `Blue))), L ({ coord=67; colored=true }, L ({ coord=586; colored=true }, R (Some `Red), R (Some `Blue)), L ({ coord=727; colored=true }, R (Some `Green), R (Some `Red)))), L ({ coord=481; colored=true }, L ({ coord=504; colored=true }, L ({ coord=310; colored=true }, R (Some `Green), R (Some `Blue)), L ({ coord=216; colored=true }, R (Some `Blue), R (Some `Green))), L ({ coord=702; colored=true }, L ({ coord=597; colored=true }, R (Some `Red), R (Some `Red)), L ({ coord=749; colored=true }, R (Some `Blue), R (Some `Red))))) in 
+  let origin_bsp = random_bsp_naive infos.prof infos.larg infos.haut rand_three_coul in
   let bsp_sat = loop_sat infos.prof (bsp_sat_of_bsp get_color_line origin_bsp) in
   let linetree = linetree_of_bsp get_color_line origin_bsp infos.larg infos.haut in
   let working_bsp = empty_copy_of_bsp origin_bsp in

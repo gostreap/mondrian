@@ -27,6 +27,27 @@ let generate_config (r,g,b) (rs,gs,bs) list =
 
 (* Genère les triplets (x,y,z) vérifiants is_valid *)
 let generate_triplet is_valid coul nadja rs gs bs =
+  (* let rec print_liste l =
+   *   match l with
+   *   | [] -> print_endline "";
+   *   | (r,g,b)::q ->
+   *      begin
+   *          print_string "(";
+   *          print_int r;
+   *          print_string ":";
+   *          print_int rs;
+   *          print_string ",";
+   *          print_int g;
+   *          print_string ":";
+   *          print_int gs;
+   *          print_string ",";
+   *          print_int b;
+   *          print_string ":";
+   *          print_int bs;
+   *          print_string ") ";
+   *          print_liste q;
+   *      end
+   * in *)
   let rec genl f l =
     if f > l
     then []
@@ -39,10 +60,11 @@ let generate_triplet is_valid coul nadja rs gs bs =
                                   (switch_coul (nadja/2) (nadja/2) nadja) coul) in
   let all_l = List.rev_map (fun x -> List.rev_map (fun y -> List.rev_map (fun z -> (x,y,z)) bl) gl ) rl in
   let filtered = List.filter is_valid (List.concat (List.concat all_l)) in
+  (* print_liste filtered; *)
   match coul with
-  | C `Red -> (nadja/2+1,gs,bs)::filtered
-  | C `Green -> (rs,nadja/2+1,bs)::filtered
-  | C `Blue -> (rs,gs,nadja/2+1)::filtered
+  | C `Red -> filtered
+  | C `Green -> filtered
+  | C `Blue -> filtered
   | _ -> filtered
 
 let generate_all_config coul nadja rs gs bs list=
@@ -105,7 +127,8 @@ let rec get_formule_complete nvar (bsp_sat : couleur bsp_sat) : formule option =
   let form = get_formule_of_list_list (get_list_list_of_bsp_sat bsp_sat) in
   (* on met sous FNC form *)
   let fnc_form = maybe None (fun x -> Some (tseitin nvar x)) form in
-  maybe2 (fun x y -> Et (x,y)) fnc_form formfils
+  let f = maybe2 (fun x y -> Et (x,y)) fnc_form formfils in
+  f
 
 (* Renvoie la formule correspondant à la solution encodé dans bsp_sat *)
 (* DÉJA SOUS FNC ET NIÉ*)
@@ -137,5 +160,5 @@ let get_fnc_of_bsp (prof : int) (bsp : couleur bsp) =
 let get_fnc_of_bsp_soluce (prof : int) (working_bsp : couleur bsp) (linetree : couleur linetree)=
   let sat = bsp_sat_of_working_bsp working_bsp linetree |> loop_sat prof in
   if not (check_all_lines sat)
-  then None
+  then begin print_endline "Non check_all_lines"; None end
   else get_formule_complete (ref (-1),Hashtbl.create 100) sat
