@@ -67,35 +67,26 @@ module Make (V : VARIABLES) = struct
          List.fold_left (fun acc x -> addFront Ml.update x k acc) (addFront Ml.update x k acc) xs in
     Ml.fold add_all g Ml.empty
 
-  let rec insert_in_inv_sorted v l =
-    match l with
-    | [] -> [v]
-    | x::xs->
-       if compare (snd v) (snd x) >=0
-       then v :: l
-       else x :: insert_in_inv_sorted v xs
-
   (* Renvoi la liste des sommets triés par ordre décroissant de date de fin de traitement par un PP *)
   let ppc_dt g =
-    let rec aux k vs ((res,date) as a )=
-      if Ml.mem k res
+    let rec aux k vs ((res, already) as a )=
+      if S.mem k already
       then a
       else
-        let (res,date) =
+        let (res,already) =
           List.fold_left
-            (fun ((res, date) as a) v ->
+            (fun ((res, already) as a) v ->
               try
                 aux v (Ml.find v g) a
               with
               Not_found ->
-                 if Ml.mem v res
+                 if S.mem v already
                  then a
-                 else (Ml.add v date res, date+1)
-            ) (Ml.add k (-1) res,date) vs in
-          (Ml.add k date res,date+1)
+                 else (v::res,S.add v already)
+            ) (res,S.add k already) vs in
+          (k::res,already)
     in
-    let (a,_) = Ml.fold aux g (Ml.empty,0) in
-    Seq.fold_left (fun acc x -> insert_in_inv_sorted x acc) [] (Ml.to_seq a)
+    fst (Ml.fold aux g ([],S.empty))
 
   (* Un PP suivant un ordre particulier *)
   let ppc_final order g =
@@ -121,7 +112,7 @@ module Make (V : VARIABLES) = struct
     let rec ppc_order ((already,res) as a) order =
       match order with
       | [] -> res
-      | (x,_)::xs ->
+      | x::xs ->
          if S.mem x already
          then ppc_order a xs
          else
