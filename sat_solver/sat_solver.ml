@@ -76,12 +76,13 @@ module Make (V : VARIABLES) = struct
         let (res,date) =
           List.fold_left
             (fun ((res, date) as a) v ->
-              match Ml.find_opt v g with
-              | None ->
+              try
+                aux v (Ml.find v g) a
+              with
+              Not_found ->
                  if Ml.mem v res
                  then a
                  else (Ml.add v date res, date+1)
-              | Some x -> aux v x a (* Test de présence fait dans l'appel récursif *)
             ) (Ml.add k (-1) res,date) vs in
           (Ml.add k date res,date+1)
     in
@@ -102,12 +103,13 @@ module Make (V : VARIABLES) = struct
       else
         List.fold_left
           (fun ((already,res) as a) v ->
-            match Ml.find_opt v g with
-            | None ->
-               if S.mem v already
-               then a
-               else (S.add v already, test_and_add v res)
-            | Some x -> aux a v x
+              try
+                aux a v (Ml.find v g)
+              with
+                Not_found ->
+                if S.mem v already
+                then a
+                else (S.add v already, test_and_add v res)
           ) (S.add k already,test_and_add k res) vs
     in
     let rec ppc_order ((already,res) as a) order =
@@ -132,12 +134,12 @@ module Make (V : VARIABLES) = struct
     (* Assigne les variables selon les CFC https://en.wikipedia.org/wiki/2-satisfiability#Strongly_connected_components *)
   let mkAssign m gamma =
     let aux gamma v =
-      match S.choose_opt v with
-      | None -> gamma
-      | Some x ->
-         if S.mem (L.mk_not x) gamma
-         then gamma
-         else S.union gamma v
+      try
+        if S.mem (L.mk_not (S.choose v)) gamma
+        then gamma
+        else S.union gamma v
+      with
+        Not_found -> gamma
     in
     List.fold_left aux gamma m
 
