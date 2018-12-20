@@ -31,7 +31,6 @@ module Make (V : VARIABLES) = struct
   exception Unsat
   exception Sat of S.t
 
-  (* TODO: on n'a pas forcément besoin de cl2 *)
   type t = { gamma : S.t ; cl2 : L.t list list ; delta : L.t list list }
 
   let addFront update k v m =
@@ -70,23 +69,23 @@ module Make (V : VARIABLES) = struct
 
   (* Renvoi la liste des sommets triés par ordre décroissant de date de fin de traitement par un PP *)
   let ppc_dt g =
-    let rec aux k vs ((res,already,date) as a )=
-      if S.mem k already
+    let rec aux k vs ((res,date) as a )=
+      if Ml.mem k res
       then a
       else
-        let (res,already,date) =
+        let (res,date) =
           List.fold_left
-            (fun ((res, already,date) as a) v ->
+            (fun ((res, date) as a) v ->
               match Ml.find_opt v g with
               | None ->
-                 if S.mem v already
+                 if Ml.mem v res
                  then a
-                 else (Ml.add v date res, S.add v already,date+1)
+                 else (Ml.add v date res, date+1)
               | Some x -> aux v x a (* Test de présence fait dans l'appel récursif *)
-            ) (res,S.add k already,date) vs in
-          (Ml.add k date res,already,date+1)
+            ) (Ml.add k (-1) res,date) vs in
+          (Ml.add k date res,date+1)
     in
-    let (a,_,_) = Ml.fold aux g (Ml.empty,S.empty,0) in
+    let (a,_) = Ml.fold aux g (Ml.empty,0) in
     List.sort
       (fun x y -> compare (snd y) (snd x)) (* TODO insérer dans la liste triée durant le fold *)
       (Seq.fold_left (fun acc x -> x::acc) [] (Ml.to_seq a))
