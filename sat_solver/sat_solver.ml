@@ -124,9 +124,7 @@ module Make (V : VARIABLES) = struct
   (* Algo de Kosaraju pour calculer les CFC *)
   (* Les CFC sont normalement déjà triées topologiquement *)
   let kosaraju_scc g =
-    let order = ppc_dt g in
-    let g = transpose g in
-    ppc_final order g
+    ppc_final (ppc_dt g) (transpose g)
 
     (* Assigne les variables selon les CFC https://en.wikipedia.org/wiki/2-satisfiability#Strongly_connected_components *)
   let mkAssign m gamma =
