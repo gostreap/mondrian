@@ -67,6 +67,14 @@ module Make (V : VARIABLES) = struct
          List.fold_left (fun acc x -> addFront Ml.update x k acc) (addFront Ml.update x k acc) xs in
     Ml.fold add_all g Ml.empty
 
+  let rec insert_in_inv_sorted v l =
+    match l with
+    | [] -> [v]
+    | x::xs->
+       if compare (snd v) (snd x) >=0
+       then v :: l
+       else x :: insert_in_inv_sorted v xs
+
   (* Renvoi la liste des sommets triés par ordre décroissant de date de fin de traitement par un PP *)
   let ppc_dt g =
     let rec aux k vs ((res,date) as a )=
@@ -87,9 +95,7 @@ module Make (V : VARIABLES) = struct
           (Ml.add k date res,date+1)
     in
     let (a,_) = Ml.fold aux g (Ml.empty,0) in
-    List.sort
-      (fun x y -> compare (snd y) (snd x)) (* TODO insérer dans la liste triée durant le fold *)
-      (Seq.fold_left (fun acc x -> x::acc) [] (Ml.to_seq a))
+    Seq.fold_left (fun acc x -> insert_in_inv_sorted x acc) [] (Ml.to_seq a)
 
   (* Un PP suivant un ordre particulier *)
   let ppc_final order g =
