@@ -31,6 +31,7 @@ module Make (V : VARIABLES) = struct
   exception Unsat
   exception Sat of S.t
 
+  (* TODO: on n'a pas forcément besoin de cl2 *)
   type t = { gamma : S.t ; cl2 : L.t list list ; delta : L.t list list }
 
   let addFront update k v m =
@@ -40,30 +41,27 @@ module Make (V : VARIABLES) = struct
       | Some xs -> Some (v :: xs) in
     update k maybe m
 
+  let mk_if_not_here k m =
+    let f z =
+      match z with
+      | None -> Some []
+      | Some _ -> z in
+    Ml.update k f m
+
   (* Créer le graphe des implications https://en.wikipedia.org/wiki/Implication_graph *)
   let mk_implication_graph =
     let aux acc l = (* TODO Use tuples *)
       match l with
-      | [a;b] -> (* TODO change this, it can certainly made a better way *)
-         let acc =
-           if Ml.mem a acc
-           then acc
-           else Ml.add a [] acc in
-         let acc =
-           if Ml.mem b acc
-           then acc
-           else Ml.add b [] acc in
+      | [a;b] ->
+         let acc = mk_if_not_here b (mk_if_not_here a acc) in
          addFront Ml.update (L.mk_not b) a (addFront Ml.update (L.mk_not a) b acc)
       | _ -> assert false in
     List.fold_left aux Ml.empty
 
-  (* Transpose un graph: TODO améliorer *)
+  (* Transpose un graph: TODO améliorer ? *)
   let transpose g =
     let add_all k v acc =
-      let acc =
-        if Ml.mem k acc
-        then acc
-        else Ml.add k [] acc in
+      let acc = mk_if_not_here k acc in
       match v with
       | [] -> acc
       | x::xs ->
@@ -153,39 +151,42 @@ module Make (V : VARIABLES) = struct
     else bcp { env with gamma = S.add f env.gamma}
 
   and bcp env =
-    let aux env l after =
-      try
-        let l =
-          filter_rev
-            (fun f ->
-              if S.mem f env.gamma then raise Exit;
-              not (S.mem (L.mk_not f) env.gamma)
-            ) l
-        in
-        match l with
-        | [] -> raise Unsat (* conflict *)
-        | f :: xs ->
-           match xs with
-           | [] -> assume env f
-           | _ :: ys -> after ys l
-      with Exit -> env in
     let start =
       List.fold_left
         (fun env l ->
-          aux env l
-            (fun _ l -> { env with cl2 = l :: env.cl2 }) (* Ne peut pas être plus qu'une 2-clause *)  )
-        {env with cl2 = []}
+          try
+            let l =
+              filter_rev
+                (fun f ->
+                  if S.mem f env.gamma then raise Exit;
+                  not (S.mem (L.mk_not f) env.gamma)
+                ) l
+            in
+            match l with
+            | [] -> raise Unsat (* conflict *)
+            | [f] -> assume env f
+            | _ -> { env with cl2 = l :: env.cl2 } (* Ne peut pas être plus qu'une 2-clause *)
+          with Exit -> env )
+        {env with cl2 = []; delta = []}
         env.cl2
     in
     List.fold_left
       (fun env l ->
-        aux env l
-          (fun ys l ->
-            match ys with
-            | [] -> { env with cl2 = l :: env.cl2 }
-            | _ -> { env with delta = l :: env.delta }
-          ))
-      { start with delta = [] }
+        try
+          let l =
+            filter_rev
+              (fun f ->
+                if S.mem f env.gamma then raise Exit;
+                not (S.mem (L.mk_not f) env.gamma)
+              ) l
+          in
+          match l with
+          | [] -> raise Unsat (* conflict *)
+          | [f] -> assume env f
+          | [_;_]-> {env with cl2 = l :: env.cl2}
+          | _ -> {env with delta = l :: env.delta}
+        with Exit -> env )
+      start
       env.delta
 
   let rec unsat env = try
