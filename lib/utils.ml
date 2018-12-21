@@ -4,6 +4,11 @@ let maybe n f m =
   | None -> n
   | Some s -> f s
 
+let fmap f x =
+  match x with
+  | None -> None
+  | Some x -> Some (f x)
+
 let rec genl f l =
   if f > l
   then []

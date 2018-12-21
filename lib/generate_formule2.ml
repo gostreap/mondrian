@@ -52,9 +52,7 @@ let get_list_list_of_bsp_sat (ligne: [`Blue | `Red ] bsp_sat) : formule list lis
   match ligne with
   | R_sat (_,_,_) -> []
   | L_sat (c,_,_,_) ->
-     match c with
-     | None -> []
-     | Some c -> generate_all_config c size rs bs list
+     maybe [] (fun c -> generate_all_config c size rs bs list) c
 
 (* Prend une liste de liste de formule et retourne une formule de la forme
  * (_ ou _ ou ... ou _) et (_ ou _ ou ... ou _) et ... et (_ ou _ ou ... ou _)*)
@@ -86,7 +84,7 @@ let rec get_actual_sol (orig : [`Red | `Blue] bsp_sat) =
   match orig with
   | R_sat (i,s,c) ->
      if s then None
-     else maybe None (fun c -> Some (Lit (neg (choose c i)))) c
+     else fmap (fun c -> Lit (neg (choose c i))) c
   | L_sat (_,s,l,r) ->
      if s
      then None
@@ -99,8 +97,7 @@ let get_fnc_of_bsp2 (prof : int) (bsp : [`Red | `Blue] bsp) =
   match sol with
     None -> None
   | Some sol ->
-     let f = get_formule_complete sat in
-     maybe None (fun fnc -> Some (Et (fnc, sol))) f
+     fmap (fun fnc -> Et (fnc, sol)) (get_formule_complete sat)
 
 let get_fnc_of_bsp_soluce2 (prof : int) (working_bsp : [`Red | `Blue] bsp) (linetree :  [`Red | `Blue] linetree)=
   let sat = bsp_sat_of_working_bsp working_bsp linetree |> loop_sat prof in

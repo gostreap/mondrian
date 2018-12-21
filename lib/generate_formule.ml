@@ -132,11 +132,11 @@ let rec get_actual_sol (orig : couleur bsp_sat) =
   | R_sat (i,s,c) ->
      if s then None
      else
-       match c with
-       | None -> None
-       | Some c ->
-          let (x,y) = choose c i in
-          Some (Ou (Lit (neg x), Lit (neg y)))
+       fmap
+         (fun c ->
+           let (x,y) = choose c i in
+           Ou (Lit (neg x), Lit (neg y))
+         ) c
 
 (* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution *)
 let get_fnc_of_bsp (prof : int) (bsp : couleur bsp) =
@@ -146,7 +146,7 @@ let get_fnc_of_bsp (prof : int) (bsp : couleur bsp) =
     None -> None
   | Some sol ->
      let f = get_formule_complete (ref (-1),Hashtbl.create 100) sat in
-     maybe None (fun fnc -> Some (Et (fnc, sol))) f
+     fmap (fun fnc -> Et (fnc, sol)) f
 
 let get_fnc_of_bsp_soluce (prof : int) (working_bsp : couleur bsp) (linetree : couleur linetree)=
   let sat = bsp_sat_of_working_bsp working_bsp linetree |> loop_sat prof in
