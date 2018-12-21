@@ -105,15 +105,7 @@ let get_formule_of_list_list (ll : formule list list) : formule option =
     | [] -> None
     | x::q -> Some (List.fold_left (fun acc x -> Et (acc,x)) x q)
   in
-  let rec disj_all (list : formule list list) : formule option =
-    match list with
-    | [] -> None
-    | x::q ->
-       let f = disj_all q in
-       let g = conj_all x in
-       maybe2 (fun x y -> Ou (x,y)) f g
-  in
-  disj_all ll
+  List.fold_left (fun acc x -> maybe2 (fun x y -> Ou (x,y)) acc (conj_all x)) None ll
 
 (* Renvoie la formule correspondant à la conjonction des contraintes de bsp_sat
  et de tout ses fils*)
@@ -127,8 +119,7 @@ let rec get_formule_complete nvar (bsp_sat : couleur bsp_sat) : formule option =
   let form = get_formule_of_list_list (get_list_list_of_bsp_sat bsp_sat) in
   (* on met sous FNC form *)
   let fnc_form = maybe None (fun x -> Some (tseitin nvar x)) form in
-  let f = maybe2 (fun x y -> Et (x,y)) fnc_form formfils in
-  f
+  maybe2 (fun x y -> Et (x,y)) fnc_form formfils
 
 (* Renvoie la formule correspondant à la solution encodé dans bsp_sat *)
 (* DÉJA SOUS FNC ET NIÉ*)
