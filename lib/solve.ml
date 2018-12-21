@@ -1,7 +1,7 @@
 open Utils
 open Bsp
 open Bsp_sat
-open Couleur
+(* open Couleur *)
 open Formule
 open Generate_formule
 open Generate_formule2
@@ -73,7 +73,55 @@ let rec get_all_secure_rect bsp_sat working_bsp =
   | L_sat(_,_,lsat,rsat), L (_,l,r) -> (get_all_secure_rect lsat l)@(get_all_secure_rect rsat r)
   | _ -> failwith ("ERREUR : (solve.ml) get_all_secure_rect -> bsp_sat et working_bsp different")
 
+(* Prend une liste de couple (bool,n) et colorie dans working bsp le rectangle 
+   correspondant à la tete de liste  *)
+let color_first working_bsp l =
+  let lclean = List.filter (fun x -> (snd x) >= 0)
+                           (List.sort (fun x y -> compare (snd x) (snd y)) l) in
+  match lclean with
+  | [] -> failwith "ERREUR : color_first -> liste vide";
+  | x::y::_ ->
+     let c =
+       if fst x && fst y then `Red
+       else if fst x && not (fst y) then `Green
+       else `Blue in
+     change_coul_with_id working_bsp (snd x/2) c;
+  | _ -> failwith "ERREUR : color_first -> paire de variable incomplète"
 
+let color_first2 working_bsp l=
+  match l with
+  | [] -> failwith "ERREUR : color_first2 -> liste vide";
+  | x::_ -> change_coul_with_id working_bsp (snd x) (if (fst x) then `Red else `Blue)
+
+
+let fill_one_rectangle (get_fnc : int -> 'a bsp -> 'a linetree -> formule option) (col_first : 'a bsp -> (bool*int) list -> 'a bsp) (prof : int) (origin_bsp_sat : 'a bsp_sat)  (working_bsp : 'a bsp) (linetree : 'a linetree) =
+  if not (check_all_secure_rect origin_bsp_sat working_bsp) then
+      begin
+          print_endline "Secure incorrect : pas de solution";
+          working_bsp
+      end
+  else
+      begin
+          let sol = sat_solve (get_fnc prof working_bsp linetree) in
+          match sol with
+          | None ->
+             let (b,r) = tryred working_bsp in
+             if b then r
+             else
+                 begin
+                     print_endline "Pas de solution : impossible de remplir";
+                     working_bsp
+                 end
+          | Some l ->
+             let secure = get_all_secure_rect origin_bsp_sat working_bsp in
+             if List.length secure = 0 then
+                 col_first working_bsp l
+             else
+                 let x = List.hd secure in
+                 match snd x with
+                 | Some c -> change_coul_with_id working_bsp (fst x) c
+                 | _ -> failwith "Erreur : fill_one_rectangle2 -> pas de couleur";
+      end
 
 (* Renvoie vrai si le bsp possède une unique solution et faux sinon *)
 let is_uniq prof bsp = maybe true (fun _ -> false) (sat_solve (get_fnc_of_bsp prof bsp))
@@ -95,68 +143,6 @@ let print_maybe_other_sol_soluce prof origin_bsp_sat working_bsp linetree =
           | _ -> print_endline "Solution possible"
       end
 
-
-let fill_one_rectangle prof origin_bsp_sat working_bsp linetree =
-  if not (check_all_secure_rect origin_bsp_sat working_bsp) then
-      begin
-          print_endline "Secure incorrect : pas de solution";
-          working_bsp
-      end
-  else
-      begin
-          let form = (get_fnc_of_bsp_soluce prof working_bsp linetree) in
-          let sol = sat_solve form in
-          match sol with
-          | None ->
-             print_formule form;
-             print_endline ("None");
-             let (b,r) = tryred working_bsp in
-             if b
-             then r
-             else
-                 begin
-                     print_endline "Pas de solution : impossible de remplir";
-                     working_bsp
-                 end
-          | Some l ->
-             let secure = get_all_secure_rect origin_bsp_sat working_bsp in
-             print_endline("####################");
-             print_int (List.length secure);
-             print_endline "";
-             if List.length secure = 0 then
-                 begin
-                     let lclean = List.filter (fun x -> (snd x) >= 0)
-                                              (List.sort (fun x y -> compare (snd x) (snd y)) l) in
-                     print_possible_sol (Some lclean);
-                     match lclean with
-                     | [] ->
-                        print_endline "ERREUR : fill_one_rectangle -> liste vide";
-                        working_bsp
-                     | x::y::_ ->
-                        print_string "N = ";
-                        print_int (snd x);
-                        print_endline "";
-                        let c =
-                          if fst x && fst y then `Red
-                          else if fst x && not (fst y) then `Green
-                          else `Blue in
-                        change_coul_with_id working_bsp (snd x/2) c;
-                     | _ -> failwith "ERREUR : fill_one_rectanlgle -> paire de variable incomplète"
-                 end
-             else
-                 begin
-                     print_endline "IN SECURE";
-                     let x = List.hd secure in
-                     match snd x with
-                     | Some c ->
-                        print_endline (string_of_couleur c);
-                        change_coul_with_id working_bsp (fst x) c
-                     | _ ->
-                        print_endline "Erreur : fill_one_rectangle2 -> pas de couleur";
-                        working_bsp
-                 end
-      end
-
 (* For 2 colors *)
 let is_uniq2 prof bsp = maybe true (fun _ -> false) (sat_solve (get_fnc_of_bsp2 prof bsp))
 
@@ -175,59 +161,5 @@ let print_maybe_other_sol_soluce2 prof origin_bsp_sat working_bsp linetree =
           match sol with
           | None -> print_endline "Pas de solution"
           | _ -> print_endline "Solution possible"
-      end
-
-let fill_one_rectangle2 prof origin_bsp_sat working_bsp linetree =
-  if not (check_all_secure_rect origin_bsp_sat working_bsp) then
-      begin
-          print_endline "Secure incorrect : pas de solution";
-          working_bsp
-      end
-  else
-      begin
-          let sol = sat_solve (get_fnc_of_bsp_soluce2 prof working_bsp linetree) in
-          print_endline("####################");
-          print_possible_sol sol;
-          match sol with
-          | None ->
-             let (b,r) = tryred working_bsp in
-             if b
-             then r
-             else
-                 begin
-                     print_endline "Pas de solution : impossible de remplir";
-                     working_bsp
-                 end
-          | Some l ->
-             begin
-                 let secure = get_all_secure_rect origin_bsp_sat working_bsp in
-                 print_int (List.length secure);
-                 print_endline "";
-                 if List.length secure = 0 then
-                     begin
-                         print_endline "NOT IN SECURE";
-                         match l with
-                         | [] ->
-                            print_endline "ERREUR : fill_one_rectangle2 -> liste vide";
-                            working_bsp
-                         | x::_ ->
-                            print_string "N = ";
-                            print_int (snd x);
-                            print_endline "";
-                            change_coul_with_id working_bsp (snd x) (if (fst x) then `Red else `Blue)
-                     end
-                 else
-                     begin
-                         print_endline "IN SECURE";
-                         let x = List.hd secure in
-                         match snd x with
-                         | Some c ->
-                            print_endline (string_of_couleur c);
-                            change_coul_with_id working_bsp (fst x) c
-                         | _ ->
-                            print_endline "Erreur : fill_one_rectangle2 -> pas de couleur";
-                            working_bsp
-                     end
-             end
       end
 
