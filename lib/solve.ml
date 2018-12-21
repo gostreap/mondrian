@@ -1,7 +1,5 @@
-open Utils
 open Bsp
 open Bsp_sat
-(* open Couleur *)
 open Formule
 open Generate_formule
 open Generate_formule2
@@ -123,9 +121,6 @@ let fill_one_rectangle (get_fnc : int -> 'a bsp -> 'a linetree -> formule option
                  | _ -> failwith "Erreur : fill_one_rectangle2 -> pas de couleur";
       end
 
-(* Renvoie vrai si le bsp possède une unique solution et faux sinon *)
-let is_uniq prof bsp = maybe true (fun _ -> false) (sat_solve (get_fnc_of_bsp prof bsp))
-
 (* Test si le bsp possède une unique solution et affiche le résultat *)
 let print_maybe_other_sol prof bsp = print_possible_sol (sat_solve (get_fnc_of_bsp prof bsp))
 
@@ -144,8 +139,6 @@ let print_maybe_other_sol_soluce prof origin_bsp_sat working_bsp linetree =
       end
 
 (* For 2 colors *)
-let is_uniq2 prof bsp = maybe true (fun _ -> false) (sat_solve (get_fnc_of_bsp2 prof bsp))
-
 (* Test si le bsp possède une unique solution et affiche le résultat *)
 let print_maybe_other_sol2 prof bsp = print_possible_sol (sat_solve (get_fnc_of_bsp2 prof bsp))
   

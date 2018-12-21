@@ -3,12 +3,10 @@ open Bsp_sat
 open Couleur
 open Formule
 
-val is_uniq : int -> couleur bsp -> bool
 val print_maybe_other_sol : int -> couleur bsp -> unit
 
 val print_maybe_other_sol_soluce : int -> couleur bsp_sat -> couleur bsp -> couleur linetree -> unit
   
-val is_uniq2 : int -> [`Red | `Blue] bsp -> bool
 val print_maybe_other_sol2 : int -> [`Red | `Blue] bsp -> unit
 val print_maybe_other_sol_soluce2 : int -> [ `Blue | `Red ] bsp_sat -> [`Red | `Blue] bsp -> [`Red | `Blue] linetree -> unit
 
