@@ -84,7 +84,7 @@ let init2coul infos : (([`Red | `Blue] as 'a) bsp * 'a bsp_sat * 'a linetree * '
   let working_bsp = empty_copy_of_bsp origin_bsp in
   (origin_bsp,bsp_sat,linetree,working_bsp)
 
-let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 'a bsp_sat) (working_bsp : 'a bsp) (linetree : 'a linetree) (pmothersol : int -> 'a bsp_sat -> 'a bsp -> 'a linetree -> unit) (get_fnc_soluce : int -> 'a bsp -> 'a linetree -> formule option) (chcol : ('a option -> 'a)) (col_first : 'a bsp -> (bool*int) list -> 'a bsp) infos =
+let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 'a bsp_sat) (working_bsp : 'a bsp) (linetree : 'a linetree) (pmothersol : int -> 'a bsp_sat -> 'a bsp -> 'a linetree -> unit) (get_fnc_soluce : int -> 'a bsp -> 'a linetree -> formule option) (chcol : ('a option -> 'a)) (col_first : 'a bsp -> (bool*int) list -> (bool*int) list option * 'a bsp) last_sol infos =
   if check_current origin_bsp working_bsp
   then print_message "Victoire";
   affiche_linetree linetree;
@@ -100,10 +100,10 @@ let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_s
       | 'h' ->
          begin
              print_message "Calcul en cours...";
-             let new_bsp = fill_one_rectangle get_fnc_soluce col_first infos.prof origin_bsp_sat working_bsp linetree in
-             loop origin_bsp origin_bsp_sat new_bsp linetree pmothersol get_fnc_soluce chcol col_first infos     
+             let sol, new_bsp = fill_one_rectangle get_fnc_soluce col_first infos.prof origin_bsp_sat working_bsp linetree last_sol in
+             loop origin_bsp origin_bsp_sat new_bsp linetree pmothersol get_fnc_soluce chcol col_first sol infos     
          end
-      | _ -> loop origin_bsp origin_bsp_sat working_bsp linetree pmothersol get_fnc_soluce chcol col_first infos
+      | _ -> loop origin_bsp origin_bsp_sat working_bsp linetree pmothersol get_fnc_soluce chcol col_first last_sol infos
       end
   else
     if e.button
@@ -112,9 +112,9 @@ let rec loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_s
             clean_message();
             let bsp = change_color chcol working_bsp (e.mouse_x - offset, e.mouse_y - 2*offset) in
             pmothersol infos.prof origin_bsp_sat bsp linetree;
-            loop origin_bsp origin_bsp_sat bsp linetree pmothersol get_fnc_soluce chcol col_first infos
+            loop origin_bsp origin_bsp_sat bsp linetree pmothersol get_fnc_soluce chcol col_first None infos
         end
-    else loop origin_bsp origin_bsp_sat working_bsp linetree pmothersol get_fnc_soluce chcol col_first infos
+    else loop origin_bsp origin_bsp_sat working_bsp linetree pmothersol get_fnc_soluce chcol col_first last_sol infos
 
 let debug_main (origin_bsp : [< `Red | `Green | `Blue] bsp) origin_bsp_sat fnc_of_bsp pmothersol prof =
   print_endline (string_of_bsp_sat origin_bsp_sat);
@@ -160,11 +160,11 @@ let main () =
   if col3 = 3
    then
      let (origin_bsp,origin_bsp_sat,linetree,working_bsp) = init3coul infos in
-     debug_main origin_bsp origin_bsp_sat get_fnc_of_bsp print_maybe_other_sol infos.prof ;
-     loop origin_bsp origin_bsp_sat working_bsp linetree print_maybe_other_sol_soluce get_fnc_of_bsp_soluce next_coul color_first infos
+     (* debug_main origin_bsp origin_bsp_sat get_fnc_of_bsp print_maybe_other_sol infos.prof ; *)
+     loop origin_bsp origin_bsp_sat working_bsp linetree print_maybe_other_sol_soluce get_fnc_of_bsp_soluce next_coul color_first None infos
   else
     let (origin_bsp,origin_bsp_sat,linetree,working_bsp) = init2coul infos in
-     debug_main origin_bsp origin_bsp_sat get_fnc_of_bsp2 print_maybe_other_sol2 infos.prof;
-     loop origin_bsp origin_bsp_sat working_bsp linetree print_maybe_other_sol_soluce2 get_fnc_of_bsp_soluce2 next_coul2 color_first2 infos
+     (* debug_main origin_bsp origin_bsp_sat get_fnc_of_bsp2 print_maybe_other_sol2 infos.prof; *)
+     loop origin_bsp origin_bsp_sat working_bsp linetree print_maybe_other_sol_soluce2 get_fnc_of_bsp_soluce2 next_coul2 color_first2 None infos
 
 let _ = main()

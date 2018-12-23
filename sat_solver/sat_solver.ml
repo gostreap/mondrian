@@ -189,7 +189,6 @@ module Make (V : VARIABLES) = struct
       (* 3 clauses OU PLUS *)
       match env.delta with
       | [] -> 
-         print_endline (string_of_int (List.length env.cl2));
          let g = mk_implication_graph env.cl2 in
          let cfc = kosaraju_scc g in
          let assign = mkAssign cfc env.gamma in (* Va vérifier si les CFC sont correctes *)
