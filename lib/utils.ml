@@ -1,3 +1,5 @@
+open Graphics
+
 (* Utilitaire *)
 let maybe n f m =
   match m with
@@ -19,3 +21,14 @@ let maybe2 f x y =
   | x, None -> x
   | None, x -> x
   | Some x, Some y -> Some (f x y)
+                   
+let clean_message () =
+  set_color white;
+  fill_rect 27 14 796 21
+
+let print_message string =
+  clean_message ();
+  set_color black;
+  moveto 30 15;
+  set_font "-misc-dejavu sans mono-bold-r-normal--18-0-0-0-m-0-iso8859-1";
+  draw_string string

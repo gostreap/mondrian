@@ -90,7 +90,7 @@ module Make (V : VARIABLES) = struct
 
   (* Un PP suivant un ordre particulier *)
   let ppc_final order g =
-    let test_and_add v s=
+    let test_and_add v s =
       if S.mem (L.mk_not v) s
       then raise Unsat
       else S.add v s in
@@ -188,7 +188,8 @@ module Make (V : VARIABLES) = struct
   let rec unsat env = try
       (* 3 clauses OU PLUS *)
       match env.delta with
-      | [] ->
+      | [] -> 
+         print_endline (string_of_int (List.length env.cl2));
          let g = mk_implication_graph env.cl2 in
          let cfc = kosaraju_scc g in
          let assign = mkAssign cfc env.gamma in (* Va vérifier si les CFC sont correctes *)
