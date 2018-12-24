@@ -56,51 +56,56 @@ let get_list_list_of_bsp_sat (ligne: [`Blue | `Red ] bsp_sat) : formule list lis
 
 (* Prend une liste de liste de formule et retourne une formule de la forme
  * (_ ou _ ou ... ou _) et (_ ou _ ou ... ou _) et ... et (_ ou _ ou ... ou _)*)
-let get_formule_of_list_list (ll : formule list list) : formule option =
-  let disj_all (list : formule list) : formule option =
+let get_formule_of_list_list (ll : formule list list) : formule =
+  let disj_all (list : formule list) : formule =
     match list with
-    | [] -> None
-    | x::q -> Some (List.fold_left (fun acc x -> Ou (acc,x)) x q)
+    | [] -> Vrai
+    | x::q -> List.fold_left (fun acc x -> ou acc x) x q
   in
-  List.fold_left (fun acc x -> maybe2 (fun x y -> Et (x,y)) acc (disj_all x)) None ll
+  List.fold_left (fun acc x -> et acc (disj_all x)) Vrai ll
 
 (* Renvoie la formule correspondant à la conjonction des contraintes de bsp_sat
  et de tout ses fils*)
-let rec get_formule_complete (bsp_sat : [`Red | `Blue] bsp_sat) : formule option =
+let rec get_formule_complete (bsp_sat : [`Red | `Blue] bsp_sat) : formule =
   let formfils =
     match bsp_sat with
-    | R_sat (_,_,_) -> None
+    | R_sat (_,_,_) -> Vrai
     | L_sat (_,_,l,r) ->
        let fl = get_formule_complete l in
        let fr = get_formule_complete r in
-       maybe2 (fun x y -> Et (x,y)) fl fr
+       et fl fr
   in
   let form = get_formule_of_list_list (get_list_list_of_bsp_sat bsp_sat) in
-  maybe2 (fun x y -> Et (x,y)) form formfils
+  et form formfils
 
 (* Renvoie la formule correspondant à la solution encodé dans bsp_sat *)
 (* DÉJA SOUS FNC ET NIÉ*)
-let rec get_actual_sol (orig : [`Red | `Blue] bsp_sat) =
+let rec get_actual_sol (orig : [`Red | `Blue] bsp_sat) : formule =
   match orig with
   | R_sat (i,s,c) ->
-     if s then None
-     else fmap (fun c -> Lit (neg (choose c i))) c
+     if s then Vrai
+     else
+         begin
+             match c with
+             | None -> Vrai (*Si le rectangle est vide, la contraine est considéré vrai*)
+             | Some co -> Lit (neg (choose co i))
+         end
   | L_sat (_,s,l,r) ->
      if s
-     then None
-     else maybe2 (fun x y -> Ou (x,y)) (get_actual_sol l) (get_actual_sol r)
+     then Vrai
+     else ou (get_actual_sol l) (get_actual_sol r)
 
 (* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution *)
 let get_fnc_of_bsp2 (prof : int) (bsp : [`Red | `Blue] bsp) =
   let sat = bsp_sat_of_bsp get_color_line2 bsp |> loop_sat prof in
   let sol = get_actual_sol sat in
   match sol with
-    None -> None
-  | Some sol ->
-     fmap (fun fnc -> Et (fnc, sol)) (get_formule_complete sat)
+  | Faux -> Faux
+  | Vrai -> Vrai
+  | solution -> et (get_formule_complete sat) solution
 
 let get_fnc_of_bsp_soluce2 (prof : int) (working_bsp : [`Red | `Blue] bsp) (linetree :  [`Red | `Blue] linetree)=
   let sat = bsp_sat_of_working_bsp working_bsp linetree |> loop_sat prof in
   if not (check_all_lines sat)
-  then None
-  else get_formule_complete sat
+  then Faux
+  else get_formule_complete sat 

@@ -1,5 +1,5 @@
 open Couleur
-open Utils
+(* open Utils *)
 open Bsp
 open Formule
 open Bsp_sat
@@ -91,7 +91,7 @@ let get_list_list_of_bsp_sat (ligne : couleur bsp_sat) : formule list list =
   let rs,gs,bs,list = get_adja_stat ligne in
   let size = rs + gs + bs + List.length list in
   match ligne with
-  | R_sat (_,_,_) -> []
+  | R_sat (_,_,_) -> [[]]
   | L_sat (c,_,_,_) ->
      match c with
      | None -> []
@@ -99,27 +99,31 @@ let get_list_list_of_bsp_sat (ligne : couleur bsp_sat) : formule list list =
 
 (* Prend une liste de liste de formule et retourne une formule de la forme
  * (_ et _ et ... et _) ou (_ et _ et ... et _) ou ... ou (_ et _ et ... et _)*)
-let get_formule_of_list_list (ll : formule list list) : formule option =
-  let conj_all (list : formule list) : formule option =
+let get_formule_of_list_list (ll : formule list list) : formule =
+  let conj_all (list : formule list) : formule =
     match list with
-    | [] -> None
-    | x::q -> Some (List.fold_left (fun acc x -> Et (acc,x)) x q)
+    | [] -> Vrai
+    | x::q -> List.fold_left (fun acc x -> Et (acc,x)) x q
   in
-  List.fold_left (fun acc x -> maybe2 (fun x y -> Ou (x,y)) acc (conj_all x)) None ll
+  List.fold_left (fun acc x -> ou acc (conj_all x)) Faux ll
 
 (* Renvoie la formule correspondant à la conjonction des contraintes de bsp_sat
  et de tout ses fils*)
-let rec get_formule_complete nvar (bsp_sat : couleur bsp_sat) : formule option =
+let rec get_formule_complete nvar (bsp_sat : couleur bsp_sat) : formule =
   let formfils =
     match bsp_sat with
-    | R_sat (_,_,_) -> None
+    | R_sat (_,_,_) -> Vrai
     | L_sat (_,_,l,r) ->
-       maybe2 (fun x y -> Et (x,y)) (get_formule_complete nvar l) (get_formule_complete nvar r)
+       et (get_formule_complete nvar l) (get_formule_complete nvar r)
   in
   let form = get_formule_of_list_list (get_list_list_of_bsp_sat bsp_sat) in
   (* on met sous FNC form *)
-  let fnc_form = maybe None (fun x -> Some (tseitin nvar x)) form in
-  maybe2 (fun x y -> Et (x,y)) fnc_form formfils
+  let fnc_form =
+    match form with
+    | Faux -> Faux
+    | Vrai -> Vrai
+    | f -> tseitin nvar f in
+  et fnc_form formfils
 
 (* Renvoie la formule correspondant à la solution encodé dans bsp_sat *)
 (* DÉJA SOUS FNC ET NIÉ*)
@@ -127,29 +131,28 @@ let rec get_actual_sol (orig : couleur bsp_sat) =
   match orig with
   | L_sat (_,s,l,r) ->
      if s
-     then None
-     else maybe2 (fun x y -> Ou (x,y)) (get_actual_sol l) (get_actual_sol r)
+     then Vrai
+     else ou (get_actual_sol l) (get_actual_sol r)
   | R_sat (i,s,c) ->
-     if s then None
+     if s then Vrai
      else
-       fmap
-         (fun c ->
-           let (x,y) = choose c i in
-           Ou (Lit (neg x), Lit (neg y))
-         ) c
+         match c with
+         | None -> Vrai (*Si le rectangle est vide, la contraine est considéré vrai*)
+         | Some co ->
+            let (x,y) = choose co i in
+            Ou (Lit (neg x), Lit (neg y))
 
 (* Renvoie une fnc satisfaisable si et seulement si le bsp à plusieurs solution *)
 let get_fnc_of_bsp (prof : int) (bsp : couleur bsp) =
   let sat = bsp_sat_of_bsp get_color_line bsp |> loop_sat prof in
   let sol = get_actual_sol sat in
   match sol with
-    None -> None
-  | Some sol ->
-     let f = get_formule_complete (ref (-1),Hashtbl.create 100) sat in
-     fmap (fun fnc -> Et (fnc, sol)) f
+  | Faux -> Faux
+  | Vrai -> Vrai
+  | solution -> et (get_formule_complete (ref (-1),Hashtbl.create 100) sat) solution
 
 let get_fnc_of_bsp_soluce (prof : int) (working_bsp : couleur bsp) (linetree : couleur linetree)=
   let sat = bsp_sat_of_working_bsp working_bsp linetree |> loop_sat prof in
   if not (check_all_lines sat)
-  then begin print_endline "Non check_all_lines"; None end
-  else get_formule_complete (ref (-1),Hashtbl.create 100) sat
+  then begin print_endline "Non check_all_lines"; Faux end
+  else get_formule_complete (ref (-1),Hashtbl.create 100) sat 

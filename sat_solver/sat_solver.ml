@@ -3,7 +3,20 @@
    par Sylvain Conchon, Johannes Kanig, Stéphane Lescuyer
 
    MODIFIÉ
-*)
+ *)
+
+open Graphics
+
+let clean_message () =
+  set_color white;
+  fill_rect 27 14 796 21
+
+let print_message string =
+  clean_message ();
+  set_color black;
+  moveto 30 15;
+  set_font "-misc-dejavu sans mono-bold-r-normal--18-0-0-0-m-0-iso8859-1";
+  draw_string string
 
 module type VARIABLES = sig
   type t
@@ -208,10 +221,10 @@ module Make (V : VARIABLES) = struct
     with Unsat -> ()
 
   let solve delta = try
-      print_endline "SAT";
-      print_endline (string_of_int (List.length delta));
       let b = bcp { gamma = S.empty ; cl2 = [];  delta } in
-      print_endline (string_of_int (List.length b.delta));
+      let s = "Calcul en cours... 2-clauses : " ^ (string_of_int (List.length delta)) ^ " 3-clauses : " ^ (string_of_int (List.length b.delta)) in
+      print_message s;
+      
       let c2,c3p = List.partition (fun x -> List.length x = 2) b.delta in
       let b =
         {b with
