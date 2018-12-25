@@ -166,11 +166,13 @@ let main () =
   if col3 = 3
    then
      let (origin_bsp,origin_bsp_sat,linetree,working_bsp) = init3coul infos in
-     (* debug_main origin_bsp origin_bsp_sat get_fnc_of_bsp print_maybe_other_sol infos.prof ; *)
+     if Array.length Sys.argv >= 2
+     then debug_main origin_bsp origin_bsp_sat get_fnc_of_bsp print_maybe_other_sol infos.prof ;
      loop origin_bsp origin_bsp_sat working_bsp linetree print_maybe_other_sol_soluce get_fnc_of_bsp_soluce next_coul color_first infos
   else
     let (origin_bsp,origin_bsp_sat,linetree,working_bsp) = init2coul infos in
-     (* debug_main origin_bsp origin_bsp_sat get_fnc_of_bsp2 print_maybe_other_sol2 infos.prof; *)
+    if Array.length Sys.argv >= 2
+    then debug_main origin_bsp origin_bsp_sat get_fnc_of_bsp2 print_maybe_other_sol2 infos.prof;
      loop origin_bsp origin_bsp_sat working_bsp linetree print_maybe_other_sol_soluce2 get_fnc_of_bsp_soluce2 next_coul2 color_first2 infos
 
 let _ = main()

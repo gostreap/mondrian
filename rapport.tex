@@ -11,4 +11,14 @@
 	
 	\author{Tristan François et Alexandre Moine}
 	\maketitle
+
+\section{Tseitin}
+Nous générons une forme normale conjonctive (FNC) représentant le problème pour 2 couleurs, mais nous n'y sommes pas arrivés pour 3 couleurs. Nous avons donc implémenté l'algorithme de Tseitin (amélioré par Plaisted-Greenbaum) permettant de transformer n'importe quelle formule en FNC en temps linéaire.
+Cette méthode a néanmoins le défaut de générer une formule comportant beaucoup de variables. À titre d'exemple, une formule faisant intervenir 25 rectangles à l'origine compte plus de 2500 variables à la sortie de l'algorithme (en fait, une nouvelle variable a (presque) été ajoutée pour chaque sous-formule de la formule d'origine).
+
+Ce travail se trouve dans le fichier $lib/tseitin.ml$.
+
+\section{SAT Solver}
+Le SAT Solver fourni pour le projet a clairement montré ses limites avec autant de variables, nous avons donc tenté de l'améliorer. L'idée est que l'algorithme de Tseitin produit énormément de 2-clauses (des clauses ne contenant que 2 variables). Par exemple, une formule générée par l'algorithme de Tseitin avec 2000 clauses en contient presque 1500.\\
+De plus, on connait des algorithmes très efficaces pour résoudre le problème 2-SAT (en temps linéaire). Nous avons donc modifié le SAT Solver fourni pour qu'il essaye des affectations de valeurs tant qu'il y a des clauses avec plus de 2 variables, puis on résout le problème en utilisant un algorithme plus efficace (en $n*log(n)$ pour $n$ le nombre de variables).
 \end{document}

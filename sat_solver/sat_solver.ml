@@ -201,7 +201,7 @@ module Make (V : VARIABLES) = struct
   let rec unsat env = try
       (* 3 clauses OU PLUS *)
       match env.delta with
-      | [] -> 
+      | [] ->
          let g = mk_implication_graph env.cl2 in
          let cfc = kosaraju_scc g in
          let assign = mkAssign cfc env.gamma in (* Va vérifier si les CFC sont correctes *)
@@ -224,7 +224,6 @@ module Make (V : VARIABLES) = struct
       let b = bcp { gamma = S.empty ; cl2 = [];  delta } in
       let s = "Calcul en cours... 2-clauses : " ^ (string_of_int (List.length delta)) ^ " 3-clauses : " ^ (string_of_int (List.length b.delta)) in
       print_message s;
-      
       let c2,c3p = List.partition (fun x -> List.length x = 2) b.delta in
       let b =
         {b with
