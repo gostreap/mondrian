@@ -33,6 +33,9 @@ let draw_r c r =
 
 (* Affiche des carrés contenant des indices entre 1 et nx*ny, retourne une liste associative entre les carrés et leurs indices *)
 let draw_choices_num larg haut offset nx ny stop =
+  set_color black;
+  moveto offset haut;
+  draw_string "Profondeur maximale:";
   set_color white;
   fill_rect 0 0 larg haut;
   set_color black;
