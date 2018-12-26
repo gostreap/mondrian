@@ -13,6 +13,7 @@ type rect =
 let draw_str r str =
   let (l,_) = text_size str in
   let l' = (r.w-l)/2 in
+  set_color black;
   moveto (r.x+l') (r.y+r.h/3);
   draw_string str
 
@@ -25,6 +26,28 @@ let draw_r r =
   fill_rect r.x r.y r.h r.w;
   set_color white;
   fill_rect (r.x+l) (r.y+l) (r.h-2*l) (r.w-2*l)
+
+let draw_choices_num larg haut offset nx ny =
+  let w = (larg-2*offset)/nx in
+  let h = (haut-2*offset)/ny in
+  let res = ref [] in
+  for j=0 to nx-1 do
+    for i=0 to ny-1 do
+      let r = {x=i*w+offset; y=j*h+offset; h=h-h/ny; w=w-w/nx;} in
+      let ind = j*nx+i+1 in
+      draw_r r;
+      draw_str r (string_of_int ind);
+      res := (r,ind)::!res
+    done
+  done;
+  !res
+
+let is_in_l x y =
+  let aux acc (r,i) =
+    match acc with
+    | None -> if is_in r x y then Some i else None
+    | _ -> acc
+  in List.fold_left aux None
 
 let start_menu larg haut offset =
   clear_graph ();
@@ -48,7 +71,14 @@ let start_menu larg haut offset =
       then 3
       else find_coul () in
   let nb = find_coul () in
-
-  let prof = 4 in
+  clear_graph ();
+  let n' = if nb = 2 then 3 else 2 in
+  let arr = draw_choices_num larg haut offset n' n' in
+  let rec find_prof () =
+    let e = wait_next_event [ Button_down ] in
+    match is_in_l e.mouse_x e.mouse_y arr with
+    | None -> find_prof ()
+    | Some x -> x in
+  let prof = find_prof () in
   clear_graph ();
   {larg=larg; haut=haut; prof=prof; nbcoul=nb;}
