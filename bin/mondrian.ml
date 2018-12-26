@@ -8,15 +8,11 @@ open Lib.Generate_formule2
 open Graphics
 open Lib.Utils
 
+open Start_menu
+open Types
+
 let line_width = 3
 let offset = 25
-
-type info_game =
-  {
-      larg : int;
-      haut : int;
-      prof : int;
-  }
 
 let rec affiche_coloration ?(v=true) infx infy supx supy bsp =
   match bsp with
@@ -61,10 +57,10 @@ let affiche_bouton (larg : int) =
   set_font "-misc-dejavu sans mono-bold-r-normal--24-0-0-0-m-0-iso8859-1";
   set_color black;
   set_line_width line_width;
-  let l = larg / 4
-  and ecart = larg / 16 in
+  let l = larg / 5
+  and ecart = larg / 25 in
   let rec bouton i =
-    if i = 3 then ()
+    if i = 4 then ()
     else
         begin
             let l' = i*l + (i+1) * ecart + offset in 
@@ -74,7 +70,7 @@ let affiche_bouton (larg : int) =
                     (l' + l, 2*offset, l' + l, offset/2);
                     (l' + l, offset/2, l', offset/2) |];
             bouton (i+1);
-            if i = 0 then set_color (get_rgb `Red)
+            if i mod 3 = 0 then set_color (get_rgb `Red)
             else if i = 1 then set_color (get_rgb `Green)
             else set_color (get_rgb `Blue);
             fill_rect (l'+2) (offset/2+2) (l-4) (offset + offset/2-3);
@@ -82,10 +78,25 @@ let affiche_bouton (larg : int) =
             moveto (l'+3) 15;
             if i = 0 then draw_string "Menu"
             else if i = 1 then draw_string "Aide"
-            else draw_string "Solution"
+            else if i = 2 then draw_string "Solution"
+            else draw_string "Quitter"
         end
   in
   bouton 0
+
+let clique_bouton infos x y : int =
+  let l = infos.larg / 5
+  and ecart = infos.larg / 25 in
+  let rec clique i =
+    if i = 4 then 0
+    else
+        begin
+            let l' = i*l + (i+1) * ecart + offset in 
+            if x >= l' && x <= l' + l && y >= offset/2 && y <= 2*offset then (i+1)
+            else clique (i+1);
+        end
+  in
+  clique 0
   
 
 let affiche_cadre (larg : int) (haut : int) =
@@ -145,14 +156,35 @@ let loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 
       if e.button
       then
         begin
-          clean_message();
-          let bsp = change_color chcol working_bsp (e.mouse_x - offset, e.mouse_y - 4*offset) in
-          pmothersol infos.prof origin_bsp_sat bsp linetree;
-          spec_loop bsp Antilogie
+            clean_message();
+            if e.mouse_y < 4 * offset then
+                begin
+                    let cas = clique_bouton infos e.mouse_x e.mouse_y in
+                    match cas with
+                    | 1 -> begin print_message "Menu"; spec_loop working_bsp Antilogie end
+                    | 2 ->
+                       begin
+                           print_message "Calcul en cours...";
+                           let sol, new_bsp = fill_one_rectangle get_fnc_soluce col_first infos.prof origin_bsp_sat working_bsp linetree last_sol in
+                           spec_loop new_bsp sol
+                       end
+                    | 3 -> begin print_message "Solution"; spec_loop working_bsp Antilogie end
+                    | 4 -> ()
+                    | _ -> spec_loop working_bsp Antilogie
+                end
+            else if e.mouse_x < offset || e.mouse_x > offset + infos.larg ||
+                        e.mouse_y > infos.haut + 4*offset then spec_loop working_bsp Antilogie
+            else 
+                begin
+                    let bsp = change_color chcol working_bsp (e.mouse_x - offset, e.mouse_y - 4*offset) in
+                    pmothersol infos.prof origin_bsp_sat bsp linetree;
+                    spec_loop bsp Antilogie
+                end
         end
       else spec_loop working_bsp last_sol
   in
   spec_loop working_bsp Antilogie
+  
 
 let debug_main (origin_bsp : [< `Red | `Green | `Blue] bsp) origin_bsp_sat fnc_of_bsp pmothersol prof =
   print_endline (string_of_bsp_sat origin_bsp_sat);
@@ -164,38 +196,8 @@ let debug_main (origin_bsp : [< `Red | `Green | `Blue] bsp) origin_bsp_sat fnc_o
   pmothersol prof origin_bsp;
   print_endline "#########################"
 
-let init () =
-  let rec getint low high =
-    try
-      let res = read_int () in
-      if res < low || res > high
-      then
-        begin
-          print_endline ("Entrez un nombre entre "^(string_of_int low)^" et "^(string_of_int high));
-          getint low high
-        end
-      else res
-    with
-      Failure _ ->
-      print_endline "Entrez un entier !";
-      getint low high
-
-  in
-  print_endline "Bienvenue dans Mondrian, voulez-vous jouer avec 2 ou 3 couleurs ?";
-  let coul = getint 2 3 in
-  print_endline "Quelle est la profondeur maximum que vous dérirez (nous recommandons moins de 10 pour les 2 couleurs et moins de 5 pour les 3 couleurs) ?";
-  (coul, getint 1 15)
-
-let main () =
-  let (col3,prof) = init () in
-  let infos =
-    {larg=900;
-     haut=900;
-     prof=prof
-    } in
-  Random.self_init ();
-  open_graph (" " ^ string_of_int (infos.larg + 2 * offset) ^ "x" ^ string_of_int (infos.haut + 5 * offset)) ;
-  if col3 = 3
+let start_game infos =
+    if infos.nbcoul = 3
    then
      let (origin_bsp,origin_bsp_sat,linetree,working_bsp) = init3coul infos in
      if Array.length Sys.argv >= 2
@@ -206,5 +208,15 @@ let main () =
     if Array.length Sys.argv >= 2
     then debug_main origin_bsp origin_bsp_sat get_fnc_of_bsp2 print_maybe_other_sol2 infos.prof;
      loop origin_bsp origin_bsp_sat working_bsp linetree print_maybe_other_sol_soluce2 get_fnc_of_bsp_soluce2 next_coul2 color_first2 infos
+
+let main () =
+
+  let larg = 800 in
+  let haut = 800 in
+  Random.self_init ();
+  open_graph (" " ^ string_of_int (larg + 2 * offset) ^ "x" ^ string_of_int (haut + 5 * offset)) ;
+  let infos = start_menu larg haut offset in
+  start_game infos
+
 
 let _ = main()
