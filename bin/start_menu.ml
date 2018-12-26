@@ -10,6 +10,7 @@ type rect =
     w:int;
   }
 
+(* Affiche un string au milieu d'un rectangle *)
 let draw_str r str =
   let (l,_) = text_size str in
   let l' = (r.w-l)/2 in
@@ -17,9 +18,11 @@ let draw_str r str =
   moveto (r.x+l') (r.y+r.h/3);
   draw_string str
 
+(* Teste si un point (x,y) est dans le rectangle r *)
 let is_in r u v =
   u >= r.x && u <= (r.x+r.w) && v >= r.y && v <= (r.y+r.h)
 
+(* Dessine un rectangle *)
 let draw_r r =
   let l = 3 in
   set_color black;
@@ -27,6 +30,7 @@ let draw_r r =
   set_color white;
   fill_rect (r.x+l) (r.y+l) (r.h-2*l) (r.w-2*l)
 
+(* Affiche des carrés contenant des indices entre 1 et nx*ny, retourne une liste associative entre les carrés et leurs indices *)
 let draw_choices_num larg haut offset nx ny =
   let w = (larg-2*offset)/nx in
   let h = (haut-2*offset)/ny in
@@ -42,6 +46,7 @@ let draw_choices_num larg haut offset nx ny =
   done;
   !res
 
+(* Retourne None si le point (x,y) n'appartient à aucun rectangle de la liste, ou Some indice *)
 let is_in_l x y =
   let aux acc (r,i) =
     match acc with
@@ -49,6 +54,7 @@ let is_in_l x y =
     | _ -> acc
   in List.fold_left aux None
 
+(* Menu de démarrage *)
 let start_menu larg haut offset =
   clear_graph ();
   set_color black;
