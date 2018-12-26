@@ -38,7 +38,7 @@ let rec affiche_coloration ?(v=true) infx infy supx supy bsp =
         set_color (get_rgb c);
         fill_rect
           (infx+offset+line_width)
-          (infy+2*offset+line_width)
+          (infy+4*offset+line_width)
           (supx-infx-2*line_width) (supy-infy-2*line_width)
 
 let affiche_linetree (lt : 'a linetree) =
@@ -53,22 +53,53 @@ let affiche_linetree (lt : 'a linetree) =
           affiche_linetree right;
           set_color (get_rgb_l c);
           set_line_width line_width;
-          draw_segments [|(a + offset, b + 2*offset, x + offset, y + 2*offset)|]
+          draw_segments [|(a + offset, b + 4*offset, x + offset, y + 4*offset)|]
   in
   affiche_linetree lt
+
+let affiche_bouton (larg : int) =
+  set_font "-misc-dejavu sans mono-bold-r-normal--24-0-0-0-m-0-iso8859-1";
+  set_color black;
+  set_line_width line_width;
+  let l = larg / 4
+  and ecart = larg / 16 in
+  let rec bouton i =
+    if i = 3 then ()
+    else
+        begin
+            let l' = i*l + (i+1) * ecart + offset in 
+            draw_segments[|
+                    (l', offset/2, l', 2*offset);
+                    (l', 2*offset, l' + l, 2*offset);
+                    (l' + l, 2*offset, l' + l, offset/2);
+                    (l' + l, offset/2, l', offset/2) |];
+            bouton (i+1);
+            if i = 0 then set_color (get_rgb `Red)
+            else if i = 1 then set_color (get_rgb `Green)
+            else set_color (get_rgb `Blue);
+            fill_rect (l'+2) (offset/2+2) (l-4) (offset + offset/2-3);
+            set_color black;
+            moveto (l'+3) 15;
+            if i = 0 then draw_string "Menu"
+            else if i = 1 then draw_string "Aide"
+            else draw_string "Solution"
+        end
+  in
+  bouton 0
+  
 
 let affiche_cadre (larg : int) (haut : int) =
   (* Affiche un cadre autour du puzzle *)
   set_line_width line_width;
   set_color black;
-  draw_segments[|(offset, 2*offset, offset, haut + 2*offset);
-                 (offset, haut + 2*offset, larg + offset, haut + 2*offset);
-                 (larg + offset, haut + 2*offset, larg + offset, 2*offset);
-                 (larg + offset, 2*offset, offset, 2*offset)|];
-  draw_segments[|(offset, offset/2, offset, offset + offset/2);
-                 (offset, offset + offset/2, larg + offset, offset + offset/2);
-                 (larg + offset, offset + offset/2, larg + offset, offset/2);
-                 (larg + offset, offset/2, offset, offset/2)|]
+  draw_segments[|(offset, 4*offset, offset, haut + 4*offset);
+                 (offset, haut + 4*offset, larg + offset, haut + 4*offset);
+                 (larg + offset, haut + 4*offset, larg + offset, 4*offset);
+                 (larg + offset, 4*offset, offset, 4*offset)|];
+  draw_segments[|(offset, 2*offset + offset/2, offset, 3*offset + offset/2);
+                 (offset, 3*offset + offset/2, larg + offset, 3*offset + offset/2);
+                 (larg + offset, 3*offset + offset/2, larg + offset, 2*offset + offset/2);
+                 (larg + offset, 2*offset + offset/2, offset, 2*offset + offset/2)|]
 
 (* Génère un bsp et sa copie vide  *)
 let init3coul infos : (couleur bsp * couleur bsp_sat * couleur linetree * couleur bsp) =
@@ -92,6 +123,7 @@ let loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 
     then print_message "Victoire";
     affiche_linetree linetree;
     affiche_cadre infos.larg infos.haut;
+    affiche_bouton infos.larg;
     affiche_coloration 0 0 infos.larg infos.haut working_bsp;
     let e = wait_next_event [ Button_down ; Key_pressed ] in
     if e.keypressed
@@ -114,7 +146,7 @@ let loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 
       then
         begin
           clean_message();
-          let bsp = change_color chcol working_bsp (e.mouse_x - offset, e.mouse_y - 2*offset) in
+          let bsp = change_color chcol working_bsp (e.mouse_x - offset, e.mouse_y - 4*offset) in
           pmothersol infos.prof origin_bsp_sat bsp linetree;
           spec_loop bsp Antilogie
         end
@@ -157,12 +189,12 @@ let init () =
 let main () =
   let (col3,prof) = init () in
   let infos =
-    {larg=800;
-     haut=800;
+    {larg=900;
+     haut=900;
      prof=prof
     } in
   Random.self_init ();
-  open_graph (" " ^ string_of_int (infos.larg + 2 * offset) ^ "x" ^ string_of_int (infos.haut + 3 * offset)) ;
+  open_graph (" " ^ string_of_int (infos.larg + 2 * offset) ^ "x" ^ string_of_int (infos.haut + 5 * offset)) ;
   if col3 = 3
    then
      let (origin_bsp,origin_bsp_sat,linetree,working_bsp) = init3coul infos in

@@ -11,6 +11,21 @@
 	
 	\author{Tristan François et Alexandre Moine}
 	\maketitle
+	
+\section{Problème à 3 couleurs}
+
+Nous avons implémenté une généralisation du problème avec 3 couleurs. Dans cette variante :
+\begin{itemize}
+	\item Une ligne est rouge si il y a plus de rectangle rouge adjacent que de rectangle vert et plus que de rectangle bleu.
+	\item Une ligne est verte si il y a plus de rectangle vert adjacent que de rectangle rouge et plus que de rectangle bleu.
+	\item Une ligne est bleu si il y a plus de rectangle bleu adjacent que de rectangle rouge et plus que de rectangle vert.
+\end{itemize}
+	
+\section{Génération de formule}
+
+
+
+
 
 \section{Tseitin}
 Nous générons une forme normale conjonctive (FNC) représentant le problème pour 2 couleurs, mais nous n'y sommes pas arrivés pour 3 couleurs. Nous avons donc implémenté l'algorithme de Tseitin (amélioré par Plaisted-Greenbaum) permettant de transformer n'importe quelle formule en FNC en temps linéaire.
