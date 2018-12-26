@@ -168,7 +168,12 @@ let loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 
                            let sol, new_bsp = fill_one_rectangle get_fnc_soluce col_first infos.prof origin_bsp_sat working_bsp linetree last_sol in
                            spec_loop new_bsp sol
                        end
-                    | 3 -> begin print_message "Solution"; spec_loop working_bsp Antilogie end
+                    | 3 ->
+                       begin
+                           print_message "Calcul en cours...";
+                           let new_bsp = fill_all_rectangle get_fnc_soluce col_first infos.prof origin_bsp origin_bsp_sat working_bsp linetree last_sol in
+                           spec_loop new_bsp Antilogie
+                       end
                     | 4 -> ()
                     | _ -> spec_loop working_bsp Antilogie
                 end

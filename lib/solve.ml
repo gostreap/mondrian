@@ -140,6 +140,20 @@ let fill_one_rectangle (get_fnc : int -> 'a bsp -> 'a linetree -> formule) (col_
             (L_sol l, change_coul_with_id working_bsp (fst x) c)
          | _ -> failwith "Erreur : fill_one_rectangle2 -> pas de couleur"
 
+let fill_all_rectangle (get_fnc : int -> 'a bsp -> 'a linetree -> formule) (col_first : 'a bsp -> (bool*int) list -> solution * 'a bsp)
+                       (prof : int) (origin_bsp : 'a bsp) (origin_bsp_sat : 'a bsp_sat)  (working_bsp : 'a bsp) (linetree : 'a linetree) (last_sol : solution) =
+  let rec fill_rec bsp sol = 
+    if check_current origin_bsp bsp then bsp
+    else
+        let new_sol, new_bsp = fill_one_rectangle get_fnc col_first prof origin_bsp_sat bsp linetree sol in
+        if new_sol = Antilogie then origin_bsp
+        else fill_rec new_bsp new_sol
+  in
+  fill_rec working_bsp last_sol
+    
+  
+  
+
 let print_maybe_other_sol_soluce_gen get_fnc prof origin_bsp_sat working_bsp linetree =
   if not (check_all_secure_rect origin_bsp_sat working_bsp) then
     print_message "Secure incorrect : pas de solution"
