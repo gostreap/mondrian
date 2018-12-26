@@ -8,15 +8,11 @@ open Lib.Generate_formule2
 open Graphics
 open Lib.Utils
 
+open Start_menu
+open Types
+
 let line_width = 3
 let offset = 25
-
-type info_game =
-  {
-      larg : int;
-      haut : int;
-      prof : int;
-  }
 
 let rec affiche_coloration ?(v=true) infx infy supx supy bsp =
   match bsp with
@@ -132,38 +128,13 @@ let debug_main (origin_bsp : [< `Red | `Green | `Blue] bsp) origin_bsp_sat fnc_o
   pmothersol prof origin_bsp;
   print_endline "#########################"
 
-let init () =
-  let rec getint low high =
-    try
-      let res = read_int () in
-      if res < low || res > high
-      then
-        begin
-          print_endline ("Entrez un nombre entre "^(string_of_int low)^" et "^(string_of_int high));
-          getint low high
-        end
-      else res
-    with
-      Failure _ ->
-      print_endline "Entrez un entier !";
-      getint low high
-
-  in
-  print_endline "Bienvenue dans Mondrian, voulez-vous jouer avec 2 ou 3 couleurs ?";
-  let coul = getint 2 3 in
-  print_endline "Quelle est la profondeur maximum que vous dérirez (nous recommandons moins de 10 pour les 2 couleurs et moins de 5 pour les 3 couleurs) ?";
-  (coul, getint 1 15)
-
 let main () =
-  let (col3,prof) = init () in
-  let infos =
-    {larg=800;
-     haut=800;
-     prof=prof
-    } in
+  let larg = 800 in
+  let haut = 800 in
   Random.self_init ();
-  open_graph (" " ^ string_of_int (infos.larg + 2 * offset) ^ "x" ^ string_of_int (infos.haut + 3 * offset)) ;
-  if col3 = 3
+  open_graph (" " ^ string_of_int (larg + 2 * offset) ^ "x" ^ string_of_int (haut + 3 * offset)) ;
+  let infos = start_menu larg haut offset in
+  if infos.nbcoul = 3
    then
      let (origin_bsp,origin_bsp_sat,linetree,working_bsp) = init3coul infos in
      if Array.length Sys.argv >= 2
