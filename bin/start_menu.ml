@@ -26,23 +26,26 @@ let is_in r u v =
 let draw_r r =
   let l = 3 in
   set_color black;
-  fill_rect r.x r.y r.h r.w;
+  fill_rect r.x r.y r.w r.h;
   set_color white;
-  fill_rect (r.x+l) (r.y+l) (r.h-2*l) (r.w-2*l)
+  fill_rect (r.x+l) (r.y+l) (r.w-2*l) (r.h-2*l)
 
 (* Affiche des carrés contenant des indices entre 1 et nx*ny, retourne une liste associative entre les carrés et leurs indices *)
-let draw_choices_num larg haut offset nx ny =
+let draw_choices_num larg haut offset nx ny stop =
   let w = (larg-2*offset)/nx in
   let h = (haut-2*offset)/ny in
   let res = ref [] in
-  for j=0 to nx-1 do
-    for i=0 to ny-1 do
-      let r = {x=i*w+offset; y=j*h+offset; h=h-h/ny; w=w-w/nx;} in
-      let ind = j*nx+i+1 in
-      draw_r r;
-      draw_str r (string_of_int ind);
-      res := (r,ind)::!res
-    done
+  for j=0 to ny-1 do
+    for i=0 to nx-1 do
+      let ind = i+j*nx+1 in
+      if ind <= stop
+      then begin
+         let r = {x=i*w+offset; y=j*h+offset; h=h-3; w=w-3;} in
+         draw_r r;
+         draw_str r (string_of_int ind);
+         res := (r,ind)::!res
+       end
+      done
   done;
   !res
 
@@ -60,8 +63,8 @@ let start_menu larg haut offset =
   set_color black;
   let lb = (larg-offset)/3 in
   let hb = (haut-offset)/4 in
-  let r1 = {x=offset; y=3*hb; h=lb; w=hb} in
-  let r2 = {x=offset + 2*lb; y=3*hb; h=lb; w=hb} in
+  let r1 = {x=offset; y=3*hb; w=lb; h=hb} in
+  let r2 = {x=offset + 2*lb; y=3*hb; w=lb; h=hb} in
   draw_r r1;
   draw_r r2;
   set_color black;
@@ -78,8 +81,8 @@ let start_menu larg haut offset =
       else find_coul () in
   let nb = find_coul () in
   clear_graph ();
-  let n' = if nb = 2 then 3 else 2 in
-  let arr = draw_choices_num larg haut offset n' n' in
+  let (n1,n2,stop) = if nb = 2 then 3,3,9 else 3,2,5 in
+  let arr = draw_choices_num larg (2*haut/3) offset n1 n2 stop in
   let rec find_prof () =
     let e = wait_next_event [ Button_down ] in
     match is_in_l e.mouse_x e.mouse_y arr with
