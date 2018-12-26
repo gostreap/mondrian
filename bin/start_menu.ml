@@ -23,15 +23,19 @@ let is_in r u v =
   u >= r.x && u <= (r.x+r.w) && v >= r.y && v <= (r.y+r.h)
 
 (* Dessine un rectangle *)
-let draw_r r =
+let draw_r c r =
   let l = 3 in
   set_color black;
   fill_rect r.x r.y r.w r.h;
-  set_color white;
-  fill_rect (r.x+l) (r.y+l) (r.w-2*l) (r.h-2*l)
+  set_color c;
+  fill_rect (r.x+l) (r.y+l) (r.w-2*l) (r.h-2*l);
+  set_color black
 
 (* Affiche des carrés contenant des indices entre 1 et nx*ny, retourne une liste associative entre les carrés et leurs indices *)
 let draw_choices_num larg haut offset nx ny stop =
+  set_color white;
+  fill_rect 0 0 larg haut;
+  set_color black;
   let w = (larg-2*offset)/nx in
   let h = (haut-2*offset)/ny in
   let res = ref [] in
@@ -41,7 +45,7 @@ let draw_choices_num larg haut offset nx ny stop =
       if ind <= stop
       then begin
          let r = {x=i*w+offset; y=j*h+offset; h=h-3; w=w-3;} in
-         draw_r r;
+         draw_r white r;
          draw_str r (string_of_int ind);
          res := (r,ind)::!res
        end
@@ -61,33 +65,49 @@ let is_in_l x y =
 let start_menu larg haut offset =
   clear_graph ();
   set_color black;
+  set_font "-misc-dejavu sans mono-bold-r-normal--18-0-0-0-m-0-iso8859-1";
+  draw_str {x=offset;y=haut-offset;w=larg-2*offset;h=offset} "Mondrian";
   let lb = (larg-offset)/3 in
   let hb = (haut-offset)/4 in
   let r1 = {x=offset; y=3*hb; w=lb; h=hb} in
   let r2 = {x=offset + 2*lb; y=3*hb; w=lb; h=hb} in
-  draw_r r1;
-  draw_r r2;
-  set_color black;
-  set_font "-misc-dejavu sans mono-bold-r-normal--18-0-0-0-m-0-iso8859-1";
-  draw_str r1 "2 couleurs";
-  draw_str r2 "3 couleurs";
-  let rec find_coul () =
-    let e = wait_next_event [ Button_down ] in
-    if is_in r1 e.mouse_x e.mouse_y
-    then 2
-    else
-      if is_in r2 e.mouse_x e.mouse_y
-      then 3
-      else find_coul () in
-  let nb = find_coul () in
-  clear_graph ();
-  let (n1,n2,stop) = if nb = 2 then 3,3,9 else 3,2,5 in
-  let arr = draw_choices_num larg (2*haut/3) offset n1 n2 stop in
-  let rec find_prof () =
+  let dr1 c =
+    draw_r c r1;
+    draw_str r1 "2 couleurs" in
+  let dr2 c =
+    draw_r c r2;
+    draw_str r2 "3 couleurs" in
+  dr1 white;
+  dr2 white;
+  let rec find_prof nb arr : info_game =
     let e = wait_next_event [ Button_down ] in
     match is_in_l e.mouse_x e.mouse_y arr with
-    | None -> find_prof ()
-    | Some x -> x in
-  let prof = find_prof () in
-  clear_graph ();
-  {larg=larg; haut=haut; prof=prof; nbcoul=nb;}
+    | None ->
+       test e (fun () -> find_prof nb arr)
+    | Some prof ->
+       begin
+         clear_graph ();
+         {larg=larg; haut=haut; prof=prof; nbcoul=nb;}
+       end
+  and test e f =
+    if is_in r1 e.mouse_x e.mouse_y
+    then
+      begin
+        dr2 white;
+        dr1 red;
+        find_prof 2 (draw_choices_num larg (2*haut/3) offset 3 3 9)
+      end
+    else
+      if is_in r2 e.mouse_x e.mouse_y
+      then
+        begin
+          dr1 white;
+          dr2 red;
+          find_prof 3 (draw_choices_num larg (2*haut/3) offset 3 2 5)
+        end
+      else f ()
+  in
+  let rec find_coul () =
+    let e = wait_next_event [ Button_down ] in
+    test e find_coul in
+  find_coul ()
