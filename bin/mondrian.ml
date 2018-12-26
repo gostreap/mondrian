@@ -57,13 +57,13 @@ let affiche_bouton (larg : int) =
   set_font "-misc-dejavu sans mono-bold-r-normal--24-0-0-0-m-0-iso8859-1";
   set_color black;
   set_line_width line_width;
-  let l = larg / 5
-  and ecart = larg / 25 in
+  let l = (larg-offset-offset/2) / 4
+  and ecart = offset/2 in
   let rec bouton i =
     if i = 4 then ()
     else
         begin
-            let l' = i*l + (i+1) * ecart + offset in 
+            let l' = i*l + i* ecart + offset in 
             draw_segments[|
                     (l', offset/2, l', 2*offset);
                     (l', 2*offset, l' + l, 2*offset);
@@ -85,13 +85,13 @@ let affiche_bouton (larg : int) =
   bouton 0
 
 let clique_bouton infos x y : int =
-  let l = infos.larg / 5
-  and ecart = infos.larg / 25 in
+  let l = (infos.larg - offset - offset/2) / 4
+  and ecart = offset / 2 in
   let rec clique i =
     if i = 4 then 0
     else
         begin
-            let l' = i*l + (i+1) * ecart + offset in 
+            let l' = i*l + i * ecart + offset in 
             if x >= l' && x <= l' + l && y >= offset/2 && y <= 2*offset then (i+1)
             else clique (i+1);
         end
