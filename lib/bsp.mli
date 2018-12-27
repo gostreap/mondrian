@@ -15,7 +15,7 @@ val random_bsp_naive :
   int ->
   int ->
   int -> (unit -> ([< `Blue | `Green | `Red ] as 'a)) -> 'a bsp
-val change_color : (([< `Blue | `Green | `Red ] as 'a) option -> 'a) -> 'a bsp -> point -> 'a bsp
+val change_color : (([< `Blue | `Green | `Red ] as 'a) option -> 'a option) -> 'a bsp -> point -> 'a bsp
 val check_current : ([< `Blue | `Green | `Red ] as 'a) bsp -> 'a bsp -> bool
 val empty_copy_of_bsp : 'a bsp -> 'b bsp
 val get_color_line : couleur bsp -> couleur couleur_l option

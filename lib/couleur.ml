@@ -48,5 +48,5 @@ let string_of_couleur_l =
     "white"
     string_of_couleur
 
-let next_coul = maybe `Blue (switch_coul `Green `Blue `Red)
-let next_coul2 = maybe `Blue (switch_coul2 `Blue `Red)
+let next_coul = maybe (Some `Blue) (switch_coul (Some `Green) None (Some `Red))
+let next_coul2 = maybe (Some `Blue) (switch_coul2 None (Some `Red))

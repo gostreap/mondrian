@@ -28,14 +28,18 @@ let rec affiche_coloration ?(v=true) infx infy supx supy bsp =
          affiche_coloration ~v:(not v) infx lab.coord supx supy r
        end
   | R x ->
-     match x with
-     | None -> ()
-     | Some c ->
-        set_color (get_rgb c);
-        fill_rect
-          (infx+offset+line_width)
-          (infy+4*offset+line_width)
-          (supx-infx-2*line_width) (supy-infy-2*line_width)
+     begin
+         let color = 
+           match x with
+           | None -> white
+           | Some c -> (get_rgb c);
+         in
+         set_color color;
+         fill_rect
+             (infx+offset+line_width)
+             (infy+4*offset+line_width)
+             (supx-infx-2*line_width) (supy-infy-2*line_width)
+     end
 
 let affiche_linetree (lt : 'a linetree) =
   let rec affiche_linetree linetree =
@@ -128,7 +132,7 @@ let init2coul infos : (([`Red | `Blue] as 'a) bsp * 'a bsp_sat * 'a linetree * '
   (origin_bsp,bsp_sat,linetree,working_bsp)
 
 
-let loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 'a bsp_sat) (working_bsp : 'a bsp) (linetree : 'a linetree) (pmothersol : int -> 'a bsp_sat -> 'a bsp -> 'a linetree -> unit) (get_fnc_soluce : int -> 'a bsp -> 'a linetree -> formule) (chcol : ('a option -> 'a)) (col_first : 'a bsp -> (bool*int) list -> solution * 'a bsp) infos start_game =
+let loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 'a bsp_sat) (working_bsp : 'a bsp) (linetree : 'a linetree) (pmothersol : int -> 'a bsp_sat -> 'a bsp -> 'a linetree -> unit) (get_fnc_soluce : int -> 'a bsp -> 'a linetree -> formule) (chcol : ('a option -> 'a option)) (col_first : 'a bsp -> (bool*int) list -> solution * 'a bsp) infos start_game =
   let rec spec_loop working_bsp last_sol =
     if check_current origin_bsp working_bsp
     then print_message "Victoire";
