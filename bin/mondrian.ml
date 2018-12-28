@@ -87,14 +87,13 @@ let clique_bouton infos x y : int =
   let rec clique i =
     if i = 4 then 0
     else
-        begin
-            let l' = i*l + i * ecart + offset in
-            if x >= l' && x <= l' + l && y >= offset/2 && y <= 2*offset then (i+1)
-            else clique (i+1);
-        end
+      begin
+        let l' = i*l + i * ecart + offset in
+        if x >= l' && x <= l' + l && y >= offset/2 && y <= 2*offset then (i+1)
+        else clique (i+1);
+      end
   in
   clique 0
-
 
 let affiche_cadre (larg : int) (haut : int) =
   (* Affiche un cadre autour du puzzle *)
@@ -141,47 +140,39 @@ let loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 
         match e.key with
         | 'q' -> ()
         | 'h' ->
-           begin
-             print_message "Calcul en cours...";
-             let sol, new_bsp = fill_one_rectangle get_fnc_soluce col_first infos.prof origin_bsp_sat working_bsp linetree last_sol in
-             spec_loop new_bsp sol
-           end
+           print_message "Calcul en cours...";
+           let sol, new_bsp = fill_one_rectangle get_fnc_soluce col_first infos.prof origin_bsp_sat working_bsp linetree last_sol in
+           spec_loop new_bsp sol
         | _ -> spec_loop working_bsp last_sol
-
       end
     else
       if e.button
       then
         begin
-            clean_message();
-            if e.mouse_y < 4 * offset then
-                begin
-                    let cas = clique_bouton infos e.mouse_x e.mouse_y in
-                    match cas with
-                    | 1 -> start_game (start_menu infos.larg infos.haut offset)
-                    | 2 ->
-                       begin
-                           print_message "Calcul en cours...";
-                           let sol, new_bsp = fill_one_rectangle get_fnc_soluce col_first infos.prof origin_bsp_sat working_bsp linetree last_sol in
-                           spec_loop new_bsp sol
-                       end
-                    | 3 ->
-                       begin
-                           print_message "Calcul en cours...";
-                           let new_bsp = fill_all_rectangle get_fnc_soluce col_first infos.prof origin_bsp origin_bsp_sat working_bsp linetree last_sol in
-                           spec_loop new_bsp Antilogie
-                       end
-                    | 4 -> ()
-                    | _ -> spec_loop working_bsp Antilogie
-                end
-            else if e.mouse_x < offset || e.mouse_x > offset + infos.larg ||
-                        e.mouse_y > infos.haut + 4*offset then spec_loop working_bsp Antilogie
-            else
-                begin
-                    let bsp = change_color chcol working_bsp (e.mouse_x - offset, e.mouse_y - 4*offset) in
-                    pmothersol infos.prof origin_bsp_sat bsp linetree;
-                    spec_loop bsp Antilogie
-                end
+          clean_message();
+          if e.mouse_y < 4 * offset then
+            begin
+              match clique_bouton infos e.mouse_x e.mouse_y with
+              | 1 -> start_game (start_menu infos.larg infos.haut offset)
+              | 2 ->
+                 print_message "Calcul en cours...";
+                 let sol, new_bsp = fill_one_rectangle get_fnc_soluce col_first infos.prof origin_bsp_sat working_bsp linetree last_sol in
+                 spec_loop new_bsp sol
+              | 3 ->
+                 print_message "Calcul en cours...";
+                 let new_bsp = fill_all_rectangle get_fnc_soluce col_first infos.prof origin_bsp origin_bsp_sat working_bsp linetree last_sol in
+                 spec_loop new_bsp Antilogie
+              | 4 -> ()
+              | _ -> spec_loop working_bsp Antilogie
+            end
+          else if e.mouse_x < offset || e.mouse_x > offset + infos.larg ||
+                    e.mouse_y > infos.haut + 4*offset then spec_loop working_bsp Antilogie
+          else
+            begin
+              let bsp = change_color chcol working_bsp (e.mouse_x - offset, e.mouse_y - 4*offset) in
+              pmothersol infos.prof origin_bsp_sat bsp linetree;
+              spec_loop bsp Antilogie
+            end
         end
       else spec_loop working_bsp last_sol
   in
@@ -212,13 +203,11 @@ let rec start_game infos =
      loop origin_bsp origin_bsp_sat working_bsp linetree print_maybe_other_sol_soluce2 get_fnc_of_bsp_soluce2 next_coul2 color_first2 infos start_game
 
 let main () =
-
   let larg = 800 in
   let haut = 800 in
   Random.self_init ();
   open_graph (" " ^ string_of_int (larg + 2 * offset) ^ "x" ^ string_of_int (haut + 5 * offset)) ;
   let infos = start_menu larg haut offset in
   start_game infos
-
 
 let _ = main()
