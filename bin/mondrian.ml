@@ -28,14 +28,11 @@ let rec affiche_coloration ?(v=true) infx infy supx supy bsp =
          affiche_coloration ~v:(not v) infx lab.coord supx supy r
        end
   | R x ->
-     match x with
-     | None -> ()
-     | Some c ->
-        set_color (get_rgb c);
-        fill_rect
-          (infx+offset+line_width)
-          (infy+4*offset+line_width)
-          (supx-infx-2*line_width) (supy-infy-2*line_width)
+     set_color (maybe white get_rgb x);
+     fill_rect
+       (infx+offset+line_width)
+       (infy+4*offset+line_width)
+       (supx-infx-2*line_width) (supy-infy-2*line_width)
 
 let affiche_linetree (lt : 'a linetree) =
   let rec affiche_linetree linetree =
@@ -63,7 +60,7 @@ let affiche_bouton (larg : int) =
     if i = 4 then ()
     else
         begin
-            let l' = i*l + i* ecart + offset in 
+            let l' = i*l + i* ecart + offset in
             draw_segments[|
                     (l', offset/2, l', 2*offset);
                     (l', 2*offset, l' + l, 2*offset);
@@ -91,13 +88,13 @@ let clique_bouton infos x y : int =
     if i = 4 then 0
     else
         begin
-            let l' = i*l + i * ecart + offset in 
+            let l' = i*l + i * ecart + offset in
             if x >= l' && x <= l' + l && y >= offset/2 && y <= 2*offset then (i+1)
             else clique (i+1);
         end
   in
   clique 0
-  
+
 
 let affiche_cadre (larg : int) (haut : int) =
   (* Affiche un cadre autour du puzzle *)
@@ -128,7 +125,7 @@ let init2coul infos : (([`Red | `Blue] as 'a) bsp * 'a bsp_sat * 'a linetree * '
   (origin_bsp,bsp_sat,linetree,working_bsp)
 
 
-let loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 'a bsp_sat) (working_bsp : 'a bsp) (linetree : 'a linetree) (pmothersol : int -> 'a bsp_sat -> 'a bsp -> 'a linetree -> unit) (get_fnc_soluce : int -> 'a bsp -> 'a linetree -> formule) (chcol : ('a option -> 'a)) (col_first : 'a bsp -> (bool*int) list -> solution * 'a bsp) infos start_game =
+let loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 'a bsp_sat) (working_bsp : 'a bsp) (linetree : 'a linetree) (pmothersol : int -> 'a bsp_sat -> 'a bsp -> 'a linetree -> unit) (get_fnc_soluce : int -> 'a bsp -> 'a linetree -> formule) (chcol : ('a option -> 'a option)) (col_first : 'a bsp -> (bool*int) list -> solution * 'a bsp) infos start_game =
   let rec spec_loop working_bsp last_sol =
     if check_current origin_bsp working_bsp
     then print_message "Victoire";
@@ -179,7 +176,7 @@ let loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 
                 end
             else if e.mouse_x < offset || e.mouse_x > offset + infos.larg ||
                         e.mouse_y > infos.haut + 4*offset then spec_loop working_bsp Antilogie
-            else 
+            else
                 begin
                     let bsp = change_color chcol working_bsp (e.mouse_x - offset, e.mouse_y - 4*offset) in
                     pmothersol infos.prof origin_bsp_sat bsp linetree;
@@ -189,7 +186,7 @@ let loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 
       else spec_loop working_bsp last_sol
   in
   spec_loop working_bsp Antilogie
-  
+
 
 let debug_main (origin_bsp : [< `Red | `Green | `Blue] bsp) origin_bsp_sat fnc_of_bsp pmothersol prof =
   print_endline (string_of_bsp_sat origin_bsp_sat);

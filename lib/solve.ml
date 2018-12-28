@@ -32,15 +32,13 @@ let rec list_of_fnc (fnc : formule) =
 
 (* Affiche une solution donnée par le sat solver *)
 let print_solution sol =
-  let pr_rec =
-    List.iter
-      (fun (x,y) -> print_string ("("^string_of_bool x ^ ", " ^string_of_int y ^ ") ") )
-  in
   match sol with
   | Antilogie -> print_endline "Antilogie"
   | Tautologie -> print_endline "Tautologie"
   | L_sol x ->
-     pr_rec (List.sort (fun x y -> compare (snd x) (snd y)) x);
+     List.iter
+      (fun (x,y) -> print_string ("("^string_of_bool x ^ ", " ^string_of_int y ^ ") ") )
+      (List.sort (fun x y -> compare (snd x) (snd y)) x);
      print_endline ""
 
 (* Renvoie None si le bsp possède une unique solution et une deuxième solution sinon *)
@@ -48,12 +46,8 @@ let sat_solve f =
   match f with
   | Faux -> Antilogie
   | Vrai -> Tautologie
-  | form ->
-     let s = Sat.solve (list_of_fnc form) in
-     match s with
-     | None -> Antilogie
-     | Some l -> L_sol l
-                                                
+  | form -> maybe Antilogie (fun x -> L_sol x) (Sat.solve (list_of_fnc form))
+
 (*Renvoie vrai si tout les rectangles sécurisés dans bsp_sat sont de la bonne couleur dans working_bsp*)
 let rec check_all_secure_rect bsp_sat working_bsp =
   match bsp_sat, working_bsp with
@@ -90,59 +84,47 @@ let color_first2 working_bsp l=
   | x::q -> (L_sol q,change_coul_with_id working_bsp (snd x) (if fst x then `Red else `Blue))
 
 let fill_one_rectangle (get_fnc : int -> 'a bsp -> 'a linetree -> formule) (col_first : 'a bsp -> (bool*int) list -> solution * 'a bsp) (prof : int) (origin_bsp_sat : 'a bsp_sat)  (working_bsp : 'a bsp) (linetree : 'a linetree) (last_sol : solution) : (solution * 'a bsp) =
+  let aux l =
+    match get_all_secure_rect origin_bsp_sat working_bsp with
+    | [] ->
+       col_first working_bsp l
+    | (x,y)::_ ->
+       match y with
+       | Some c -> (L_sol l, change_coul_with_id working_bsp x c)
+       | _ -> failwith "Erreur : fill_one_rectangle -> pas de couleur" in
   match last_sol with
   | Antilogie | Tautologie | L_sol [] ->
      begin
-         if not (check_all_secure_rect origin_bsp_sat working_bsp) then
-             begin
-                 print_message "Secure incorrect : pas de solution";
-                 (Antilogie ,working_bsp)
-             end
-         else
-             let sol = sat_solve (get_fnc prof working_bsp linetree) in
-             match sol with
-             | Antilogie -> print_message "Pas de solution : impossible de remplir (1)"; (Antilogie, working_bsp)
-             | Tautologie ->
-                let (b,r) = tryred working_bsp in
-                if b then begin clean_message(); (Tautologie, r) end
-                else
-                    begin
-                        print_message "Pas de solution : impossible de remplir";
-                        (Antilogie, working_bsp)
-                    end
-             | L_sol l ->
-                let secure = get_all_secure_rect origin_bsp_sat working_bsp in
-                if List.length secure = 0 then
-                    begin
-                        clean_message ();
-                        col_first working_bsp l
-                    end
-                else
-                    let x = List.hd secure in
-                    match snd x with
-                    | Some c ->
-                       clean_message ();
-                       (sol, change_coul_with_id working_bsp (fst x) c)
-                    | _ -> failwith "Erreur : fill_one_rectangle2 -> pas de couleur"
+       if not (check_all_secure_rect origin_bsp_sat working_bsp) then
+         begin
+           print_message "Secure incorrect : pas de solution";
+           (Antilogie ,working_bsp)
+         end
+       else
+         let sol = sat_solve (get_fnc prof working_bsp linetree) in
+         clean_message();
+         match sol with
+         | Antilogie ->
+            print_message "Pas de solution : impossible de remplir (1)";
+            (Antilogie, working_bsp)
+         | Tautologie ->
+            let (b,r) = tryred working_bsp in
+            if b
+            then (Tautologie, r)
+            else
+              begin
+                print_message "Pas de solution : impossible de remplir";
+                (Antilogie, working_bsp)
+              end
+         | L_sol l -> aux l
      end
   | L_sol l ->
-     let secure = get_all_secure_rect origin_bsp_sat working_bsp in
-     if List.length secure = 0 then
-         begin
-             clean_message ();
-             col_first working_bsp l
-         end
-     else
-         let x = List.hd secure in
-         match snd x with
-         | Some c ->
-            clean_message ();
-            (L_sol l, change_coul_with_id working_bsp (fst x) c)
-         | _ -> failwith "Erreur : fill_one_rectangle2 -> pas de couleur"
+     clean_message();
+     aux l
 
 let fill_all_rectangle (get_fnc : int -> 'a bsp -> 'a linetree -> formule) (col_first : 'a bsp -> (bool*int) list -> solution * 'a bsp)
                        (prof : int) (origin_bsp : 'a bsp) (origin_bsp_sat : 'a bsp_sat)  (working_bsp : 'a bsp) (linetree : 'a linetree) (last_sol : solution) =
-  let rec fill_rec bsp sol = 
+  let rec fill_rec bsp sol =
     if check_current origin_bsp bsp then bsp
     else
         let new_sol, new_bsp = fill_one_rectangle get_fnc col_first prof origin_bsp_sat bsp linetree sol in
@@ -150,16 +132,12 @@ let fill_all_rectangle (get_fnc : int -> 'a bsp -> 'a linetree -> formule) (col_
         else fill_rec new_bsp new_sol
   in
   fill_rec working_bsp last_sol
-    
-  
-  
 
 let print_maybe_other_sol_soluce_gen get_fnc prof origin_bsp_sat working_bsp linetree =
   if not (check_all_secure_rect origin_bsp_sat working_bsp) then
     print_message "Secure incorrect : pas de solution"
   else
-    let sol = sat_solve (get_fnc prof working_bsp linetree) in
-    match sol with
+    match sat_solve (get_fnc prof working_bsp linetree) with
     | Antilogie -> print_message "Pas de solution"
     | _ -> print_message "Solution possible"
 
@@ -171,7 +149,7 @@ let print_maybe_other_sol prof bsp =
 let print_maybe_other_sol_soluce =
   print_maybe_other_sol_soluce_gen get_fnc_of_bsp_soluce
 
-(* For 2 colors *)
+(* Pour 2 couleurs *)
 (* Test si le bsp possède une unique solution et affiche le résultat *)
 
 let print_maybe_other_sol2 prof bsp =
