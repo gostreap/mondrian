@@ -39,36 +39,36 @@ let rand_three_coul () =
  Génère un BSP aléatoire de profondeur 'profondeur'
  NOTE: Pour l'instant, toutes les arrêtes sont visibles
  *)
-let rec random_bsp_naive
-          ?(v=true) ?(minsize=20) ?(start_larg=0)
-          ?(start_haut=0) (prof : int) (larg : int) (haut : int) (rand : unit -> ([< `Red | `Green | `Blue] as 'a)) : ('a bsp) =
-  if prof = 0 || larg-start_larg <= minsize*2 || haut-start_haut <= minsize*2
-  then R (Some (rand ()))
-  else
-    let lab =
-      { coord =
-          if v
-          then start_larg + minsize + (Random.int (larg-start_larg - minsize*2))
-          else start_haut + minsize + (Random.int (haut-start_haut - minsize*2));
-        colored = true
-      } in
-    let l =
-      random_bsp_naive
-        ~v:(not v)
-        ~start_larg:start_larg
-        ~start_haut:start_haut
-        (prof-1)
-        (if v then lab.coord else larg)
-        (if v then haut else lab.coord) rand in
-    let r =
-      random_bsp_naive
-        ~v:(not v)
-        ~start_larg:(if v then lab.coord else start_larg)
-        ~start_haut:(if v then start_haut else lab.coord)
-        (prof-1)
-        larg
-        haut rand in
-    L (lab,l,r)
+let random_bsp_naive ?(minsize=20) (rand : unit -> ([< `Red | `Green | `Blue] as 'a)) =
+  let rec aux v start_larg start_haut prof larg haut =
+    if prof = 0 || larg-start_larg <= minsize*2 || haut-start_haut <= minsize*2
+    then R (Some (rand ()))
+    else
+      let lab =
+        { coord =
+            if v
+            then start_larg + minsize + (Random.int (larg-start_larg - minsize*2))
+            else start_haut + minsize + (Random.int (haut-start_haut - minsize*2));
+          colored = true
+        } in
+      let l =
+        aux
+          (not v)
+          start_larg
+          start_haut
+          (prof-1)
+          (if v then lab.coord else larg)
+          (if v then haut else lab.coord) in
+      let r =
+        aux
+          (not v)
+          (if v then lab.coord else start_larg)
+          (if v then start_haut else lab.coord)
+          (prof-1)
+          larg
+          haut in
+      L (lab,l,r)
+  in aux true 0 0
 
 (* Change la couleur d'un rectangle d'un bsp, dans lequel se situe p *)
 let change_color (getnext : 'a option -> 'a option) (bsp : 'a bsp) ((x,y) : point) =

@@ -110,14 +110,14 @@ let affiche_cadre (larg : int) (haut : int) =
 
 (* Génère un bsp et sa copie vide  *)
 let init3coul infos : (couleur bsp * couleur bsp_sat * couleur linetree * couleur bsp) =
-  let origin_bsp = random_bsp_naive infos.prof infos.larg infos.haut rand_three_coul in
+  let origin_bsp = random_bsp_naive rand_three_coul infos.prof infos.larg infos.haut in
   let bsp_sat = loop_sat infos.prof (bsp_sat_of_bsp get_color_line origin_bsp) in
   let linetree = linetree_of_bsp get_color_line origin_bsp infos.larg infos.haut in
   let working_bsp = empty_copy_of_bsp origin_bsp in
   (origin_bsp,bsp_sat,linetree,working_bsp)
 
 let init2coul infos : (([`Red | `Blue] as 'a) bsp * 'a bsp_sat * 'a linetree * 'a bsp) =
-  let origin_bsp = random_bsp_naive infos.prof infos.larg infos.haut rand_two_coul in
+  let origin_bsp = random_bsp_naive rand_two_coul infos.prof infos.larg infos.haut in
   let bsp_sat = loop_sat infos.prof (bsp_sat_of_bsp get_color_line2 origin_bsp) in
   let linetree = linetree_of_bsp get_color_line2 origin_bsp infos.larg infos.haut in
   let working_bsp = empty_copy_of_bsp origin_bsp in

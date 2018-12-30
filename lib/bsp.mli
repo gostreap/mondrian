@@ -8,13 +8,9 @@ val machinestring_of_bsp : [< `Red | `Green | `Blue] bsp -> string
 val rand_two_coul : unit -> [`Blue | `Red ]
 val rand_three_coul : unit -> [`Blue | `Green | `Red ]
 val random_bsp_naive :
-  ?v:bool ->
   ?minsize:int ->
-  ?start_larg:int ->
-  ?start_haut:int ->
-  int ->
-  int ->
-  int -> (unit -> ([< `Blue | `Green | `Red ] as 'a)) -> 'a bsp
+  (unit -> ([< `Blue | `Green | `Red ] as 'a)) ->
+  int -> int -> int -> 'a bsp
 val change_color : (([< `Blue | `Green | `Red ] as 'a) option -> 'a option) -> 'a bsp -> point -> 'a bsp
 val check_current : ([< `Blue | `Green | `Red ] as 'a) bsp -> 'a bsp -> bool
 val empty_copy_of_bsp : 'a bsp -> 'b bsp

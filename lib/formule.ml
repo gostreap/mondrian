@@ -44,19 +44,12 @@ let rec string_of_formule f =
 
 let print_formule f =
   print_endline (string_of_formule f)
-  
+
 (* Renvoie vrai ssi il x et y sont des Var et si x = y *)
 let same_var x y =
   match x, y with
   | Var x, Var y -> x = y
   | _ -> false
-
-let rec size_of_formule (f : formule) =
-  match f with
-  | Faux | Vrai -> 0
-  | Lit _ -> 1
-  | Et (a,b) -> size_of_formule a + size_of_formule b
-  | Ou (a,b) -> size_of_formule a + size_of_formule b
 
 let neg lit =
   match lit with

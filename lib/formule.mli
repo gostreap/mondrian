@@ -7,6 +7,5 @@ val ou : formule -> formule -> formule
 val string_of_formule : formule -> string
 val print_formule : formule -> unit
 val same_var : lit -> lit -> bool
-val size_of_formule : formule -> int
 val neg : lit -> lit
 val get_v : lit -> int
