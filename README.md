@@ -13,5 +13,5 @@ dune build bin/mondrian.exe
 Pour exéctuer
 
 ```
-dune exec bin/mondrian.exe [profondeur] [si3couleurs]
+dune exe bin/mondrian.exe
 ```
