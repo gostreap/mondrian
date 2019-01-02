@@ -20,7 +20,7 @@ Pour exécuter le projet, lancer:\\
 \verb|$ dune exe bin/mondrian.exe|
 
 \section{Menu}
-Le premier menu permet de choisir entre le jeu d'origine (avec deux couleurs possibles pour les rectangles) ou le jeu étendu (avec trois couleurs possibles par rectangles).
+Le premier menu permet de choisir entre le jeu d'origine (avec deux couleurs possibles pour les rectangles) ou le jeu étendu (avec trois couleurs possibles par rectangle).
 Une fois le mode choisit, l'utilisateur peut choisir la profondeur maximale de la partition de l'espace qui va être générée.
 
 \section{Problème à 3 couleurs}
@@ -38,13 +38,13 @@ Nous avons implémenté une généralisation du problème avec 3 couleurs. Dans 
 	
 \section{Génération de formule}
 
-Nous avons réussi à générer très efficacement une formule en forme normal conjonctive dans le cas d'un jeu à deux couleurs. Le principe est le suivant :
+Nous avons réussi à générer très efficacement une formule en forme normale conjonctive dans le cas d'un jeu à deux couleurs. Le principe est le suivant :
 
-Soit $l$ une ligne à $n$ rectangles adjacents. La ligne $l$ possède $k$ rectangles rouges si dans tout groupe de $n-k+1$ rectangles il y en a au moins un rouge. Ainsi, il suffit de générer tout les arrangement de $n-k+1$ rectangles et de vérifier si il y a un rouge dans chacun. Cela se traduit par une forme normal conjonctive.
+Soit $l$ une ligne à $n$ rectangles adjacents. La ligne $l$ possède $k$ rectangles rouges si dans tout groupe de $n-k+1$ rectangles il y en a au moins un rouge. Ainsi, il suffit de générer tout les arrangements de $n-k+1$ rectangles et de vérifier si il y a un rouge dans chacun. Cela se traduit par une forme normale conjonctive.
 
 Cependant cette méthode ne permet pas de générer des formules justes et directement en forme normale conjonctive dans le jeu à 3 couleurs car une ligne avec 7 rectangles adjacents peut être, par exemple, verte avec 3 rectangles verts, 2 rouges et 2 bleus mais rouge avec les mêmes 3 rectangles verts et 4 rectangles rouges.
 
-Nous n'avons en tout cas pas réussi à générer une formule directement en forme normal conjonctive pour le jeu à 3 couleurs. Nous avons donc du implémenté un algorithme pour transformer notre formule en forme normal conjonctive.
+Nous n'avons en tout cas pas réussi à générer une formule directement en forme normale conjonctive pour le jeu à 3 couleurs. Nous avons donc du implémenté un algorithme pour transformer notre formule en forme normale conjonctive.
 
 
 \section{Tseitin}
@@ -55,5 +55,5 @@ Ce travail se trouve dans le fichier \verb|lib/tseitin.ml|.
 
 \section{SAT Solver}
 Le SAT Solver fourni pour le projet a clairement montré ses limites avec autant de variables, nous avons donc tenté de l'améliorer. L'idée est que l'algorithme de Tseitin produit énormément de 2-clauses (des clauses ne contenant que 2 variables). Par exemple, une formule générée par l'algorithme de Tseitin avec 2000 clauses en contient presque 1500.\\
-De plus, on connait des algorithmes très efficaces pour résoudre le problème 2-SAT (en temps linéaire). Nous avons donc modifié le SAT Solver fourni pour qu'il essaye des affectations de valeurs tant qu'il y a des clauses avec plus de 2 variables, puis on résout le problème en utilisant un algorithme plus efficace (en $n*log(n)$ pour $n$ le nombre de variables).
+De plus, on connaît des algorithmes très efficaces pour résoudre le problème 2-SAT (en temps linéaire). Nous avons donc modifié le SAT Solver fourni pour qu'il essaye des affectations de valeurs tant qu'il y a des clauses avec plus de 2 variables, puis on résout le problème en utilisant un algorithme plus efficace (en $n*log(n)$ pour $n$ le nombre de variables).
 \end{document}
