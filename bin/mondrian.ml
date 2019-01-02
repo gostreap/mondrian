@@ -151,7 +151,6 @@ let loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 
         begin
           clean_message();
           if e.mouse_y < 4 * offset then
-            begin
               match clique_bouton infos e.mouse_x e.mouse_y with
               | 1 -> start_game (start_menu infos.larg infos.haut offset)
               | 2 ->
@@ -164,7 +163,6 @@ let loop (origin_bsp : ([< `Blue | `Green | `Red ] as 'a) bsp) (origin_bsp_sat: 
                  spec_loop new_bsp Antilogie
               | 4 -> ()
               | _ -> spec_loop working_bsp Antilogie
-            end
           else if e.mouse_x < offset || e.mouse_x > offset + infos.larg ||
                     e.mouse_y > infos.haut + 4*offset then spec_loop working_bsp Antilogie
           else
@@ -190,17 +188,17 @@ let debug_main (origin_bsp : [< `Red | `Green | `Blue] bsp) origin_bsp_sat fnc_o
   print_endline "#########################"
 
 let rec start_game infos =
-    if infos.nbcoul = 3
-    then
-        let (origin_bsp,origin_bsp_sat,linetree,working_bsp) = init3coul infos in
-        if Array.length Sys.argv >= 2
-        then debug_main origin_bsp origin_bsp_sat get_fnc_of_bsp print_maybe_other_sol infos.prof ;
-        loop origin_bsp origin_bsp_sat working_bsp linetree print_maybe_other_sol_soluce get_fnc_of_bsp_soluce next_coul color_first infos start_game
-  else
-    let (origin_bsp,origin_bsp_sat,linetree,working_bsp) = init2coul infos in
-    if Array.length Sys.argv >= 2
-    then debug_main origin_bsp origin_bsp_sat get_fnc_of_bsp2 print_maybe_other_sol2 infos.prof;
-     loop origin_bsp origin_bsp_sat working_bsp linetree print_maybe_other_sol_soluce2 get_fnc_of_bsp_soluce2 next_coul2 color_first2 infos start_game
+  if infos.nbcoul = 3
+  then
+      let (origin_bsp,origin_bsp_sat,linetree,working_bsp) = init3coul infos in
+      if Array.length Sys.argv >= 2
+      then debug_main origin_bsp origin_bsp_sat get_fnc_of_bsp print_maybe_other_sol infos.prof ;
+      loop origin_bsp origin_bsp_sat working_bsp linetree print_maybe_other_sol_soluce get_fnc_of_bsp_soluce next_coul color_first infos start_game
+      else
+          let (origin_bsp,origin_bsp_sat,linetree,working_bsp) = init2coul infos in
+          if Array.length Sys.argv >= 2
+          then debug_main origin_bsp origin_bsp_sat get_fnc_of_bsp2 print_maybe_other_sol2 infos.prof;
+          loop origin_bsp origin_bsp_sat working_bsp linetree print_maybe_other_sol_soluce2 get_fnc_of_bsp_soluce2 next_coul2 color_first2 infos start_game
 
 let main () =
   let larg = 800 in

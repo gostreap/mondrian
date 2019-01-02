@@ -6,6 +6,5 @@ val et : formule -> formule -> formule
 val ou : formule -> formule -> formule
 val string_of_formule : formule -> string
 val print_formule : formule -> unit
-val same_var : lit -> lit -> bool
 val neg : lit -> lit
 val get_v : lit -> int

@@ -27,27 +27,6 @@ let generate_config (r,g,b) (rs,gs,bs) list =
 
 (* Genère les triplets (x,y,z) vérifiants is_valid *)
 let generate_triplet is_valid coul nadja rs gs bs =
-  (* let rec print_liste l =
-   *   match l with
-   *   | [] -> print_endline "";
-   *   | (r,g,b)::q ->
-   *      begin
-   *          print_string "(";
-   *          print_int r;
-   *          print_string ":";
-   *          print_int rs;
-   *          print_string ",";
-   *          print_int g;
-   *          print_string ":";
-   *          print_int gs;
-   *          print_string ",";
-   *          print_int b;
-   *          print_string ":";
-   *          print_int bs;
-   *          print_string ") ";
-   *          print_liste q;
-   *      end
-   * in *)
   let rec genl f l =
     if f > l
     then []

@@ -45,12 +45,6 @@ let rec string_of_formule f =
 let print_formule f =
   print_endline (string_of_formule f)
 
-(* Renvoie vrai ssi il x et y sont des Var et si x = y *)
-let same_var x y =
-  match x, y with
-  | Var x, Var y -> x = y
-  | _ -> false
-
 let neg lit =
   match lit with
   | Var x -> Neg x
