@@ -30,9 +30,17 @@ Nous avons implémenté une généralisation du problème avec 3 couleurs. Dans 
 	\item Une ligne est rouge si il y a plus de rectangle rouge adjacent que de rectangle vert et plus que de rectangle bleu.
 	\item Une ligne est verte si il y a plus de rectangle vert adjacent que de rectangle rouge et plus que de rectangle bleu.
 	\item Une ligne est bleu si il y a plus de rectangle bleu adjacent que de rectangle rouge et plus que de rectangle vert.
+	\item Une ligne est violette si il y a autant de rectangle rouge que de rectangle bleu et plus de rectangle rouge que de rectangle vert.
+	\item Une ligne est jaune si il y a autant de rectangle rouge que de rectangle vert et plus de rectangle rouge que de rectangle bleu.
+	\item Une ligne est cyan si il y a autant de rectangle bleu que de rectangle vert et plus de rectangle bleu que de rectangle rouge.
+	\item Une ligne est blanche s'il y a autant de rectangle de chaque couleur.
 \end{itemize}
 	
 \section{Génération de formule}
+
+Nous avons réussi à générer très efficacement une formule en forme normal conjonctive dans le cas d'un jeu à deux couleur. Le principe est le suivant :
+
+Soit $l$ une ligne à $n$ rectangles adjacents. La ligne $l$ possède $k$ rectangles rouges si dans tout groupe de $n-k+1$ rectangles il y en a au moins un rouge. Ainsi, il suffit de générer tout les arrangement de $n-k+1$ rectangles et de vérifier si il y a un rouge dans chacun. Cela se traduit par une forme normal conjonctive.
 
 
 \section{Tseitin}

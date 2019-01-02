@@ -39,7 +39,7 @@ let rec tseitinPlaisted (((nvar,tabl) as t ): tseitinD) (f : formule) =
           let c3 = ou_lit (Some (neg q)) la in
           et a (et b (et c3 c2)) in
         add tabl f !nvar;
-        nvar := !nvar - 1 ;
+        nvar := !nvar - 1;
         Some q,clause
 
 (* Algorithme de Tseitin (1970), transforme une formule en FNC de manière efficace *)
