@@ -42,6 +42,10 @@ Nous avons réussi à générer très efficacement une formule en forme normal c
 
 Soit $l$ une ligne à $n$ rectangles adjacents. La ligne $l$ possède $k$ rectangles rouges si dans tout groupe de $n-k+1$ rectangles il y en a au moins un rouge. Ainsi, il suffit de générer tout les arrangement de $n-k+1$ rectangles et de vérifier si il y a un rouge dans chacun. Cela se traduit par une forme normal conjonctive.
 
+Cependant cette méthode ne permet pas de générer des formules justes et directement en forme normal conjonctive dans le jeu à 3 couleurs car une ligne avec 7 rectangles adjacent peut être, par exemple, verte avec 3 rectangles vert, 2 rouges et 2 bleus mais rouge avec les mêmes 3 rectangles verts et 4 rectangles rouges.
+
+Nous n'avons en tout cas pas réussi à générer une formule directement en forme normal conjonctive pour le jeu à 3 couleurs. Nous avons donc du implémenté un algorithme pour transformer notre formule en forme normal conjonctive.
+
 
 \section{Tseitin}
 Nous générons une forme normale conjonctive (FNC) représentant le problème pour 2 couleurs, mais nous n'y sommes pas arrivés pour 3 couleurs. Nous avons donc implémenté l'algorithme de Tseitin (amélioré par Plaisted-Greenbaum) permettant de transformer n'importe quelle formule en FNC en temps linéaire.
