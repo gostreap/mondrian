@@ -12,6 +12,6 @@ module Make (V : VARIABLES) : sig
 
   type literal = bool * V.t
 
-  val solve : literal list list -> literal list option
+  val solve : (string -> unit) -> literal list list -> literal list option
 
 end

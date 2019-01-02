@@ -46,7 +46,7 @@ let sat_solve f =
   match f with
   | Faux -> Antilogie
   | Vrai -> Tautologie
-  | form -> maybe Antilogie (fun x -> L_sol x) (Sat.solve (list_of_fnc form))
+  | form -> maybe Antilogie (fun x -> L_sol x) (Sat.solve print_message (list_of_fnc form))
 
 (*Renvoie vrai si tout les rectangles sécurisés dans bsp_sat sont de la bonne couleur dans working_bsp*)
 let rec check_all_secure_rect bsp_sat working_bsp =

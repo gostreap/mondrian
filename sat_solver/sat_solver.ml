@@ -5,19 +5,6 @@
    MODIFIÉ
  *)
 
-open Graphics
-
-let clean_message () =
-  set_color white;
-  fill_rect 27 64 796 21
-
-let print_message string =
-  clean_message ();
-  set_color black;
-  moveto 30 65;
-  set_font "-misc-dejavu sans mono-bold-r-normal--18-0-0-0-m-0-iso8859-1";
-  draw_string string
-
 module type VARIABLES = sig
   type t
   val compare : t -> t -> int
@@ -62,7 +49,7 @@ module Make (V : VARIABLES) = struct
 
   (* Créer le graphe des implications https://en.wikipedia.org/wiki/Implication_graph *)
   let mk_implication_graph =
-    let aux acc l = (* TODO Use tuples *)
+    let aux acc l =
       match l with
       | [a;b] ->
          let acc = mk_if_not_here b (mk_if_not_here a acc) in
@@ -70,7 +57,7 @@ module Make (V : VARIABLES) = struct
       | _ -> assert false in
     List.fold_left aux Ml.empty
 
-  (* Transpose un graph: TODO améliorer ? *)
+  (* Transpose un graph *)
   let transpose g =
     let add_all k v acc =
       let acc = mk_if_not_here k acc in
@@ -220,7 +207,7 @@ module Make (V : VARIABLES) = struct
         unsat (assume nenv (L.mk_not a))
     with Unsat -> ()
 
-  let solve delta = try
+  let solve print_message delta = try
       let b = bcp { gamma = S.empty ; cl2 = [];  delta } in
       let s = "Calcul en cours... 2-clauses : " ^ (string_of_int (List.length delta)) ^ " 3-clauses : " ^ (string_of_int (List.length b.delta)) in
       print_message s;
